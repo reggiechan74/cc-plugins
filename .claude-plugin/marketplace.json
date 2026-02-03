@@ -5,9 +5,15 @@
   },
   "plugins": [
     {
+      "name": "rubric-creator",
+      "source": "./rubric-creator",
+      "description": "Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code",
+      "version": "1.0.0"
+    },
+    {
       "name": "spinnerverbs",
       "source": "./spinnerverbs-plugin",
-      "description": "Generate and apply themed spinner verbs for Claude Code status messages. Includes pre-built themes (Star Trek, Game of Thrones, Mandalorian) with optional parody and cynic modifiers.",
+      "description": "Generate and apply themed spinner verbs for Claude Code status messages. Includes pre-built themes (Star Trek, Game of Thrones, Mandalorian) with optional humor and cynic modifiers.",
       "version": "1.0.0"
     }
   ]

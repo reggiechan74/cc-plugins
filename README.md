@@ -12,6 +12,28 @@ Add this marketplace to Claude Code:
 
 ## Available Plugins
 
+### rubric-creator
+
+Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code.
+
+**Install:**
+```bash
+/plugin install rubric-creator@reggiechan74
+```
+
+**Features:**
+- Three creation modes: Interactive, Template, and Example-Based
+- 7 pre-built domain templates (regulatory-compliance, document-quality, code-review, vendor-evaluation, risk-assessment, performance-review, research-quality)
+- Professional controls: anchor examples, critical barriers, inter-rater reliability protocol
+- Optional companion materials: pilot testing worksheet and scorer calibration pack
+
+**Commands:**
+- `/rubric-creator --interactive` - Guided 6-phase questionnaire with validity/alignment foundation
+- `/rubric-creator --template [domain]` - Generate from pre-built domain templates
+- `/rubric-creator --from-example [file]` - Analyze existing rubric and create variant
+
+---
+
 ### spinnerverbs
 
 Generate and apply themed spinner verbs for Claude Code status messages.
@@ -29,7 +51,9 @@ Generate and apply themed spinner verbs for Claude Code status messages.
 
 **Commands:**
 - `/spinnerverbs:create [theme]` - Generate custom themed spinner verbs
-- `/spinnerverbs:apply [template]` - Apply a pre-built theme
+- `/spinnerverbs:apply [template]` - Apply a pre-built theme (startrek, gameofthrones, mandalorian)
+
+---
 
 ## Usage
 
