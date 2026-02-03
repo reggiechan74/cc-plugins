@@ -5,6 +5,12 @@
   },
   "plugins": [
     {
+      "name": "code-coherence",
+      "source": "./code-coherence",
+      "description": "Multi-agent verification system implementing organizational intelligence for production-grade code reliability. Achieves 92%+ accuracy through team-of-rivals architecture with specialized critic agents.",
+      "version": "0.1.0"
+    },
+    {
       "name": "rubric-creator",
       "source": "./rubric-creator",
       "description": "Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code",

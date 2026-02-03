@@ -12,6 +12,31 @@ Add this marketplace to Claude Code:
 
 ## Available Plugins
 
+### code-coherence
+
+Multi-agent verification system implementing organizational intelligence for production-grade code reliability. Achieves 92%+ accuracy through team-of-rivals architecture with specialized critic agents.
+
+**Install:**
+```bash
+/plugin install code-coherence@reggiechan74
+```
+
+**Features:**
+- Multi-agent verification with 92%+ reliability (vs 60% single-agent baseline)
+- Team of Rivals architecture with specialized critic agents
+- Swiss cheese model for multi-layer error checking
+- Hierarchical veto authority (any critic can reject)
+- Automatic verification gates via PreToolUse/PostToolUse hooks
+- Per-project configuration via `.claude/code-coherence.local.md`
+
+**Commands:**
+- `/coherence-check` - Full multi-agent verification workflow
+- `/plan-review` - Review execution plans with acceptance criteria
+- `/audit-trail` - Bidirectional decision history with search
+- `/acceptance-criteria` - Define and enforce success criteria
+
+---
+
 ### rubric-creator
 
 Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code.
@@ -24,19 +49,21 @@ Professional-grade rubric creation skill with validity, reliability, and fairnes
 **Features:**
 - Three creation modes: Interactive, Template, and Example-Based
 - 7 pre-built domain templates (regulatory-compliance, document-quality, code-review, vendor-evaluation, risk-assessment, performance-review, research-quality)
-- Professional controls: anchor examples, critical barriers, inter-rater reliability protocol
-- Optional companion materials: pilot testing worksheet and scorer calibration pack
+- Professional controls: anchor examples, critical barriers, inter-rater reliability
+- Confidence flagging (high/medium/low)
+- Bias review checklist
+- Optional companion materials (pilot testing worksheet, scorer calibration pack)
 
 **Commands:**
-- `/rubric-creator --interactive` - Guided 6-phase questionnaire with validity/alignment foundation
-- `/rubric-creator --template [domain]` - Generate from pre-built domain templates
-- `/rubric-creator --from-example [file]` - Analyze existing rubric and create variant
+- `/rubric-creator --interactive` - Guided 6-phase questionnaire
+- `/rubric-creator --template [domain]` - Generate from pre-built templates
+- `/rubric-creator --from-example [file]` - Create variant from existing rubric
 
 ---
 
 ### spinnerverbs
 
-Generate and apply themed spinner verbs for Claude Code status messages.
+Generate and apply themed spinner verbs for Claude Code status messages. Includes pre-built themes (Star Trek, Game of Thrones, Mandalorian) with optional humor and cynic modifiers.
 
 **Install:**
 ```bash
@@ -45,13 +72,13 @@ Generate and apply themed spinner verbs for Claude Code status messages.
 
 **Features:**
 - Pre-built themes: Star Trek, Game of Thrones, Mandalorian
-- Custom theme generation from any description
-- Style modifiers: `--parody` (AI/coding humor) and `--cynic` (pessimistic twist)
-- Flexible scoping: local, project, or user-level
+- Custom theme generation from descriptions
+- Style modifiers: `--parody` (AI/LLM references), `--cynic` (pessimistic twist)
+- Flexible scoping: project, user, or local directory
 
 **Commands:**
-- `/spinnerverbs:create [theme]` - Generate custom themed spinner verbs
-- `/spinnerverbs:apply [template]` - Apply a pre-built theme (startrek, gameofthrones, mandalorian)
+- `/spinnerverbs:create [theme]` - Generate new themed spinner verbs
+- `/spinnerverbs:apply [template-name]` - Apply a pre-built theme template
 
 ---
 
