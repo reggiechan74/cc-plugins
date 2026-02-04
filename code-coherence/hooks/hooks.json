@@ -1,46 +1,39 @@
 {
-  "PreToolUse": [
-    {
-      "matcher": "Write|Edit",
-      "hooks": [
-        {
-          "type": "prompt",
-          "prompt": "A Write or Edit operation is about to occur. Check if this matches high-stakes patterns from settings (auth/**, payment/**, financial/**, migrations/**). If yes, warn the user: '⚠ HIGH-STAKES OPERATION DETECTED\\n\\nFile matches critical pattern. Recommend running /coherence-check before proceeding.\\n\\nOptions:\\n1. Run coherence check now (safer)\\n2. Proceed without verification (faster but risky)\\n3. Cancel\\n\\nWhat would you like to do?' and return {\"permission\": \"ask\"}. If no, allow with {\"permission\": \"allow\"}.",
-          "timeout": 30000
-        }
-      ]
-    },
-    {
-      "matcher": "Bash(git commit*)|Bash(npm publish*)|Bash(docker push*)",
-      "hooks": [
-        {
-          "type": "prompt",
-          "prompt": "A deployment/publish command is about to execute. Check recent file changes for high-stakes patterns. If any critical files modified, warn: '⚠ DEPLOYMENT WITH UNVERIFIED CHANGES\\n\\nRecent changes to critical files detected. Recommend verification before deployment.\\n\\nRun coherence check first?' Return {\"permission\": \"ask\"}. Otherwise allow.",
-          "timeout": 30000
-        }
-      ]
-    },
-    {
-      "matcher": "Bash(rm *)|Bash(docker rm*)",
-      "hooks": [
-        {
-          "type": "prompt",
-          "prompt": "Destructive operation detected. Warn user and request confirmation with {\"permission\": \"ask\"}.",
-          "timeout": 10000
-        }
-      ]
-    }
-  ],
-  "PostToolUse": [
-    {
-      "matcher": "Write|Edit",
-      "hooks": [
-        {
-          "type": "prompt",
-          "prompt": "File operation completed. If this was a high-stakes file, briefly validate: 1) Syntax is valid, 2) No obvious security issues (secrets in code, SQL injection patterns). If issues found, show diff and ask: 'Issues detected in changes. Review diff above. Accept changes anyway?' with {\"permission\": \"ask\"}. If clean, allow with {\"permission\": \"allow\"}.",
-          "timeout": 60000
-        }
-      ]
-    }
-  ]
+  "description": "Code coherence verification gates for high-stakes operations",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A Write or Edit operation is about to occur. Check if this file path matches high-stakes patterns (auth/**, payment/**, financial/**, migrations/**). If yes, respond with {\"ok\": false, \"reason\": \"HIGH-STAKES OPERATION: File matches critical pattern. Recommend running /coherence-check before proceeding.\"}. If no, respond with {\"ok\": true}.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A Bash command is about to execute. Check if this is a deployment/publish command (git commit, npm publish, docker push) or destructive operation (rm -rf, docker rm). If deployment with recent high-stakes file changes, respond with {\"ok\": false, \"reason\": \"DEPLOYMENT WITH UNVERIFIED CHANGES: Recent changes to critical files detected. Recommend running /coherence-check first.\"}. If destructive, respond with {\"ok\": false, \"reason\": \"DESTRUCTIVE OPERATION: This command may cause data loss. Please confirm.\"}. Otherwise respond with {\"ok\": true}.",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "File operation completed. If this was a high-stakes file, briefly validate: 1) No obvious syntax errors, 2) No security issues (secrets in code, SQL injection patterns). If issues found, respond with {\"ok\": false, \"reason\": \"Issues detected in changes: [describe issues]. Review recommended.\"}. If clean, respond with {\"ok\": true}.",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -7,5 +7,6 @@
     "email": "reggie.chan@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["spinner", "customization", "themes", "humor", "status-messages"]
+  "keywords": ["spinner", "customization", "themes", "humor", "status-messages"],
+  "commands": ["./commands/"]
 }

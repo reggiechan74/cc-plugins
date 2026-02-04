@@ -16,5 +16,15 @@
     "critic-agents",
     "production-reliability"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "agents": [
+    "./agents/planner.md",
+    "./agents/code-critic.md",
+    "./agents/security-critic.md",
+    "./agents/domain-critic.md",
+    "./agents/financial-critic.md",
+    "./agents/healthcare-critic.md",
+    "./agents/legal-critic.md"
+  ],
+  "hooks": "./hooks/hooks.json"
 }
