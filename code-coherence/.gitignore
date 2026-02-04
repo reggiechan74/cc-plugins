@@ -1,0 +1,37 @@
+# Local settings (user-specific configuration)
+.claude/*.local.md
+*.local.md
+
+# Audit trail files (session-specific)
+.claude/coherence-audit/
+
+# Node modules (if MCP servers added later)
+node_modules/
+package-lock.json
+
+# Python (if scripts added)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -1,0 +1,46 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "A Write or Edit operation is about to occur. Check if this matches high-stakes patterns from settings (auth/**, payment/**, financial/**, migrations/**). If yes, warn the user: '⚠ HIGH-STAKES OPERATION DETECTED\\n\\nFile matches critical pattern. Recommend running /coherence-check before proceeding.\\n\\nOptions:\\n1. Run coherence check now (safer)\\n2. Proceed without verification (faster but risky)\\n3. Cancel\\n\\nWhat would you like to do?' and return {\"permission\": \"ask\"}. If no, allow with {\"permission\": \"allow\"}.",
+          "timeout": 30000
+        }
+      ]
+    },
+    {
+      "matcher": "Bash(git commit*)|Bash(npm publish*)|Bash(docker push*)",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "A deployment/publish command is about to execute. Check recent file changes for high-stakes patterns. If any critical files modified, warn: '⚠ DEPLOYMENT WITH UNVERIFIED CHANGES\\n\\nRecent changes to critical files detected. Recommend verification before deployment.\\n\\nRun coherence check first?' Return {\"permission\": \"ask\"}. Otherwise allow.",
+          "timeout": 30000
+        }
+      ]
+    },
+    {
+      "matcher": "Bash(rm *)|Bash(docker rm*)",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Destructive operation detected. Warn user and request confirmation with {\"permission\": \"ask\"}.",
+          "timeout": 10000
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "File operation completed. If this was a high-stakes file, briefly validate: 1) Syntax is valid, 2) No obvious security issues (secrets in code, SQL injection patterns). If issues found, show diff and ask: 'Issues detected in changes. Review diff above. Accept changes anyway?' with {\"permission\": \"ask\"}. If clean, allow with {\"permission\": \"allow\"}.",
+          "timeout": 60000
+        }
+      ]
+    }
+  ]
+}
