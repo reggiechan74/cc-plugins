@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "A Write or Edit operation is about to occur. Check if this file path matches high-stakes patterns (auth/**, payment/**, financial/**, migrations/**). If yes, respond with {\"ok\": false, \"reason\": \"HIGH-STAKES OPERATION: File matches critical pattern. Recommend running /coherence-check before proceeding.\"}. If no, respond with {\"ok\": true}.",
+            "prompt": "A Write or Edit operation is about to occur. Context: $ARGUMENTS\n\nCheck if the file_path matches high-stakes patterns (auth/**, payment/**, financial/**, migrations/**). If yes, respond with {\"ok\": false, \"reason\": \"HIGH-STAKES OPERATION: File matches critical pattern. Recommend running /coherence-check before proceeding.\"}. If no, respond with {\"ok\": true}.",
             "timeout": 30
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "A Bash command is about to execute. Check if this is a deployment/publish command (git commit, npm publish, docker push) or destructive operation (rm -rf, docker rm). If deployment with recent high-stakes file changes, respond with {\"ok\": false, \"reason\": \"DEPLOYMENT WITH UNVERIFIED CHANGES: Recent changes to critical files detected. Recommend running /coherence-check first.\"}. If destructive, respond with {\"ok\": false, \"reason\": \"DESTRUCTIVE OPERATION: This command may cause data loss. Please confirm.\"}. Otherwise respond with {\"ok\": true}.",
+            "prompt": "A Bash command is about to execute. Context: $ARGUMENTS\n\nCheck if this is a deployment/publish command (git commit, npm publish, docker push) or destructive operation (rm -rf, docker rm). If deployment with high-stakes implications, respond with {\"ok\": false, \"reason\": \"DEPLOYMENT COMMAND: Recommend running /coherence-check first.\"}. If destructive, respond with {\"ok\": false, \"reason\": \"DESTRUCTIVE OPERATION: This command may cause data loss. Please confirm.\"}. Otherwise respond with {\"ok\": true}.",
             "timeout": 30
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "File operation completed. If this was a high-stakes file, briefly validate: 1) No obvious syntax errors, 2) No security issues (secrets in code, SQL injection patterns). If issues found, respond with {\"ok\": false, \"reason\": \"Issues detected in changes: [describe issues]. Review recommended.\"}. If clean, respond with {\"ok\": true}.",
+            "prompt": "File operation completed. Context: $ARGUMENTS\n\nIf this was a high-stakes file, briefly validate: 1) No obvious syntax errors, 2) No security issues (secrets in code, SQL injection patterns). If issues found, respond with {\"ok\": false, \"reason\": \"Issues detected: [describe issues]. Review recommended.\"}. If clean, respond with {\"ok\": true}.",
             "timeout": 60
           }
         ]
