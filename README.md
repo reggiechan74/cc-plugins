@@ -22,18 +22,48 @@ Multi-agent verification system implementing organizational intelligence for pro
 ```
 
 **Features:**
-- Multi-agent verification with 92%+ reliability (vs 60% single-agent baseline)
-- Team of Rivals architecture with specialized critic agents
-- Swiss cheese model for multi-layer error checking
-- Hierarchical veto authority (any critic can reject)
-- Automatic verification gates via PreToolUse/PostToolUse hooks
-- Per-project configuration via `.claude/code-coherence.local.md`
+- Multi-layer verification with independent critics implementing the Swiss cheese model
+- Specialized critic agents: planner, code-critic, security-critic, domain-critic
+- Domain specializations: financial, healthcare, legal
+- Automatic verification gates via PreToolUse and PostToolUse hooks
+- Per-project configuration with `.claude/code-coherence.local.md`
 
 **Commands:**
 - `/coherence-check` - Full multi-agent verification workflow
 - `/plan-review` - Review execution plans with acceptance criteria
 - `/audit-trail` - Bidirectional decision history with search
 - `/acceptance-criteria` - Define and enforce success criteria
+
+---
+
+### course-curriculum-creator
+
+Create professional course curricula for 1-2 day workshops using backward design methodology and Bloom's taxonomy.
+
+**Install:**
+```bash
+/plugin install course-curriculum-creator@reggiechan74
+```
+
+**Features:**
+- Backward Design Framework: Start with learning outcomes, design assessments, then plan activities
+- Bloom's Taxonomy Integration: Create measurable learning objectives at appropriate cognitive levels
+- Rapid Course Creation: Generate complete curricula autonomously or step-by-step
+- Modular Architecture: Create courses optimized for 1-2 day weekend workshops
+- Professional Outputs: Course descriptions, outlines, lesson plans, rubrics, student materials
+- Template System: Save and reuse course structures for variants and iterations
+
+**Commands:**
+- `/create-course` - Initialize new course project with directory structure
+- `/generate-description` - Create student-facing course description
+- `/generate-outline` - Generate module structure with timing
+- `/generate-objectives` - Create Bloom's-aligned learning objectives
+- `/generate-lesson-plans` - Generate detailed module-level lesson plans
+- `/generate-rubrics` - Create 1-5 scale analytical assessment rubrics
+- `/generate-artifacts` - Generate student handouts, instructor guides, etc.
+- `/save-as-template` - Save course structure as reusable template
+- `/create-from-template` - Create new course from existing template
+- `/review-curriculum` - Validate curriculum quality and alignment
 
 ---
 
@@ -49,15 +79,18 @@ Professional-grade rubric creation skill with validity, reliability, and fairnes
 **Features:**
 - Three creation modes: Interactive, Template, and Example-Based
 - 7 pre-built domain templates (regulatory-compliance, document-quality, code-review, vendor-evaluation, risk-assessment, performance-review, research-quality)
-- Professional controls: anchor examples, critical barriers, inter-rater reliability
-- Confidence flagging (high/medium/low)
-- Bias review checklist
-- Optional companion materials (pilot testing worksheet, scorer calibration pack)
+- Anchor examples for every score level
+- Critical barrier definitions with thresholds
+- Inter-rater reliability protocol
+- Bias review checklist and maintenance lifecycle schedule
+- Optional companion materials: pilot testing worksheet and scorer calibration pack
 
 **Commands:**
-- `/rubric-creator --interactive` - Guided 6-phase questionnaire
-- `/rubric-creator --template [domain]` - Generate from pre-built templates
-- `/rubric-creator --from-example [file]` - Create variant from existing rubric
+- `/rubric-creator --interactive` - Guided 6-phase questionnaire with validity/alignment foundation
+- `/rubric-creator --template [domain]` - Generate from pre-built domain templates
+- `/rubric-creator --from-example [file]` - Analyze existing rubric and create variant
+- `/rubric-creator --with-pilot` - Generate pilot testing worksheet
+- `/rubric-creator --with-calibration` - Generate scorer calibration pack
 
 ---
 
@@ -72,13 +105,13 @@ Generate and apply themed spinner verbs for Claude Code status messages. Include
 
 **Features:**
 - Pre-built themes: Star Trek, Game of Thrones, Mandalorian
-- Custom theme generation from descriptions
-- Style modifiers: `--parody` (AI/LLM references), `--cynic` (pessimistic twist)
-- Flexible scoping: project, user, or local directory
+- Custom theme generation from any description
+- Style modifiers: `--parody` (Claude Code / AI / LLM references) and `--cynic` (pessimistic / world-weary twist)
+- Flexible scoping: Apply to current project, user-level, or local directory
 
 **Commands:**
-- `/spinnerverbs:create [theme]` - Generate new themed spinner verbs
-- `/spinnerverbs:apply [template-name]` - Apply a pre-built theme template
+- `/spinnerverbs:create [theme]` - Generate new themed spinner verbs from a description
+- `/spinnerverbs:apply [template-name]` - Apply a pre-built theme template (startrek, gameofthrones, mandalorian)
 
 ---
 

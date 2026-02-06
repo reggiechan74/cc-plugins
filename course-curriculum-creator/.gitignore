@@ -1,0 +1,29 @@
+# Plugin settings (user-specific configuration)
+.claude/*.local.md
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (if any scripts use npm)
+node_modules/
+
+# Python cache (if any scripts use Python)
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp

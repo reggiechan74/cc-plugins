@@ -11,6 +11,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "course-curriculum-creator",
+      "source": "./course-curriculum-creator",
+      "description": "Create professional course curricula for 1-2 day workshops using backward design methodology and Bloom's taxonomy",
+      "version": "0.1.0"
+    },
+    {
       "name": "rubric-creator",
       "source": "./rubric-creator",
       "description": "Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code",
