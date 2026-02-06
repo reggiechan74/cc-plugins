@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code",
   "author": {
-    "name": "Reggie Chan",
-    "email": "reggie.chan@gmail.com"
+    "name": "Reggie Chan"
   },
   "license": "MIT",
   "keywords": [

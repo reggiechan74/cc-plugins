@@ -221,7 +221,4 @@ Created by Reggie Chan for Tenebrus Capital Corp training programs.
 
 ## Support
 
-For questions or feedback:
-- Email: reggie@tenebrus.capital
-
 _GitHub repository and issue tracking coming soon._

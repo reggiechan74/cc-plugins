@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Generate and apply themed spinner verbs for Claude Code status messages. Includes pre-built themes (Star Trek, Game of Thrones, Mandalorian) with optional humor and cynic modifiers.",
   "author": {
-    "name": "Reggie Chan",
-    "email": "reggie.chan@gmail.com"
+    "name": "Reggie Chan"
   },
   "license": "MIT",
   "keywords": ["spinner", "customization", "themes", "humor", "status-messages"],

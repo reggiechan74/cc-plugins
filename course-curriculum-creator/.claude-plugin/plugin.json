@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "description": "Create professional course curricula for 1-2 day workshops using backward design methodology and Bloom's taxonomy",
   "author": {
-    "name": "Reggie Chan",
-    "email": "reggie@tenebrus.capital"
+    "name": "Reggie Chan"
   },
   "keywords": [
     "education",

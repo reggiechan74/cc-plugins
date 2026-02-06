@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "description": "Multi-agent verification system implementing organizational intelligence for production-grade code reliability. Achieves 92%+ accuracy through team-of-rivals architecture with specialized critic agents.",
   "author": {
-    "name": "Reggie Chan",
-    "email": "reggie@example.com"
+    "name": "Reggie Chan"
   },
   "keywords": [
     "verification",
