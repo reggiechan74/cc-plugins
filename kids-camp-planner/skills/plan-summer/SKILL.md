@@ -47,6 +47,18 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/plan-summer/scripts/summer_dates.py \
 
 The script outputs: total weekdays, total weeks, and a week-by-week date range listing.
 
+For day-by-day output, add the `--output-days` flag:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/plan-summer/scripts/summer_dates.py \
+  --year 2025 \
+  --last-school-day 2025-06-26 \
+  --first-fall-day 2025-09-02 \
+  --output-days
+```
+
+This adds a day-by-day listing showing each weekday with its week number and coverage status.
+
 ### Step 2: Map Exclusion Dates
 
 From the family profile, identify vacation and exclusion dates. Subtract these from the coverage window to determine **weeks/days that need camp coverage**.
@@ -88,10 +100,22 @@ Create a week-by-week assignment considering:
 - Proximity to home during non-work days
 - Variety across the summer (mix of activities)
 
-**Schedule format:**
+**Day-by-day schedule format (primary):**
 
 ```markdown
-# Summer 2025 Schedule
+# Summer 2025 Daily Schedule
+
+| Date | Day | Emma's Camp | Emma Cost | Liam's Camp | Liam Cost | Daily Total | Notes |
+|------|-----|-------------|-----------|-------------|-----------|-------------|-------|
+| 2025-06-30 | Mon | YMCA Cedar Glen | $87 | YMCA Cedar Glen | $87 | $174 | Week 1 |
+| 2025-07-01 | Tue | YMCA Cedar Glen | $87 | YMCA Cedar Glen | $87 | $174 | |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+```
+
+**Weekly summary format (derived from daily):**
+
+```markdown
+# Summer 2025 Weekly Summary
 
 | Week | Dates | Child 1 | Child 2 | Notes |
 |------|-------|---------|---------|-------|
@@ -100,6 +124,8 @@ Create a week-by-week assignment considering:
 | 3 | Jul 14 - Jul 18 | VACATION | VACATION | Cottage trip |
 | ... | ... | ... | ... | ... |
 ```
+
+The day-by-day schedule is the primary format and source of truth. Weekly summaries are derived from it. See `${CLAUDE_PLUGIN_ROOT}/examples/sample-annual-schedule.md` for a full-year example.
 
 ### Step 5: Identify Gaps and Issues
 
@@ -154,4 +180,8 @@ Summarize the plan for the user:
 
 ### Scripts
 
-- **`scripts/summer_dates.py`** - Calculate summer coverage window, weekday counts, and week-by-week date ranges given school year boundaries
+- **`scripts/summer_dates.py`** - Calculate summer coverage window, weekday counts, and week-by-week date ranges given school year boundaries. Use `--output-days` for day-by-day listing with week numbers.
+
+### Related Skills
+
+- **Generate Annual Schedule** - After building the summer schedule, use the generate-annual-schedule skill to create a full-year view combining summer, PA days, winter break, and March break into one consolidated schedule.

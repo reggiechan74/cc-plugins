@@ -125,6 +125,12 @@ March break programs fill quickly. Advise the user on:
 | Half-week options | Rare | More common |
 | Mixing providers | Common | Usually one provider |
 
+**Daily cost note:** March break programs often offer daily rates alongside weekly rates. When comparing, use daily costs ($40-90/day depending on provider) to accurately budget partial-week coverage. The budget calculator supports daily rates via `--daily-rate` and `--days` flags.
+
 ## Additional Resources
 
 For detailed private school March break test cases (including 2-week break scenarios with real GIST vs TDSB data), consult `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/private-school-test-cases.md` (see Test Case 2: Extended March Break).
+
+### Related Skills
+
+- **Generate Annual Schedule** - After finalizing March break plans, use the generate-annual-schedule skill to consolidate all school-break periods into one annual view.

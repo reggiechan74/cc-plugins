@@ -153,9 +153,20 @@ PA day program registration is time-sensitive. Advise the user:
 - Private programs: $50-90/day (specialty activities)
 - School extended care: $25-45/day (if available, most convenient)
 
+PA days are inherently daily — use the budget calculator's `--daily-rate` flag for accurate single-day costing:
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/budget-optimization/scripts/budget_calculator.py \
+  --kids 2 --days 1 --daily-rate 45 --before-care-daily 8 --after-care-daily 8 \
+  --format markdown
+```
+
 ### Friday PA Days
 Most PA days fall on Fridays, creating long weekends. Consider:
 - Parent taking a flex day (if work allows)
 - Grandparent or family member coverage
 - Combining with a mini family outing
 - Half-day program + parent afternoon off
+
+## Related Skills
+
+- **Generate Annual Schedule** - After identifying PA day coverage, use the generate-annual-schedule skill to consolidate all school-break periods (summer, PA days, winter break, March break) into one annual view.
