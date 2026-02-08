@@ -1,0 +1,112 @@
+---
+name: Research Camps
+description: This skill should be used when the user asks to "research camps", "find camps near me", "search for camps", "look up camp providers", "what camps are available", "compare camp options", "create camp provider files", "find day camps in [area]", or needs help discovering, evaluating, and documenting camp providers in their area. Creates structured provider markdown files in the research folder.
+version: 0.1.0
+---
+
+# Research Camps
+
+## Overview
+
+Discover, evaluate, and document camp providers for a family's area, creating structured provider files in the `camp-research/providers/` directory. Each provider gets its own markdown file with standardized information for easy comparison. Providers are cross-referenced from period-specific schedule files (summer, March break, PA days).
+
+## Research Workflow
+
+### Step 1: Define Search Criteria
+
+Read the family profile from `.claude/kids-camp-planner.local.md` to determine:
+- Home address and maximum commute time
+- Children's ages (determines eligible programs)
+- Children's interests (guides specialty camp search)
+- Budget range (filters out unaffordable options)
+- Before/after care needs
+- Lunch preferences
+
+### Step 2: Conduct Research
+
+Use web search to find camp providers. Search in this order:
+
+**1. Municipal programs (best value):**
+- Search: "[municipality] summer camp registration [year]"
+- Search: "[municipality] recreation programs children [year]"
+- Check the municipal recreation portal directly
+
+**2. Established organizations:**
+- Search: "YMCA day camp [city/area] [year]"
+- Search: "Boys and Girls Club [city/area] camps"
+- Search: "[city] community centre summer programs"
+
+**3. Private and specialty camps:**
+- Search: "day camps near [home address area] [year]"
+- Search: "[interest] camp [city] children" (e.g., "robotics camp Toronto children")
+- Search: "best day camps [area] [year]"
+- Check Ontario Camps Association directory: ontariocamps.ca
+
+**4. Niche and interest-based:**
+- Search based on each child's interests
+- Check local sports clubs, art studios, music schools for camp programs
+- Look at university/college campus programs
+
+### Step 3: Create Provider Files
+
+For each camp provider found, create a markdown file in `camp-research/providers/` using the standard template.
+
+**File naming:** Use kebab-case: `provider-name.md` (e.g., `ymca-downtown.md`, `city-of-toronto-parks-rec.md`)
+
+**Provider file template:** Use the template at `references/provider-template.md`. The template includes sections for: basic information, distance & commute, programs offered, costs (with discount tracking), quality indicators, logistics, suitability rating, and notes.
+
+For a completed example showing all fields filled in with realistic data, see `examples/sample-provider.md`.
+
+### Step 4: Verify Key Details
+
+For the most promising providers, verify critical details:
+- Confirm current-year pricing (costs change annually)
+- Check registration status (open, full, waitlist)
+- Verify age eligibility for each child
+- Confirm before/after care hours match parent schedules
+
+If details cannot be confirmed via web search, note them as "needs verification" and suggest the user confirm by phone/email (offer to draft an inquiry email via the draft-email skill).
+
+### Step 5: Create Comparison Summary
+
+After researching multiple providers, generate a comparison table:
+
+```markdown
+# Camp Provider Comparison - [Area]
+
+| Provider | Ages | $/Week | Before Care | After Care | Lunch | Distance | Rating |
+|----------|------|--------|-------------|------------|-------|----------|--------|
+| YMCA Downtown | 4-12 | $280 | $50 (7:30am) | $50 (6pm) | Pack | 3.2 km | Strong |
+| City Parks Rec | 6-12 | $195 | $40 (7:30am) | $40 (6pm) | Pack | 1.5 km | Strong |
+| Science Camp | 7-12 | $425 | No | No | Incl | 8.1 km | Good |
+```
+
+Save this comparison to `camp-research/providers/comparison-summary.md`.
+
+## Research Tips
+
+### Finding Current-Year Information
+- Always include the year in search queries
+- Municipal program guides are usually published in January-February
+- Check "What's New" sections on recreation portals
+- Look for PDF program guides (often more detailed than web pages)
+
+### Evaluating Online Reviews
+- Check Google Reviews, Facebook reviews, and parent forums
+- Look for reviews from the most recent year
+- Pay attention to recurring themes (positive and negative)
+- Weight reviews from parents with similar-aged children more heavily
+
+### Hidden Gems
+- Library-run programs (free or very low cost)
+- Conservation authority camps (nature-focused, affordable)
+- University faculty/staff camps (sometimes open to public)
+- Ethnic/cultural community centres (multilingual options)
+- Church-run VBS programs (often free, typically July)
+
+## Additional Resources
+
+### Reference Files
+
+- **`references/provider-template.md`** - Blank provider file template for quick copying
+- **`examples/sample-provider.md`** - Completed example provider file
