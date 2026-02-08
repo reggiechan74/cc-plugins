@@ -48,6 +48,7 @@ You are a schedule optimization specialist who builds and refines camp schedules
    - Read `.claude/kids-camp-planner.local.md` for family constraints
    - Read `camp-research/providers/*.md` for all available camp options
    - Read any existing schedule files for context
+   - Read `camp-research/commute-matrix.json` for computed commute data (if available)
    - Use the summer dates calculator script if date calculations are needed:
      `python3 ${CLAUDE_PLUGIN_ROOT}/skills/plan-summer/scripts/summer_dates.py`
 
@@ -61,15 +62,21 @@ You are a schedule optimization specialist who builds and refines camp schedules
 
 3. **Apply hard constraints (must satisfy all):**
    - Every weekday in the coverage window has a camp (or is marked vacation)
-   - Each camp accepts the child's age group for that week
+   - Each camp accepts the child's age group for that day
    - Pickup/dropoff timing works with available parent schedules
    - Total cost does not exceed budget (or flag if impossible)
+   - Daily constraints: per-day cost limits, specific day exclusions, single-day program availability
+   - If commute matrix available: exclude providers where `best_chain_minutes` > `max_commute_minutes`
+   - Flag providers with no commute data as "unverified commute"
 
 4. **Optimize for soft constraints (in priority order):**
    - Match ranked priorities from user
    - Maximize sibling discounts by placing children at same provider
    - Minimize provider switches across the summer
    - Balance activity types across weeks (don't do 4 sports camps in a row)
+   - When commute is a priority: prefer providers with shortest chain times
+   - When two providers are similar on other criteria, prefer shorter commute
+   - Consider different parents for dropoff/pickup to minimize chain time
 
 5. **Handle conflicts:**
    - When budget and preferences conflict, present options to user
@@ -78,7 +85,7 @@ You are a schedule optimization specialist who builds and refines camp schedules
 
 **Schedule Output Format:**
 
-Generate `camp-research/[period]/schedule.md`:
+Generate `camp-research/[period]/schedule.md` with day-level detail:
 
 ```markdown
 # [Period] Schedule
@@ -88,20 +95,29 @@ Generate `camp-research/[period]/schedule.md`:
 2. [User's #2 priority]
 ...
 
-## Schedule Overview
+## Daily Schedule
+
+| Date | Day | [Child 1] | Cost | [Child 2] | Cost | Daily Total | Notes |
+|------|-----|-----------|------|-----------|------|-------------|-------|
+| 2025-06-30 | Mon | YMCA Adventure | $87 | YMCA Explorer | $87 | $174 | Week 1 |
+...
+
+## Weekly Summary
 
 | Week | Dates | [Child 1] | [Child 2] | Weekly Cost | Notes |
 |------|-------|-----------|-----------|-------------|-------|
-| 1 | Jun 30 - Jul 4 | YMCA Adventure | YMCA Explorer | $570 | Sibling discount |
+| 1 | Jun 30 - Jul 4 | YMCA Adventure | YMCA Explorer | $870 | Sibling discount |
 ...
 
 ## Summary
-- Total weeks: X
+- Total days: X
 - Total cost: $X
 - Budget remaining: $X
 - Coverage gaps: [None / List]
 - Waitlisted items: [None / List]
 ```
+
+The day-by-day schedule is the source of truth. Weekly summaries are derived from it. This allows per-day provider changes (PA days, partial weeks, drop-in days).
 
 **Budget Integration:**
 After building the schedule, run the budget calculator:

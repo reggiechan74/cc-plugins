@@ -74,6 +74,7 @@ Guide the user through providing their family information using AskUserQuestion.
 **Group 5 - Budget:**
 - Total budget for summer / per period
 - Target per child per week
+- Target per child per day (for PA days, partial weeks, drop-in programs)
 - Budget flexibility (strict / moderate / flexible)
 - Before-care and after-care willingness
 - Lunch preference (pack / buy / either)
@@ -88,6 +89,12 @@ Guide the user through providing their family information using AskUserQuestion.
 - March break start and end dates (especially for private schools with extended breaks)
 - Fall break dates (some private schools have a full week in Oct/Nov; public boards typically do not)
 - Any other non-standard breaks or early dismissal dates
+
+**Group 8 - API Keys (optional):**
+- Geoapify API key for automated commute calculations
+- Explain: free tier is sufficient (3,000 requests/day) for all camp planning needs
+- Link: https://myprojects.geoapify.com/
+- Skip if user doesn't want to set up now — commute calculations can be added later
 
 ### Step 3: Generate the .local.md File
 

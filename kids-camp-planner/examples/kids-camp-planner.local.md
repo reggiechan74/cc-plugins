@@ -58,6 +58,7 @@ max_commute_minutes: 20
 budget:
   total_summer: 5000        # total summer budget across all kids
   per_child_per_week: 350   # target per child per week
+  per_child_per_day: 70     # target per child per day (PA days, partial weeks, drop-ins)
   flexibility: "moderate"   # strict, moderate, flexible
   before_care_ok: true
   after_care_ok: true
@@ -83,6 +84,10 @@ school_dates:
   fall_break_start: ""   # leave blank if no fall break (most public boards); fill for private schools
   fall_break_end: ""     # e.g., GIST has Nov 3-7 fall break
   early_dismissal_dates: []  # dates with early dismissal (e.g., ["2025-12-19", "2026-06-26"])
+
+# APIs (optional — enables automated commute calculations)
+apis:
+  geoapify_api_key: ""  # Get free key at https://myprojects.geoapify.com/
 ---
 
 # Family Notes

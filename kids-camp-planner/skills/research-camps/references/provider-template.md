@@ -8,10 +8,20 @@
 - **Email**: [Contact email]
 
 ## Distance & Commute
-- **Distance from home**: [X km]
-- **Drive time**: [X minutes]
+
+### Manual
 - **Transit accessible**: [Yes/No]
 - **Parking**: [Available/Street/None]
+
+### Computed
+<!-- Auto-updated by commute-matrix skill -- do not edit manually -->
+- **Distance from home**: [X km]
+- **Drive time**: [X minutes]
+- **Transit time**: [X minutes]
+- **AM chain (drive)**: Home -> Camp -> Work = [X min]
+- **PM chain (drive)**: Work -> Camp -> Home = [X min]
+- **Status**: [OK / EXCEEDS MAX]
+- *Last computed: [date]*
 
 ## Programs Offered
 ### [Program Name 1]
@@ -23,10 +33,11 @@
 ## Costs
 | Item | Cost | Notes |
 |------|------|-------|
-| Base fee (weekly) | $[X] | |
-| Before care | $[X]/week | [Hours] |
-| After care | $[X]/week | [Hours] |
-| Lunch program | $[X]/week | [Optional/Required] |
+| Base fee (daily) | $[X] | Per day rate |
+| Base fee (weekly) | $[X] | Per week rate |
+| Before care | $[X]/day ($[X]/week) | [Hours] |
+| After care | $[X]/day ($[X]/week) | [Hours] |
+| Lunch program | $[X]/day ($[X]/week) | [Optional/Required] |
 | Registration fee | $[X] | One-time |
 | Materials fee | $[X] | [If applicable] |
 | Sibling discount | [X]% | [Conditions] |

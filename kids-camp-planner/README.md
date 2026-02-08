@@ -93,7 +93,7 @@ The sample annual schedule (`examples/sample-annual-schedule.md`) demonstrates f
 
 ## Components
 
-### Skills (10)
+### Skills (11)
 
 | Skill | Purpose |
 |-------|---------|
@@ -107,6 +107,7 @@ The sample annual schedule (`examples/sample-annual-schedule.md`) demonstrates f
 | **Draft Email** | Email composition including daily rate availability inquiries |
 | **Add School Calendar** | Import school calendar from URL/PDF into reference data |
 | **Generate Annual Schedule** | Consolidate summer, PA days, winter break, and March break into one annual view with markdown + xlsx output |
+| **Commute Matrix** | Automated commute calculation using Geoapify API with full chain modeling and constraint filtering |
 
 ### Agents (2)
 
@@ -115,13 +116,14 @@ The sample annual schedule (`examples/sample-annual-schedule.md`) demonstrates f
 | **Camp Researcher** | Autonomous web research creating provider files with daily and weekly rates |
 | **Schedule Optimizer** | Builds and refines day-level schedules across constraints |
 
-### Python Scripts (3)
+### Python Scripts (4)
 
 | Script | Purpose |
 |--------|---------|
 | `budget_calculator.py` | Multi-child budget calculation with daily/weekly rates and discounts |
 | `summer_dates.py` | Coverage window, week-by-week, and day-by-day date calculation |
 | `generate_annual_schedule.py` | Consolidate spreadsheet + school calendar into annual schedule markdown and xlsx tab |
+| `commute_calculator.py` | Travel time calculation with geocoding, route matrix, and full chain modeling |
 
 **Daily rate examples:**
 
@@ -208,6 +210,7 @@ See `RESEARCH-PLAN.md` for the roadmap to add more Ontario schools.
 - Claude Code CLI
 - Python 3.x (for budget calculator and date scripts)
 - openpyxl (for Excel spreadsheet generation)
+- Geoapify API key (optional, free tier — for automated commute calculations via commute-matrix skill)
 - [Anthropic xlsx skill](https://github.com/anthropics/skills/blob/main/skills/xlsx/SKILL.md) (optional, for Excel budget export)
 - Google Calendar connectivity via external plugin/MCP (optional, for calendar integration)
 

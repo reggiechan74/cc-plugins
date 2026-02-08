@@ -1,6 +1,7 @@
 ---
-name: generate-annual-schedule
+name: Generate Annual Schedule
 description: This skill should be used when the user asks to "generate annual schedule", "update annual schedule", "create year schedule", "rebuild schedule", "refresh schedule from spreadsheet", "create full-year view", "build annual camp plan", "consolidate all camp days", "combine summer and PA days", or needs to produce a consolidated annual schedule covering summer, PA days, winter break, and March break from spreadsheet data and school calendar. Generates both markdown and Excel output.
+version: 0.1.0
 ---
 
 # Generate Annual Schedule
@@ -40,6 +41,8 @@ The summer schedule comes from the spreadsheet. For non-summer periods, confirm 
 
 Ask the user: "For PA days I'll use City of Toronto ($62/day) and for winter/March breaks I'll use YMCA Cedar Glen ($87/day). Want to change any of these?"
 
+If children need **different providers** on specific days (e.g., Emma does Science Camp for a PA day while Liam does YMCA), create an overrides JSON file. Every day can have a different provider per child — see the `--overrides` argument below.
+
 ### Step 3: Run the Generator Script
 
 ```bash
@@ -53,14 +56,44 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/generate-annual-schedule/scripts/generate_a
   --update-xlsx
 ```
 
+For per-child, per-day provider assignments, add an overrides file:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/generate-annual-schedule/scripts/generate_annual_schedule.py \
+  --xlsx examples/sample-budget.xlsx \
+  --calendar ${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/public-boards/tcdsb.md \
+  --children "Emma,Liam" \
+  --pa-day-provider "City of Toronto" \
+  --break-provider "YMCA Cedar Glen" \
+  --overrides camp-research/schedule-overrides.json \
+  --output-md camp-research/annual-schedule-2025-2026.md \
+  --update-xlsx
+```
+
 **Arguments:**
 - `--xlsx`: Path to the budget spreadsheet (reads Provider Comparison + Daily Schedule tabs)
 - `--calendar`: Path to the school calendar markdown file
 - `--children`: Comma-separated children's names (must match spreadsheet column headers)
-- `--pa-day-provider`: Provider name for PA day coverage (must exist in Provider Comparison tab)
-- `--break-provider`: Provider name for winter break and March break (must exist in Provider Comparison tab)
+- `--pa-day-provider`: Default provider for PA day coverage (must exist in Provider Comparison tab)
+- `--break-provider`: Default provider for winter break and March break (must exist in Provider Comparison tab)
+- `--overrides`: Optional JSON file with per-child, per-date provider overrides (see below)
 - `--output-md`: Path for the generated markdown file
 - `--update-xlsx`: Flag to add/replace "Annual Schedule" tab in the spreadsheet
+
+**Overrides JSON format:**
+
+The overrides file lets you assign different providers to each child on any date. Children not listed for a date fall back to the period default (`--pa-day-provider` or `--break-provider`). Summer dates can also be overridden (replacing the spreadsheet assignment for that child).
+
+```json
+{
+  "2025-09-26": {"Emma": "Science Camp Toronto", "Liam": "YMCA Cedar Glen"},
+  "2025-10-10": {"Liam": "YMCA Cedar Glen"},
+  "2025-12-22": {"Emma": "City of Toronto"},
+  "2026-03-16": {"Emma": "Science Camp Toronto", "Liam": "City of Toronto"}
+}
+```
+
+All provider names in the overrides file must exist in the Provider Comparison tab.
 
 ### Step 4: Review Output
 

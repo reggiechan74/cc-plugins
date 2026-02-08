@@ -8,10 +8,20 @@
 - **Email**: cedarglenadmin@ymcagta.org
 
 ## Distance & Commute
-- **Distance from home**: 4.8 km
-- **Drive time**: 12 minutes
+
+### Manual
 - **Transit accessible**: No (suburban location)
 - **Parking**: Available (free, dedicated lot)
+
+### Computed
+<!-- Auto-updated by commute-matrix skill -- do not edit manually -->
+- **Distance from home**: 4.8 km
+- **Drive time**: 12 minutes
+- **Transit time**: 35 minutes
+- **AM chain (drive)**: Home -> Camp -> Parent 1 Work = 28 min
+- **PM chain (drive)**: Parent 1 Work -> Camp -> Home = 32 min
+- **Status**: OK
+- *Last computed: 2025-01-20*
 
 ## Programs Offered
 ### Explorer Camp (Ages 4-6)
@@ -35,9 +45,10 @@
 ## Costs
 | Item | Cost | Notes |
 |------|------|-------|
+| Base fee (daily) | $57 | Per day rate |
 | Base fee (weekly) | $285 | All programs |
-| Before care | $45/week | 7:30am - 9:00am |
-| After care | $45/week | 4:00pm - 6:00pm |
+| Before care | $9/day ($45/week) | 7:30am - 9:00am |
+| After care | $9/day ($45/week) | 4:00pm - 6:00pm |
 | Lunch program | $0 | Bring your own (nut-free facility) |
 | Registration fee | $50 | One-time per family |
 | Materials fee | $0 | Included |
