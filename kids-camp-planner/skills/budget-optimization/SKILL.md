@@ -16,22 +16,23 @@ Calculate, compare, and optimize camp costs across children, time periods, and p
 
 Read the family profile from `.claude/kids-camp-planner.local.md` for budget constraints. Collect per-provider costs from `camp-research/providers/*.md` files if they exist. For each camp option, ensure the following cost components are captured:
 
-| Component | Example |
-|-----------|---------|
-| Base weekly fee | $300/week |
-| Before-care (if needed) | $50/week |
-| After-care (if needed) | $50/week |
-| Lunch program (if not packing) | $35/week |
-| Materials/equipment fee | $25 one-time |
-| Registration fee | $50 one-time |
-| Sibling discount | -10% second child |
-| Early-bird discount | -$25/week if registered by deadline |
-| Multi-week discount | -5% for 4+ weeks |
+| Component | Weekly Rate | Daily Rate |
+|-----------|-------------|------------|
+| Base camp fee | $300/week | $60/day |
+| Before-care (if needed) | $50/week | $10/day |
+| After-care (if needed) | $50/week | $10/day |
+| Lunch program (if not packing) | $35/week | $7/day |
+| Materials/equipment fee | $25 one-time | $25 one-time |
+| Registration fee | $50 one-time | $50 one-time |
+| Sibling discount | -10% second child | -10% second child |
+| Early-bird discount | -$25/week if registered by deadline | -$25/week equivalent |
+| Multi-week discount | -5% for 4+ weeks | -5% for 20+ days |
 
 ### Step 2: Calculate Using Budget Script
 
 Run the budget calculator script to compute totals:
 
+**Weekly rate mode:**
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/skills/budget-optimization/scripts/budget_calculator.py \
   --kids 2 \
@@ -44,9 +45,22 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/budget-optimization/scripts/budget_calculat
   --format markdown
 ```
 
-The script supports multiple scenarios for comparison. Pass `--format csv` to generate CSV output or `--format markdown` for a markdown table.
+**Daily rate mode:**
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/budget-optimization/scripts/budget_calculator.py \
+  --kids 2 \
+  --days 40 \
+  --daily-rate 60 \
+  --before-care-daily 10 \
+  --after-care-daily 10 \
+  --lunch-daily 7 \
+  --sibling-discount 10 \
+  --format markdown
+```
 
-For complex multi-provider budgets, prepare a JSON input file and pass it with `--input budget-input.json`. See the script's `--help` for the JSON schema.
+The script supports both weekly and daily rate calculations. Use `--days` and `--daily-rate` for day-level pricing (takes precedence over `--weeks`/`--base-cost` if both provided). Pass `--format csv` to generate CSV output or `--format markdown` for a markdown table.
+
+For complex multi-provider budgets, prepare a JSON input file and pass it with `--input budget-input.json`. The JSON format supports both `"weeks"` and `"days"` arrays (days takes precedence). See the script's `--help` for the JSON schema.
 
 ### Step 3: Generate Budget Document
 
@@ -94,7 +108,13 @@ Create the budget file at the appropriate location:
 - Recommendations: [suggestions to reduce costs]
 ```
 
-**Excel format:** See `${CLAUDE_PLUGIN_ROOT}/examples/sample-budget.xlsx` for the reference Excel budget template. The Excel version uses formulas (SUM, SUMIF) that reference the Weekly Schedule tab so that Camp Fees and the per-provider breakdown update automatically when the schedule changes. When generating Excel output, use openpyxl with formulas rather than hardcoded values.
+**Excel format:** See `${CLAUDE_PLUGIN_ROOT}/examples/sample-budget.xlsx` for the reference Excel budget template. The spreadsheet has four tabs:
+- **Provider Comparison**: Camp rates including both daily and weekly columns with Total/Day and Total/Week formulas
+- **Daily Schedule**: Day-by-day assignments (source of truth) with VLOOKUP formulas referencing Provider Comparison
+- **Weekly Schedule**: Derived from Daily Schedule via SUMIF formulas
+- **Budget Summary**: All cost totals derived from Daily Schedule via SUM/SUMIF formulas
+
+When generating Excel output, use openpyxl with formulas rather than hardcoded values. The Daily Schedule tab is the primary input surface — users only fill in the date, week number, and camp name per child per day.
 
 ### Step 4: Provide Optimization Recommendations
 
@@ -137,4 +157,4 @@ Camp fees qualify as child care expenses on Line 21400:
 
 ### Scripts
 
-- **`scripts/budget_calculator.py`** - Calculate camp costs across multiple children, providers, and weeks with discount application and tax estimates
+- **`scripts/budget_calculator.py`** - Calculate camp costs across multiple children, providers, and weeks/days with discount application and tax estimates. Supports both `--base-cost`/`--weeks` (weekly) and `--daily-rate`/`--days` (daily) modes.

@@ -61,6 +61,7 @@ in the [Program Name] program.
 I'd appreciate information on:
 - Availability for the week(s) of [dates]
 - Registration process and any deadlines
+- Daily rates available? (for partial weeks or PA day drop-ins)
 - [Any specific questions based on research gaps]
 
 [If applicable: We're also considering enrollment for a second child,

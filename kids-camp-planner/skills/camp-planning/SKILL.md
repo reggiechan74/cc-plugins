@@ -72,7 +72,7 @@ When comparing camps, assess on these dimensions:
 
 | Factor | What to Check |
 |--------|---------------|
-| **Cost** | Base fee, before/after care, lunch, materials, registration fees |
+| **Cost** | Base fee (daily and weekly rates), before/after care, lunch, materials, registration fees |
 | **Location** | Distance from home/work, transit accessibility, parking |
 | **Hours** | Core hours, extended care availability, flexibility |
 | **Program** | Activity variety, specialization, outdoor time |

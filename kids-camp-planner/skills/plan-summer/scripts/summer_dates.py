@@ -22,6 +22,10 @@ Usage:
     # JSON output
     python3 summer_dates.py --year 2025 \
         --last-school-day 2025-06-26 --format json
+
+    # Day-by-day listing
+    python3 summer_dates.py --year 2025 \
+        --last-school-day 2025-06-26 --output-days
 """
 
 import argparse
@@ -108,6 +112,35 @@ def get_weeks(start_date, end_date):
     return weeks
 
 
+def get_individual_days(start_date, end_date):
+    """Return day-by-day list of weekdays with date, day of week, and week number.
+
+    Returns list of dicts: [{date, day_of_week, week_number}]
+    Week numbers are calculated from the first Monday on or after start_date.
+    """
+    weekdays = get_weekdays(start_date, end_date)
+    if not weekdays:
+        return []
+
+    # Find first Monday for week numbering
+    first_monday = start_date
+    while first_monday.weekday() != 0:
+        first_monday += timedelta(days=1)
+
+    days = []
+    for d in weekdays:
+        week_num = max(1, ((d - first_monday).days // 7) + 1)
+        # Days before first Monday are week 1
+        if d < first_monday:
+            week_num = 1
+        days.append({
+            "date": d.isoformat(),
+            "day_of_week": d.strftime("%a"),
+            "week_number": week_num,
+        })
+    return days
+
+
 def parse_date(date_str):
     """Parse a date string in YYYY-MM-DD format."""
     return datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -126,6 +159,8 @@ def main():
                              "Can be specified multiple times.")
     parser.add_argument("--format", choices=["text", "json", "markdown"],
                         default="text", help="Output format")
+    parser.add_argument("--output-days", action="store_true",
+                        help="Include day-by-day listing in output")
 
     args = parser.parse_args()
 
@@ -191,6 +226,15 @@ def main():
         else:
             w["status"] = "NEEDS COVERAGE"
 
+    # Individual days (computed if requested)
+    individual_days = None
+    if args.output_days:
+        individual_days = get_individual_days(coverage_start, coverage_end)
+        # Mark excluded days
+        for day in individual_days:
+            d = parse_date(day["date"])
+            day["excluded"] = d in excluded_days
+
     result = {
         "year": args.year,
         "last_school_day": last_school.isoformat(),
@@ -204,6 +248,8 @@ def main():
         "exclusions": exclusion_ranges,
         "weeks": weeks,
     }
+    if individual_days is not None:
+        result["days"] = individual_days
 
     if args.format == "json":
         print(json.dumps(result, indent=2))
@@ -230,6 +276,14 @@ def main():
         for w in weeks:
             partial_note = " (partial)" if w["partial"] else ""
             print(f"| {w['week_number']} | {w['monday']} | {w['friday']} | {w['coverage_days']}{partial_note} | {w['status']} |")
+        if individual_days is not None:
+            print()
+            print("## Day-by-Day Listing\n")
+            print("| Date | Day | Week | Status |")
+            print("|------|-----|-----:|--------|")
+            for day in individual_days:
+                status = "VACATION" if day["excluded"] else "NEEDS COVERAGE"
+                print(f"| {day['date']} | {day['day_of_week']} | {day['week_number']} | {status} |")
     else:
         print(f"Summer {args.year} Coverage Window")
         print(f"{'='*40}")
@@ -253,6 +307,14 @@ def main():
         print("-" * 50)
         for w in weeks:
             print(f"{w['week_number']:<6} {w['monday']:<12} {w['friday']:<12} {w['coverage_days']:<6} {w['status']}")
+        if individual_days is not None:
+            print()
+            print("Day-by-Day:")
+            print(f"{'Date':<12} {'Day':<5} {'Week':<6} {'Status'}")
+            print("-" * 40)
+            for day in individual_days:
+                status = "VACATION" if day["excluded"] else "NEEDS COVERAGE"
+                print(f"{day['date']:<12} {day['day_of_week']:<5} {day['week_number']:<6} {status}")
 
 
 if __name__ == "__main__":

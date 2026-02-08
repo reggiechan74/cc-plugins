@@ -7,6 +7,7 @@ combines with PA days, winter break, and March break from a school calendar,
 and generates a consolidated annual schedule as markdown and/or an xlsx tab.
 
 Usage:
+    # Basic: same provider for all children per period type
     python3 generate_annual_schedule.py \
       --xlsx examples/sample-budget.xlsx \
       --calendar skills/camp-planning/references/school-calendars/public-boards/tcdsb.md \
@@ -15,9 +16,30 @@ Usage:
       --break-provider "YMCA Cedar Glen" \
       --output-md camp-research/annual-schedule-2025-2026.md \
       --update-xlsx
+
+    # Per-child, per-day overrides via JSON file
+    python3 generate_annual_schedule.py \
+      --xlsx examples/sample-budget.xlsx \
+      --calendar skills/camp-planning/references/school-calendars/public-boards/tcdsb.md \
+      --children "Emma,Liam" \
+      --pa-day-provider "City of Toronto" \
+      --break-provider "YMCA Cedar Glen" \
+      --overrides overrides.json \
+      --output-md camp-research/annual-schedule-2025-2026.md
+
+Overrides JSON format (per-child, per-date provider assignments):
+    {
+      "2025-09-26": {"Emma": "Science Camp Toronto", "Liam": "City of Toronto"},
+      "2025-12-22": {"Emma": "City of Toronto"},
+      "2026-03-16": {"Emma": "Science Camp Toronto", "Liam": "Science Camp Toronto"}
+    }
+    Any child not listed for a date falls back to the period default
+    (--pa-day-provider or --break-provider). Summer days from the
+    spreadsheet can also be overridden.
 """
 
 import argparse
+import json
 import re
 import sys
 from datetime import date, datetime, timedelta
@@ -208,31 +230,58 @@ def get_summer_holidays(year):
 # Building the annual schedule
 # ---------------------------------------------------------------------------
 
-def build_annual_days(summer_days, calendar_data, pa_provider, break_provider, children):
+def _resolve_assignments(d, children, default_provider, overrides):
+    """Resolve per-child provider for a given date.
+
+    For each child, checks the overrides dict for a date-specific provider.
+    Falls back to default_provider if no override exists for that child+date.
+    """
+    d_iso = d.isoformat()
+    day_overrides = overrides.get(d_iso, {})
+    return {child: day_overrides.get(child, default_provider) for child in children}
+
+
+def build_annual_days(summer_days, calendar_data, pa_provider, break_provider,
+                      children, overrides=None):
     """Combine summer + non-summer into a unified list of annual days.
+
+    Args:
+        overrides: dict of {"YYYY-MM-DD": {"ChildName": "Provider"}}
+            Per-child, per-date provider overrides. For summer days, overrides
+            replace the spreadsheet assignment. For non-summer days, overrides
+            replace the period default. Any child not listed for a date falls
+            back to the period default (or spreadsheet value for summer).
 
     Returns list of dicts sorted by date:
     [{date, day_name, period, period_label, assignments: {child: camp}, notes}]
     """
+    overrides = overrides or {}
     all_days = []
     seen_dates = set()  # Track dates to prevent double-counting
 
-    # Summer days (from spreadsheet)
+    # Summer days (from spreadsheet, with optional overrides)
     summer_holidays = get_summer_holidays(summer_days[0]["date"].year) if summer_days else {}
     for sd in summer_days:
         d = sd["date"]
+        d_iso = d.isoformat()
         week = sd["week"]
         notes = f"Week {week}" if d.weekday() == 0 else ""
         # Flag summer statutory/civic holidays
         if d in summer_holidays:
             holiday_name = summer_holidays[d]
             notes = f"{holiday_name} -- VERIFY camp open" + (f" ({notes})" if notes else "")
+        # Apply overrides on top of spreadsheet assignments
+        assignments = dict(sd["assignments"])
+        if d_iso in overrides:
+            for child in children:
+                if child in overrides[d_iso]:
+                    assignments[child] = overrides[d_iso][child]
         all_days.append({
             "date": d,
             "day_name": d.strftime("%a"),
             "period": "summer",
             "period_label": f"Summer Wk {week}",
-            "assignments": dict(sd["assignments"]),
+            "assignments": assignments,
             "notes": notes,
         })
         seen_dates.add(d)
@@ -249,7 +298,7 @@ def build_annual_days(summer_days, calendar_data, pa_provider, break_provider, c
             "day_name": d.strftime("%a"),
             "period": "pa_day",
             "period_label": "PA Day",
-            "assignments": {child: pa_provider for child in children},
+            "assignments": _resolve_assignments(d, children, pa_provider, overrides),
             "notes": f"PA Day {i}" + (f" - {purpose}" if purpose else ""),
         })
         seen_dates.add(d)
@@ -278,7 +327,7 @@ def build_annual_days(summer_days, calendar_data, pa_provider, break_provider, c
                 "day_name": d.strftime("%a"),
                 "period": "winter_break",
                 "period_label": "Winter Break",
-                "assignments": {child: break_provider for child in children},
+                "assignments": _resolve_assignments(d, children, break_provider, overrides),
                 "notes": notes,
             })
             seen_dates.add(d)
@@ -296,7 +345,7 @@ def build_annual_days(summer_days, calendar_data, pa_provider, break_provider, c
                 "day_name": d.strftime("%a"),
                 "period": "march_break",
                 "period_label": "March Break",
-                "assignments": {child: break_provider for child in children},
+                "assignments": _resolve_assignments(d, children, break_provider, overrides),
                 "notes": "",
             })
             seen_dates.add(d)
@@ -475,8 +524,13 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
     break_prov = render_context.get("break_provider", "")
     pa_rate = provider_rates.get(pa_prov, {}).get("total", 0)
     break_rate = provider_rates.get(break_prov, {}).get("total", 0)
-    lines.append(f"- PA day costs use {pa_prov} rates (${pa_rate}/day all-in)")
-    lines.append(f"- Winter and March Break use {break_prov} rates (${break_rate}/day all-in)")
+    has_overrides = render_context.get("has_overrides", False)
+    if has_overrides:
+        lines.append(f"- PA day default: {pa_prov} (${pa_rate}/day); per-child overrides applied where specified")
+        lines.append(f"- Break default: {break_prov} (${break_rate}/day); per-child overrides applied where specified")
+    else:
+        lines.append(f"- PA day costs use {pa_prov} rates (${pa_rate}/day all-in)")
+        lines.append(f"- Winter and March Break use {break_prov} rates (${break_rate}/day all-in)")
     lines.append("- Costs shown are pre-discount; apply sibling/early-bird discounts to reduce totals")
 
     # List provider rates
@@ -694,6 +748,9 @@ def main():
                         help="Provider for PA day coverage")
     parser.add_argument("--break-provider", default="YMCA Cedar Glen",
                         help="Provider for winter and March break coverage")
+    parser.add_argument("--overrides",
+                        help="JSON file with per-child, per-date provider overrides. "
+                             "Format: {\"YYYY-MM-DD\": {\"ChildName\": \"Provider\"}}")
     parser.add_argument("--output-md",
                         help="Path for output markdown file")
     parser.add_argument("--update-xlsx", action="store_true",
@@ -713,17 +770,29 @@ def main():
     summer_days = read_summer_assignments(args.xlsx, children)
     calendar_data = parse_calendar(args.calendar)
 
-    # Validate providers exist
-    for provider_name in [args.pa_day_provider, args.break_provider]:
-        if provider_name not in provider_rates:
-            print(f"Error: Provider '{provider_name}' not found in Provider Comparison tab.", file=sys.stderr)
-            print(f"Available providers: {', '.join(provider_rates.keys())}", file=sys.stderr)
-            sys.exit(1)
+    # Load overrides
+    overrides = {}
+    if args.overrides:
+        with open(args.overrides) as f:
+            overrides = json.load(f)
+        print(f"Loaded {len(overrides)} date overrides from {args.overrides}")
+
+    # Validate all providers exist (defaults + every provider in overrides)
+    all_providers = {args.pa_day_provider, args.break_provider}
+    for date_key, child_map in overrides.items():
+        for child_name, provider_name in child_map.items():
+            all_providers.add(provider_name)
+    missing = [p for p in all_providers if p not in provider_rates]
+    if missing:
+        print(f"Error: Provider(s) not found in Provider Comparison tab: {', '.join(sorted(missing))}", file=sys.stderr)
+        print(f"Available providers: {', '.join(sorted(provider_rates.keys()))}", file=sys.stderr)
+        sys.exit(1)
 
     # Build unified schedule
     annual_days = build_annual_days(
         summer_days, calendar_data,
         args.pa_day_provider, args.break_provider, children,
+        overrides=overrides,
     )
 
     # Summary stats
@@ -739,7 +808,11 @@ def main():
 
     # Generate markdown
     if args.output_md:
-        ctx = {"pa_provider": args.pa_day_provider, "break_provider": args.break_provider}
+        ctx = {
+            "pa_provider": args.pa_day_provider,
+            "break_provider": args.break_provider,
+            "has_overrides": bool(overrides),
+        }
         md = render_markdown(annual_days, provider_rates, children, render_context=ctx)
         with open(args.output_md, "w") as f:
             f.write(md)

@@ -74,12 +74,14 @@ After researching multiple providers, generate a comparison table:
 ```markdown
 # Camp Provider Comparison - [Area]
 
-| Provider | Ages | $/Week | Before Care | After Care | Lunch | Distance | Rating |
-|----------|------|--------|-------------|------------|-------|----------|--------|
-| YMCA Downtown | 4-12 | $280 | $50 (7:30am) | $50 (6pm) | Pack | 3.2 km | Strong |
-| City Parks Rec | 6-12 | $195 | $40 (7:30am) | $40 (6pm) | Pack | 1.5 km | Strong |
-| Science Camp | 7-12 | $425 | No | No | Incl | 8.1 km | Good |
+| Provider | Ages | $/Day | $/Week | Before Care | After Care | Lunch | Distance | Rating |
+|----------|------|-------|--------|-------------|------------|-------|----------|--------|
+| YMCA Downtown | 4-12 | $56 | $280 | $10/day | $10/day | Pack | 3.2 km | Strong |
+| City Parks Rec | 6-12 | $39 | $195 | $8/day | $8/day | Pack | 1.5 km | Strong |
+| Science Camp | 7-12 | $85 | $425 | No | No | Incl | 8.1 km | Good |
 ```
+
+Include daily rates ($/Day) alongside weekly rates for accurate partial-week and PA day costing.
 
 Save this comparison to `camp-research/providers/comparison-summary.md`.
 

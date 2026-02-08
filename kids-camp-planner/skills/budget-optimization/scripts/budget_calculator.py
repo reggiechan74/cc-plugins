@@ -4,24 +4,30 @@ Camp Budget Calculator
 
 Calculate and compare camp costs across multiple children, providers, and weeks.
 Generates markdown tables or CSV output with discount application and tax estimates.
+Supports both weekly and daily rate calculations.
 
 Usage:
-    # Simple single-provider calculation
+    # Simple single-provider calculation (weekly rates)
     python3 budget_calculator.py --kids 2 --weeks 8 --base-cost 300 --format markdown
 
-    # With all cost components
+    # With all cost components (weekly rates)
     python3 budget_calculator.py --kids 2 --weeks 8 --base-cost 300 \
         --before-care 50 --after-care 50 --lunch 35 \
         --sibling-discount 10 --early-bird 25 --registration-fee 50 \
         --format markdown
 
-    # Multi-provider from JSON input
+    # Daily rate calculation
+    python3 budget_calculator.py --kids 2 --days 40 --daily-rate 60 \
+        --before-care-daily 10 --after-care-daily 10 --lunch-daily 7 \
+        --format markdown
+
+    # Multi-provider from JSON input (supports both "weeks" and "days" arrays)
     python3 budget_calculator.py --input budget-input.json --format markdown
 
     # CSV output
     python3 budget_calculator.py --input budget-input.json --format csv
 
-JSON Input Schema:
+JSON Input Schema (weekly):
 {
     "children": [
         {"name": "Child 1", "age": 7},
@@ -60,6 +66,31 @@ JSON Input Schema:
         "YMCA Day Camp": 50
     }
 }
+
+JSON Input Schema (daily - alternative to "weeks"):
+{
+    "children": [
+        {"name": "Child 1", "age": 7},
+        {"name": "Child 2", "age": 5}
+    ],
+    "budget_limit": 5000,
+    "days": [
+        {
+            "date": "2025-06-30",
+            "assignments": {
+                "Child 1": {
+                    "provider": "YMCA Day Camp",
+                    "daily_rate": 60,
+                    "before_care": 10,
+                    "after_care": 10,
+                    "lunch": 7
+                }
+            }
+        }
+    ],
+    "discounts": { ... },
+    "registration_fees": { ... }
+}
 """
 
 import argparse
@@ -69,58 +100,114 @@ from datetime import datetime, timedelta
 
 
 def calculate_simple_budget(args):
-    """Calculate budget for a simple single-provider scenario."""
+    """Calculate budget for a simple single-provider scenario.
+
+    Supports both weekly rates (--base-cost/--weeks) and daily rates
+    (--daily-rate/--days). Daily rates take precedence if both are provided.
+    """
     kids = args.kids
-    weeks = args.weeks
-    base = args.base_cost
-    before = args.before_care or 0
-    after = args.after_care or 0
-    lunch = args.lunch or 0
     sibling_pct = args.sibling_discount or 0
     early_bird = args.early_bird or 0
     reg_fee = args.registration_fee or 0
+
+    # Determine if using daily or weekly rates
+    use_daily = args.daily_rate is not None or args.days is not None
+
+    if use_daily:
+        num_days = args.days or 40
+        daily_rate = args.daily_rate or 60
+        before_daily = args.before_care_daily or 0
+        after_daily = args.after_care_daily or 0
+        lunch_daily = args.lunch_daily or 0
+        daily_total = daily_rate + before_daily + after_daily + lunch_daily
+        # Convert to equivalent weekly values for discount calculations
+        num_weeks = (num_days + 4) // 5  # ceiling division for week count
+    else:
+        num_weeks = args.weeks
+        base = args.base_cost
+        before = args.before_care or 0
+        after = args.after_care or 0
+        lunch = args.lunch or 0
 
     results = []
     grand_total = 0
 
     for i in range(kids):
         child_num = i + 1
-        weekly_cost = base + before + after + lunch
 
-        # Apply sibling discount to 2nd+ child
-        sibling_disc = 0
-        if i > 0 and sibling_pct > 0:
-            sibling_disc = base * (sibling_pct / 100) * weeks
+        if use_daily:
+            camp_fees = daily_rate * num_days
+            before_after = (before_daily + after_daily) * num_days
+            lunch_cost = lunch_daily * num_days
+            subtotal = (daily_total * num_days) + reg_fee
 
-        subtotal = (weekly_cost * weeks) + reg_fee
-        early_disc = early_bird * weeks
-        total = subtotal - sibling_disc - early_disc
+            sibling_disc = 0
+            if i > 0 and sibling_pct > 0:
+                sibling_disc = camp_fees * (sibling_pct / 100)
 
-        results.append({
-            "child": f"Child {child_num}",
-            "weekly_cost": weekly_cost,
-            "weeks": weeks,
-            "camp_fees": base * weeks,
-            "before_after": (before + after) * weeks,
-            "lunch_cost": lunch * weeks,
-            "registration": reg_fee,
-            "subtotal": subtotal,
-            "sibling_discount": sibling_disc,
-            "early_bird_discount": early_disc,
-            "total": total,
-        })
+            early_disc = early_bird * num_weeks
+            total = subtotal - sibling_disc - early_disc
+
+            results.append({
+                "child": f"Child {child_num}",
+                "daily_cost": daily_total,
+                "days": num_days,
+                "camp_fees": camp_fees,
+                "before_after": before_after,
+                "lunch_cost": lunch_cost,
+                "registration": reg_fee,
+                "subtotal": subtotal,
+                "sibling_discount": sibling_disc,
+                "early_bird_discount": early_disc,
+                "total": total,
+            })
+        else:
+            weekly_cost = base + before + after + lunch
+
+            sibling_disc = 0
+            if i > 0 and sibling_pct > 0:
+                sibling_disc = base * (sibling_pct / 100) * num_weeks
+
+            subtotal = (weekly_cost * num_weeks) + reg_fee
+            early_disc = early_bird * num_weeks
+            total = subtotal - sibling_disc - early_disc
+
+            results.append({
+                "child": f"Child {child_num}",
+                "weekly_cost": weekly_cost,
+                "weeks": num_weeks,
+                "camp_fees": base * num_weeks,
+                "before_after": (before + after) * num_weeks,
+                "lunch_cost": lunch * num_weeks,
+                "registration": reg_fee,
+                "subtotal": subtotal,
+                "sibling_discount": sibling_disc,
+                "early_bird_discount": early_disc,
+                "total": total,
+            })
         grand_total += total
 
     return results, grand_total
 
 
 def calculate_json_budget(input_data):
-    """Calculate budget from a detailed JSON input."""
+    """Calculate budget from a detailed JSON input.
+
+    Supports both "weeks" and "days" arrays. If "days" is present, it takes
+    precedence. Each day entry has a date and per-child assignments with
+    daily_rate, before_care, after_care, and lunch fields.
+    """
     children = input_data["children"]
     budget_limit = input_data.get("budget_limit", 0)
+    days_data = input_data.get("days", [])
     weeks_data = input_data.get("weeks", [])
     discounts = input_data.get("discounts", {})
     reg_fees = input_data.get("registration_fees", {})
+
+    # If days data is present, convert to weekly format for processing
+    if days_data:
+        return _calculate_daily_json_budget(input_data)
+
 
     sibling_pct = discounts.get("sibling_percent", 0)
     early_bird = discounts.get("early_bird_per_week", 0)
@@ -210,6 +297,151 @@ def calculate_json_budget(input_data):
             "total": final,
         })
         grand_total += final
+
+    return {
+        "children": results,
+        "grand_total": grand_total,
+        "budget_limit": budget_limit,
+        "weekly_details": weekly_details,
+        "child_names": child_names,
+    }
+
+
+def _calculate_daily_json_budget(input_data):
+    """Calculate budget from daily JSON input format."""
+    children = input_data["children"]
+    budget_limit = input_data.get("budget_limit", 0)
+    days_data = input_data["days"]
+    discounts = input_data.get("discounts", {})
+    reg_fees = input_data.get("registration_fees", {})
+
+    sibling_pct = discounts.get("sibling_percent", 0)
+    early_bird = discounts.get("early_bird_per_week", 0)
+    multi_week_threshold = discounts.get("multi_week_threshold", 0)
+    multi_week_pct = discounts.get("multi_week_percent", 0)
+
+    child_names = [c["name"] for c in children]
+    child_totals = {name: 0 for name in child_names}
+    child_base_totals = {name: 0 for name in child_names}
+    providers_used = {name: set() for name in child_names}
+    daily_details = []
+
+    for day_entry in days_data:
+        day_date = day_entry.get("date", "")
+        day_row = {"date": day_date}
+
+        for child_name in child_names:
+            assignment = day_entry.get("assignments", {}).get(child_name)
+            if assignment:
+                provider = assignment.get("provider", "TBD")
+                daily_rate = assignment.get("daily_rate", 0)
+                before = assignment.get("before_care", 0)
+                after = assignment.get("after_care", 0)
+                lunch = assignment.get("lunch", 0)
+                day_cost = daily_rate + before + after + lunch
+
+                child_totals[child_name] += day_cost
+                child_base_totals[child_name] += daily_rate
+                providers_used[child_name].add(provider)
+                day_row[child_name] = {
+                    "provider": provider,
+                    "cost": day_cost,
+                    "base": daily_rate,
+                }
+            else:
+                day_row[child_name] = {
+                    "provider": "No camp",
+                    "cost": 0,
+                    "base": 0,
+                }
+
+        daily_details.append(day_row)
+
+    # Count weeks for discount purposes (every 5 days = 1 week)
+    child_day_counts = {}
+    for name in child_names:
+        child_day_counts[name] = sum(
+            1 for d in daily_details if d.get(name, {}).get("cost", 0) > 0
+        )
+
+    child_discounts = {name: {"sibling": 0, "early_bird": 0, "multi_week": 0} for name in child_names}
+
+    for i, name in enumerate(child_names):
+        num_weeks = (child_day_counts[name] + 4) // 5
+
+        if i > 0 and sibling_pct > 0:
+            child_discounts[name]["sibling"] = child_base_totals[name] * (sibling_pct / 100)
+
+        if early_bird > 0:
+            child_discounts[name]["early_bird"] = early_bird * num_weeks
+
+        if multi_week_threshold > 0 and num_weeks >= multi_week_threshold and multi_week_pct > 0:
+            child_discounts[name]["multi_week"] = child_base_totals[name] * (multi_week_pct / 100)
+
+    child_reg = {}
+    for name in child_names:
+        total_reg = sum(reg_fees.get(p, 0) for p in providers_used[name])
+        child_reg[name] = total_reg
+
+    results = []
+    grand_total = 0
+    for name in child_names:
+        disc = child_discounts[name]
+        total_disc = disc["sibling"] + disc["early_bird"] + disc["multi_week"]
+        final = child_totals[name] + child_reg[name] - total_disc
+        results.append({
+            "child": name,
+            "camp_fees": child_totals[name],
+            "registration": child_reg[name],
+            "subtotal": child_totals[name] + child_reg[name],
+            "sibling_discount": disc["sibling"],
+            "early_bird_discount": disc["early_bird"],
+            "multi_week_discount": disc["multi_week"],
+            "total_discount": total_disc,
+            "total": final,
+        })
+        grand_total += final
+
+    # Convert daily details to weekly format for rendering compatibility
+    weekly_details = []
+    current_week = []
+    week_num = 1
+    for d in daily_details:
+        current_week.append(d)
+        if len(current_week) == 5:
+            week_row = {"week": week_num, "start_date": current_week[0].get("date", "")}
+            for name in child_names:
+                week_cost = sum(day.get(name, {}).get("cost", 0) for day in current_week)
+                providers_in_week = set(
+                    day.get(name, {}).get("provider", "")
+                    for day in current_week
+                    if day.get(name, {}).get("cost", 0) > 0
+                )
+                week_row[name] = {
+                    "provider": ", ".join(sorted(providers_in_week)) or "No camp",
+                    "cost": week_cost,
+                    "base": sum(day.get(name, {}).get("base", 0) for day in current_week),
+                }
+            weekly_details.append(week_row)
+            current_week = []
+            week_num += 1
+
+    # Handle remaining days
+    if current_week:
+        week_row = {"week": week_num, "start_date": current_week[0].get("date", "")}
+        for name in child_names:
+            week_cost = sum(day.get(name, {}).get("cost", 0) for day in current_week)
+            providers_in_week = set(
+                day.get(name, {}).get("provider", "")
+                for day in current_week
+                if day.get(name, {}).get("cost", 0) > 0
+            )
+            week_row[name] = {
+                "provider": ", ".join(sorted(providers_in_week)) or "No camp",
+                "cost": week_cost,
+                "base": sum(day.get(name, {}).get("base", 0) for day in current_week),
+            }
+        weekly_details.append(week_row)
 
     return {
         "children": results,
@@ -417,11 +649,16 @@ def main():
     parser = argparse.ArgumentParser(description="Camp Budget Calculator")
     parser.add_argument("--input", "-i", help="JSON input file for detailed multi-provider budget")
     parser.add_argument("--kids", type=int, default=1, help="Number of children (simple mode)")
-    parser.add_argument("--weeks", type=int, default=8, help="Number of camp weeks (simple mode)")
-    parser.add_argument("--base-cost", type=float, default=300, help="Base cost per week (simple mode)")
+    parser.add_argument("--weeks", type=int, default=8, help="Number of camp weeks (weekly mode)")
+    parser.add_argument("--base-cost", type=float, default=300, help="Base cost per week (weekly mode)")
     parser.add_argument("--before-care", type=float, default=0, help="Before-care cost per week")
     parser.add_argument("--after-care", type=float, default=0, help="After-care cost per week")
     parser.add_argument("--lunch", type=float, default=0, help="Lunch cost per week")
+    parser.add_argument("--days", type=int, default=None, help="Number of camp days (daily mode, overrides --weeks)")
+    parser.add_argument("--daily-rate", type=float, default=None, help="Base cost per day (daily mode, overrides --base-cost)")
+    parser.add_argument("--before-care-daily", type=float, default=0, help="Before-care cost per day")
+    parser.add_argument("--after-care-daily", type=float, default=0, help="After-care cost per day")
+    parser.add_argument("--lunch-daily", type=float, default=0, help="Lunch cost per day")
     parser.add_argument("--sibling-discount", type=float, default=0, help="Sibling discount percentage")
     parser.add_argument("--early-bird", type=float, default=0, help="Early bird discount per week")
     parser.add_argument("--registration-fee", type=float, default=0, help="One-time registration fee per child")
