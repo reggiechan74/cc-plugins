@@ -8,7 +8,7 @@ version: 0.1.0
 
 ## Overview
 
-Calculate, compare, and optimize camp costs across children, time periods, and providers. Generate budget summaries as markdown tables (default) or Excel spreadsheets (requires anthropic spreadsheet plugin). Apply Ontario-specific cost-saving strategies including tax deductions, subsidies, and discount timing.
+Calculate, compare, and optimize camp costs across children, time periods, and providers. Generate budget summaries as markdown tables (default) or Excel spreadsheets. Apply Ontario-specific cost-saving strategies including tax deductions, subsidies, and discount timing.
 
 ## Budget Generation Workflow
 
@@ -63,14 +63,22 @@ Create the budget file at the appropriate location:
 ## Summary
 | | Child 1 | Child 2 | Total |
 |---|---------|---------|-------|
-| Camp fees | $2,400 | $2,160 | $4,560 |
+| Camp fees | $2,350 | $2,200 | $4,550 |
 | Before/after care | $800 | $800 | $1,600 |
-| Lunch | $0 | $0 | $0 |
+| Lunch | $280 | $280 | $560 |
 | Registration | $50 | $50 | $100 |
-| **Subtotal** | **$3,250** | **$3,010** | **$6,260** |
-| Sibling discount | - | -$216 | -$216 |
+| **Subtotal** | **$3,480** | **$3,330** | **$6,810** |
+| Sibling discount | - | -$240 | -$240 |
 | Early bird discount | -$200 | -$200 | -$400 |
-| **Total** | **$3,050** | **$2,594** | **$5,644** |
+| **Total** | **$3,280** | **$2,890** | **$6,170** |
+
+## Cost by Camp Provider
+| Provider | Child 1 | Child 2 | Total |
+|----------|---------|---------|-------|
+| YMCA Cedar Glen | $1,800 | $1,800 | $3,600 |
+| City of Toronto | $200 | $400 | $600 |
+| Science Camp TO | $350 | $0 | $350 |
+| **Total Camp Fees** | **$2,350** | **$2,200** | **$4,550** |
 
 ## Tax Recovery Estimate
 - Child care deduction (Line 21400): ~$X estimated tax savings
@@ -80,13 +88,13 @@ Create the budget file at the appropriate location:
 [Week-by-week table with provider, child, and cost per week]
 
 ## Budget vs. Target
-- Budget limit: $5,000
-- Projected spend: $5,644
-- Over/under: $644 over budget
+- Budget limit: $7,000
+- Projected spend: $6,170
+- Over/under: $830 under budget
 - Recommendations: [suggestions to reduce costs]
 ```
 
-**Excel format:** If the user requests Excel output, inform them that generating `.xlsx` files requires the Anthropic xlsx skill (https://github.com/anthropics/skills/blob/main/skills/xlsx/SKILL.md). Offer markdown + CSV as alternatives, or proceed with Excel if the skill is installed.
+**Excel format:** See `${CLAUDE_PLUGIN_ROOT}/examples/sample-budget.xlsx` for the reference Excel budget template. The Excel version uses formulas (SUM, SUMIF) that reference the Weekly Schedule tab so that Camp Fees and the per-provider breakdown update automatically when the schedule changes. When generating Excel output, use openpyxl with formulas rather than hardcoded values.
 
 ### Step 4: Provide Optimization Recommendations
 
