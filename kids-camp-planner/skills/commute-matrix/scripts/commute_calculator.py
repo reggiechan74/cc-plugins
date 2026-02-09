@@ -9,22 +9,24 @@ in AM, Work -> Camp -> Home in PM) across multiple travel modes.
 Usage:
     # Basic: compute commutes for all providers
     python3 commute_calculator.py \
-        --profile .claude/kids-camp-planner.local.md \
-        --providers camp-research/providers/ \
+        --profile <research_dir>/family-profile.md \
+        --providers <research_dir>/providers/ \
+        --api-key YOUR_GEOAPIFY_KEY \
         --modes drive,transit \
-        --output-md camp-research/commute-report.md \
-        --output-json camp-research/commute-matrix.json \
-        --geocache camp-research/geocache.json
+        --output-md <research_dir>/commute-report.md \
+        --output-json <research_dir>/commute-matrix.json \
+        --geocache <research_dir>/geocache.json
 
     # With provider file updates
     python3 commute_calculator.py \
-        --profile .claude/kids-camp-planner.local.md \
-        --providers camp-research/providers/ \
+        --profile <research_dir>/family-profile.md \
+        --providers <research_dir>/providers/ \
+        --api-key YOUR_GEOAPIFY_KEY \
         --modes drive,transit \
-        --output-md camp-research/commute-report.md \
-        --output-json camp-research/commute-matrix.json \
+        --output-md <research_dir>/commute-report.md \
+        --output-json <research_dir>/commute-matrix.json \
         --update-providers \
-        --geocache camp-research/geocache.json
+        --geocache <research_dir>/geocache.json
 
 API: Geoapify Route Matrix (POST /v1/routematrix) + Geocoding (GET /v1/geocode/search)
 Free tier: 3,000 matrix requests/day, 90,000 geocoding/month
@@ -781,9 +783,11 @@ def main():
         description="Calculate commute times between home, work, and camp locations using Geoapify API."
     )
     parser.add_argument("--profile", required=True,
-                        help="Path to family profile (.claude/kids-camp-planner.local.md)")
+                        help="Path to family profile (<research_dir>/family-profile.md)")
     parser.add_argument("--providers", required=True,
-                        help="Path to providers directory (camp-research/providers/)")
+                        help="Path to providers directory (<research_dir>/providers/)")
+    parser.add_argument("--api-key",
+                        help="Geoapify API key (overrides key from profile if both provided)")
     parser.add_argument("--modes", default="drive,transit",
                         help="Comma-separated travel modes: drive, transit, walk, bicycle (default: drive,transit)")
     parser.add_argument("--output-md",
@@ -793,7 +797,7 @@ def main():
     parser.add_argument("--update-providers", action="store_true",
                         help="Update provider files with computed commute data")
     parser.add_argument("--geocache",
-                        help="Path to geocoding cache file (camp-research/geocache.json)")
+                        help="Path to geocoding cache file (<research_dir>/geocache.json)")
 
     args = parser.parse_args()
     modes = [m.strip() for m in args.modes.split(",") if m.strip()]
@@ -806,10 +810,15 @@ def main():
         print("Error: No home_address found in profile.", file=sys.stderr)
         sys.exit(1)
 
+    # CLI --api-key overrides profile-embedded key
+    if args.api_key:
+        profile["api_key"] = args.api_key
+
     if not profile["api_key"]:
         print(
-            "Error: No Geoapify API key found in profile.\n"
-            "Add your key under apis.geoapify_api_key in your family profile.\n"
+            "Error: No Geoapify API key found.\n"
+            "Provide --api-key on the command line, or add the key\n"
+            "under apis.geoapify_api_key in the family profile.\n"
             "Get a free key at https://myprojects.geoapify.com/",
             file=sys.stderr,
         )

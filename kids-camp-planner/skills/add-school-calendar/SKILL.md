@@ -8,6 +8,8 @@ version: 0.1.0
 
 ## Overview
 
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
+
 Extract school calendar data from a URL, PDF, or web search and save it as a structured reference file in the school-calendars directory. This makes the data instantly available to all planning skills (plan-summer, plan-march-break, plan-pa-days) without requiring web searches for known schools.
 
 All planning skills use the **School Calendar Lookup** pattern (see below) before asking the user or searching the web. This skill is what populates the internal library that those lookups check first.
@@ -148,7 +150,7 @@ After saving:
 1. Confirm the file was created and show a summary of what was extracted
 2. If a PDF was downloaded, note the saved PDF path for reference
 3. List any fields that were marked "Not specified" - ask if the user can fill them in
-4. If this school is used in the family profile (`.claude/kids-camp-planner.local.md`), inform the user that other skills will now automatically use this data via Tier 1 lookup
+4. If this school is used in the family profile (`<research_dir>/family-profile.md`), inform the user that other skills will now automatically use this data via Tier 1 lookup
 5. Offer to add another school year or another school
 
 ## Handling Ambiguous or Incomplete Sources

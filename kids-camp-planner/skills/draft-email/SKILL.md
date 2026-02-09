@@ -8,15 +8,17 @@ version: 0.1.0
 
 ## Overview
 
-Draft professional, personalized emails to camp providers. Pull family details from the profile and provider details from research files to create complete, ready-to-send emails. Save drafts to `camp-research/drafts/` for review before sending.
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
+
+Draft professional, personalized emails to camp providers. Pull family details from the profile and provider details from research files to create complete, ready-to-send emails. Save drafts to `<research_dir>/drafts/` for review before sending.
 
 ## Email Drafting Workflow
 
 ### Step 1: Gather Context
 
 Before drafting, read:
-1. **Family profile** (`.claude/kids-camp-planner.local.md`) for children's details, special needs, contact info
-2. **Provider file** (`camp-research/providers/[provider].md`) for camp-specific details, contact email, program names
+1. **Family profile** (`<research_dir>/family-profile.md`) for children's details, special needs, contact info
+2. **Provider file** (`<research_dir>/providers/[provider].md`) for camp-specific details, contact email, program names
 
 ### Step 2: Determine Email Type
 
@@ -41,7 +43,7 @@ Identify the purpose and use the appropriate template structure:
 - Include relevant medical/dietary info when appropriate
 - Keep it concise - camp administrators handle hundreds of emails
 
-**Save drafts to:** `camp-research/drafts/[type]-[provider].md`
+**Save drafts to:** `<research_dir>/drafts/[type]-[provider].md`
 
 ## Email Templates
 

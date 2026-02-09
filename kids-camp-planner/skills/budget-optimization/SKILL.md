@@ -8,13 +8,15 @@ version: 0.1.0
 
 ## Overview
 
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
+
 Calculate, compare, and optimize camp costs across children, time periods, and providers. Generate budget summaries as markdown tables (default) or Excel spreadsheets. Apply Ontario-specific cost-saving strategies including tax deductions, subsidies, and discount timing.
 
 ## Budget Generation Workflow
 
 ### Step 1: Gather Cost Data
 
-Read the family profile from `.claude/kids-camp-planner.local.md` for budget constraints. Collect per-provider costs from `camp-research/providers/*.md` files if they exist. For each camp option, ensure the following cost components are captured:
+Read the family profile from `<research_dir>/family-profile.md` for budget constraints. Collect per-provider costs from `<research_dir>/providers/*.md` files if they exist. For each camp option, ensure the following cost components are captured:
 
 | Component | Weekly Rate | Daily Rate |
 |-----------|-------------|------------|
@@ -65,9 +67,9 @@ For complex multi-provider budgets, prepare a JSON input file and pass it with `
 ### Step 3: Generate Budget Document
 
 Create the budget file at the appropriate location:
-- Summer: `camp-research/summer-YYYY/budget.md`
-- March break: `camp-research/march-break-YYYY/budget.md`
-- PA days: `camp-research/pa-days-YYYY-YYYY/budget.md`
+- Summer: `<research_dir>/summer-YYYY/budget.md`
+- March break: `<research_dir>/march-break-YYYY/budget.md`
+- PA days: `<research_dir>/pa-days-YYYY-YYYY/budget.md`
 
 **Markdown budget format (default):**
 

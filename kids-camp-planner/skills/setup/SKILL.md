@@ -1,47 +1,64 @@
 ---
 name: Camp Planner Setup
 description: This skill should be used when the user asks to "set up camp planner", "initialize camp planning", "create family profile", "configure camp planner", "start camp planning", "set up kids camp", or mentions needing to configure their family details, children info, school board, or budget for camp planning. Provides guided setup workflow for the kids-camp-planner plugin.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Camp Planner Setup
 
 ## Overview
 
-Initialize the kids-camp-planner workspace by creating the research folder structure and collecting the family profile. This is typically the first step before any camp planning activity.
+Initialize the kids-camp-planner workspace by creating the research folder structure, seeding it with templates and examples, collecting the family profile, and configuring API keys. This is typically the first step before any camp planning activity.
+
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
 
 ## Setup Workflow
 
-### Step 1: Create Research Folder Structure
+### Step 0: Choose Research Directory Name
 
-Create the following directory structure in the user's current working directory:
+Ask the user what they'd like to name their research directory using AskUserQuestion:
+- Default: `camp-research` (recommended)
+- The user may choose a custom name (e.g., `camps`, `camp-planning`, `kids-camps`)
+- This directory will hold all camp research data: providers, schedules, budgets, drafts, etc.
+
+Store the chosen name — it will be written to `.claude/kids-camp-planner.local.md` as `research_dir` in Step 3.
+
+### Step 1: Create Research Folder Structure and Seed Files
+
+Create the following directory structure in the user's current working directory, using the research directory name chosen in Step 0:
 
 ```
-camp-research/
-├── providers/            # Individual camp provider files
-├── drafts/               # Draft emails
-├── school-calendars/     # Saved school calendar data for this family
-│   ├── school-name.md    # Extracted dates, PA days, breaks
-│   └── public-board.md   # Nearest public board for cross-reference
-├── summer-YYYY/          # Summer period planning
-│   ├── schedule.md
-│   └── budget.md
-├── march-break-YYYY/     # March break planning
-│   ├── schedule.md
-│   └── budget.md
-├── fall-break-YYYY/      # Fall break planning (private schools)
-│   ├── schedule.md
-│   └── budget.md
-└── pa-days-YYYY-YYYY/    # PA day coverage
-    ├── dates.md
-    └── coverage.md
+<research_dir>/
+├── family-profile.md             # Full family profile (seeded from plugin, filled in Step 2)
+├── providers/                    # Individual camp provider files
+├── templates/
+│   └── provider-template.md      # Provider file template for reference
+├── examples/
+│   ├── sample-provider.md        # YMCA Cedar Glen example
+│   └── boulderz-etobicoke.md     # Boulderz Climbing example
+├── drafts/                       # Draft emails
+├── school-calendars/             # Saved school calendar data for this family
+├── summer-YYYY/                  # Summer period planning
+├── march-break-YYYY/             # March break planning
+├── fall-break-YYYY/              # Fall break planning (private schools)
+└── pa-days-YYYY-YYYY/            # PA day coverage
 ```
+
+**Seed files from plugin:** Copy the following files from the plugin into the research directory so the user has templates and examples visible in their project:
+
+| Source (plugin) | Destination (research dir) |
+|----------------|---------------------------|
+| `${CLAUDE_PLUGIN_ROOT}/examples/family-profile.md` | `<research_dir>/family-profile.md` |
+| `${CLAUDE_PLUGIN_ROOT}/skills/research-camps/references/provider-template.md` | `<research_dir>/templates/provider-template.md` |
+| `${CLAUDE_PLUGIN_ROOT}/skills/research-camps/examples/sample-provider.md` | `<research_dir>/examples/sample-provider.md` |
+| `${CLAUDE_PLUGIN_ROOT}/skills/research-camps/examples/boulderz-etobicoke.md` | `<research_dir>/examples/boulderz-etobicoke.md` |
+
+Read each source file with the Read tool and write it to the destination with the Write tool.
 
 **Notes:**
-- The `fall-break-YYYY/` folder is only created if the school has a fall break (common in private schools, uncommon in Ontario public boards).
+- The `fall-break-YYYY/` folder is only created if the school has a fall break (common in private schools, uncommon in Ontario public boards). If unsure, create it — it's harmless to have an empty folder.
 - The `school-calendars/` folder stores the user's specific school calendar data. Before web searching, check if pre-saved data exists in the plugin's reference data at `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/`. If found, copy the relevant data to the user's folder and confirm it matches the current year.
-
-Use the current year for folder names. For PA days, use the current school year span (e.g., `pa-days-2025-2026`).
+- Use the current year for folder names. For PA days, use the current school year span (e.g., `pa-days-2025-2026`).
 
 ### Step 2: Collect Family Profile
 
@@ -90,36 +107,52 @@ Guide the user through providing their family information using AskUserQuestion.
 - Fall break dates (some private schools have a full week in Oct/Nov; public boards typically do not)
 - Any other non-standard breaks or early dismissal dates
 
-**Group 8 - API Keys (optional):**
-- Geoapify API key for automated commute calculations
-- Explain: free tier is sufficient (3,000 requests/day) for all camp planning needs
+Write the collected profile to `<research_dir>/family-profile.md` in YAML frontmatter format. Reference the seed template already copied in Step 1 for the expected format. Include a markdown body section titled "Family Notes" for any additional context the user provides.
+
+### Step 3: Configure API Keys and Write Thin Config
+
+Collect optional API keys:
+
+**Geoapify API key (optional):**
+- Enables automated commute calculations via the commute-matrix skill
+- Free tier is sufficient (3,000 requests/day) for all camp planning needs
 - Link: https://myprojects.geoapify.com/
 - Skip if user doesn't want to set up now — commute calculations can be added later
 
-### Step 3: Generate the .local.md File
+Write the thin config file to `.claude/kids-camp-planner.local.md` with:
+- `research_dir`: The directory name chosen in Step 0
+- `apis.geoapify_api_key`: The API key collected (or empty string if skipped)
 
-Write the collected profile to `.claude/kids-camp-planner.local.md` in YAML frontmatter format. Reference the example template at `${CLAUDE_PLUGIN_ROOT}/examples/kids-camp-planner.local.md` for the expected format.
-
-Include a markdown body section titled "Family Notes" for any additional context the user provides (e.g., "Child 1 loved YMCA last year", "Grandparent available Wednesdays").
+Reference the template at `${CLAUDE_PLUGIN_ROOT}/examples/kids-camp-planner.local.md` for the expected format.
 
 ### Step 4: Confirm and Summarize
 
-Present a summary of the created profile back to the user:
+Present a summary of the setup to the user:
+- Research directory location and what was seeded into it
 - Number of children and their ages
 - School board and type
 - Budget overview
 - Key constraints (commute, care hours, dietary)
 - Vacation dates noted
-- Research folder location
+- API keys configured (or skipped)
+- Files created:
+  - `<research_dir>/family-profile.md` — full family profile
+  - `.claude/kids-camp-planner.local.md` — thin config (research_dir pointer + API keys)
+  - Seed files in `<research_dir>/templates/` and `<research_dir>/examples/`
 
-Invite the user to review and edit the `.local.md` file directly if any corrections are needed.
+Invite the user to review and edit the family profile directly at `<research_dir>/family-profile.md` if any corrections are needed. Mention that API keys can be updated in `.claude/kids-camp-planner.local.md`.
 
 ## Re-Running Setup
 
-If a `.claude/kids-camp-planner.local.md` file already exists, read it first and ask the user whether to:
-1. Update specific fields (preserve existing data)
-2. Start fresh (replace entirely)
-3. Cancel (keep existing profile)
+If a `.claude/kids-camp-planner.local.md` file already exists:
+1. Read it to get the `research_dir` path
+2. Read `<research_dir>/family-profile.md` for existing family data
+3. Ask the user whether to:
+   - Update specific fields (preserve existing data)
+   - Start fresh (replace entirely)
+   - Cancel (keep existing profile)
+
+If `research_dir` points to a directory that doesn't exist, treat it as a fresh setup starting from Step 1.
 
 ## Profile Validation
 
@@ -130,3 +163,5 @@ After generating the profile, verify:
 - [ ] Home address is provided
 - [ ] Budget has at least one constraint specified
 - [ ] Research folder structure was created successfully
+- [ ] Seed files were copied (family-profile.md, provider-template.md, sample-provider.md, boulderz-etobicoke.md)
+- [ ] Thin config `.claude/kids-camp-planner.local.md` has correct `research_dir` value

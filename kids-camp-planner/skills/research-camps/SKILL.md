@@ -8,13 +8,15 @@ version: 0.1.0
 
 ## Overview
 
-Discover, evaluate, and document camp providers for a family's area, creating structured provider files in the `camp-research/providers/` directory. Each provider gets its own markdown file with standardized information for easy comparison. Providers are cross-referenced from period-specific schedule files (summer, March break, PA days).
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
+
+Discover, evaluate, and document camp providers for a family's area, creating structured provider files in the `<research_dir>/providers/` directory. Each provider gets its own markdown file with standardized information for easy comparison. Providers are cross-referenced from period-specific schedule files (summer, March break, PA days).
 
 ## Research Workflow
 
 ### Step 1: Define Search Criteria
 
-Read the family profile from `.claude/kids-camp-planner.local.md` to determine:
+Read the family profile from `<research_dir>/family-profile.md` to determine:
 - Home address and maximum commute time
 - Children's ages (determines eligible programs)
 - Children's interests (guides specialty camp search)
@@ -49,13 +51,13 @@ Use web search to find camp providers. Search in this order:
 
 ### Step 3: Create Provider Files
 
-For each camp provider found, create a markdown file in `camp-research/providers/` using the standard template.
+For each camp provider found, create a markdown file in `<research_dir>/providers/` using the standard template.
 
 **File naming:** Use kebab-case: `provider-name.md` (e.g., `ymca-downtown.md`, `city-of-toronto-parks-rec.md`)
 
-**Provider file template:** Use the template at `references/provider-template.md`. The template includes sections for: basic information, distance & commute, programs offered, costs (with discount tracking), quality indicators, logistics, suitability rating, and notes.
+**Provider file template:** Use the template at `<research_dir>/templates/provider-template.md` (seeded during setup from the plugin). The template includes sections for: basic information, distance & commute, programs offered, costs (with discount tracking), quality indicators, logistics, suitability rating, and notes.
 
-For a completed example showing all fields filled in with realistic data, see `examples/sample-provider.md`.
+For completed examples showing all fields filled in with realistic data, see `<research_dir>/examples/sample-provider.md` and `<research_dir>/examples/boulderz-etobicoke.md`.
 
 ### Step 4: Verify Key Details
 
@@ -83,7 +85,7 @@ After researching multiple providers, generate a comparison table:
 
 Include daily rates ($/Day) alongside weekly rates for accurate partial-week and PA day costing.
 
-Save this comparison to `camp-research/providers/comparison-summary.md`.
+Save this comparison to `<research_dir>/providers/comparison-summary.md`.
 
 ## Research Tips
 
@@ -110,5 +112,6 @@ Save this comparison to `camp-research/providers/comparison-summary.md`.
 
 ### Reference Files
 
-- **`references/provider-template.md`** - Blank provider file template for quick copying
-- **`examples/sample-provider.md`** - Completed example provider file
+- **`<research_dir>/templates/provider-template.md`** - Blank provider file template for quick copying (seeded during setup)
+- **`<research_dir>/examples/sample-provider.md`** - Completed example provider file (YMCA Cedar Glen, multi-program)
+- **`<research_dir>/examples/boulderz-etobicoke.md`** - Specialty camp example (Boulderz Climbing, single-program)

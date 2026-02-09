@@ -8,6 +8,8 @@ version: 0.1.0
 
 ## Overview
 
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
+
 Generate a consolidated annual camp schedule that combines all school-break periods into a single view. Reads summer assignments from the spreadsheet's Daily Schedule tab, looks up non-summer dates from the school calendar, applies provider assignments for PA days and breaks, and produces both a markdown schedule and an updated spreadsheet with an "Annual Schedule" tab.
 
 ## When to Use
@@ -21,7 +23,7 @@ Generate a consolidated annual camp schedule that combines all school-break peri
 
 ### Step 1: Gather Inputs
 
-Read the family profile from `.claude/kids-camp-planner.local.md` for:
+Read the family profile from `<research_dir>/family-profile.md` for:
 - Children's names
 - School board
 
@@ -52,7 +54,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/generate-annual-schedule/scripts/generate_a
   --children "Emma,Liam" \
   --pa-day-provider "City of Toronto" \
   --break-provider "YMCA Cedar Glen" \
-  --output-md camp-research/annual-schedule-2025-2026.md \
+  --output-md <research_dir>/annual-schedule-2025-2026.md \
   --update-xlsx
 ```
 
@@ -65,8 +67,8 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/generate-annual-schedule/scripts/generate_a
   --children "Emma,Liam" \
   --pa-day-provider "City of Toronto" \
   --break-provider "YMCA Cedar Glen" \
-  --overrides camp-research/schedule-overrides.json \
-  --output-md camp-research/annual-schedule-2025-2026.md \
+  --overrides <research_dir>/schedule-overrides.json \
+  --output-md <research_dir>/annual-schedule-2025-2026.md \
   --update-xlsx
 ```
 
@@ -125,7 +127,7 @@ Annual Schedule Generated:
 - Total: 59 days
 
 Files updated:
-- camp-research/annual-schedule-2025-2026.md
+- <research_dir>/annual-schedule-2025-2026.md
 - examples/sample-budget.xlsx (Annual Schedule tab added)
 ```
 

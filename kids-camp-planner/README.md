@@ -145,26 +145,32 @@ python3 skills/budget-optimization/scripts/budget_calculator.py \
   --sibling-discount 10 --format markdown
 ```
 
-### Examples (3)
+### Examples (4)
 
 | File | Description |
 |------|-------------|
 | `sample-budget.xlsx` | Excel budget template with Provider Comparison, Daily Schedule, Weekly Schedule, and Budget Summary tabs |
 | `sample-annual-schedule.md` | Full 2025-2026 TCDSB annual camp schedule (59 days across all periods) |
-| `kids-camp-planner.local.md` | Example family profile with per-week and per-day budget targets |
+| `kids-camp-planner.local.md` | Thin config template (research directory pointer + API keys) |
+| `family-profile.md` | Full family profile template with per-week and per-day budget targets |
 
 ## Configuration
 
-### Family Profile
+The plugin uses a **two-file configuration** architecture:
 
-Copy the example profile to your project:
-```bash
-cp examples/kids-camp-planner.local.md .claude/kids-camp-planner.local.md
+### 1. Thin Config (`.claude/kids-camp-planner.local.md`)
+
+A small config file that stores the research directory path and API keys. This file is gitignored and always at a known location.
+
+```yaml
+research_dir: "camp-research"   # configurable during setup
+apis:
+  geoapify_api_key: ""          # optional, for commute calculations
 ```
 
-Or use the setup skill to create it interactively.
+### 2. Family Profile (`<research_dir>/family-profile.md`)
 
-The profile includes:
+The full family profile lives inside the research directory alongside all other user data. It includes:
 - Children (names, DOB, interests, allergies, medical needs)
 - School info (board, school name, public/private, calendar URL)
 - Parents/guardians (work schedules, pickup/dropoff availability)
@@ -172,12 +178,34 @@ The profile includes:
 - Vacation/exclusion dates
 - School year dates (overrides for private schools)
 
+### Getting Started
+
+Use the setup skill to create both files interactively:
+```
+User: "Set up camp planner"
+```
+
+Or set up manually:
+```bash
+mkdir -p camp-research/providers camp-research/templates camp-research/examples camp-research/drafts
+cp examples/family-profile.md camp-research/family-profile.md
+cp examples/kids-camp-planner.local.md .claude/kids-camp-planner.local.md
+```
+
+The research directory name is configurable during setup (default: `camp-research`).
+
 ### Research Folder Structure
 
-The plugin creates and maintains:
+The plugin creates and maintains (directory name is configurable):
 ```
-camp-research/
+<research_dir>/
+├── family-profile.md     # Full family profile
 ├── providers/            # Individual camp provider markdown files
+├── templates/
+│   └── provider-template.md  # Provider file template
+├── examples/
+│   ├── sample-provider.md    # YMCA Cedar Glen example
+│   └── boulderz-etobicoke.md # Boulderz example
 ├── school-calendars/     # Your school's calendar data
 ├── drafts/               # Draft emails
 ├── summer-YYYY/          # Summer schedule and budget

@@ -8,6 +8,8 @@ version: 0.1.0
 
 ## Overview
 
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
+
 Professional Activity (PA) days are single days during the Ontario school year when students stay home while teachers participate in professional development. Plan coverage by first identifying PA day dates from the school board calendar, then finding suitable single-day programs. PA days are also called PD days (Professional Development days) in some boards.
 
 ## PA Day Lookup Workflow
@@ -17,7 +19,7 @@ Professional Activity (PA) days are single days during the Ontario school year w
 Use the **3-Tier School Calendar Lookup** to find PA day dates:
 
 **Tier 1 - Check internal library first:**
-- Read the school board/name from `.claude/kids-camp-planner.local.md`
+- Read the school board/name from `<research_dir>/family-profile.md`
 - Search `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/` for a matching file
 - If found and the school year matches, extract PA day dates directly. Inform the user: "Found [school] PA days in the internal library."
 
@@ -128,9 +130,9 @@ For each PA day needing coverage:
 ### Step 6: Generate Output Files
 
 Create or update:
-1. **`camp-research/pa-days-YYYY-YYYY/dates.md`** - All PA day dates with status
-2. **`camp-research/pa-days-YYYY-YYYY/coverage.md`** - Coverage plan for each PA day
-3. **Provider files** in `camp-research/providers/` for PA day program providers
+1. **`<research_dir>/pa-days-YYYY-YYYY/dates.md`** - All PA day dates with status
+2. **`<research_dir>/pa-days-YYYY-YYYY/coverage.md`** - Coverage plan for each PA day
+3. **Provider files** in `<research_dir>/providers/` for PA day program providers
 
 ### Step 7: Set Up Reminders
 

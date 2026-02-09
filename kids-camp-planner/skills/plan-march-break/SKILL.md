@@ -8,6 +8,8 @@ version: 0.1.0
 
 ## Overview
 
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
+
 Plan camp coverage for the Ontario March break week (typically the third week of March). March break is a single week, making it simpler than summer planning but with its own considerations: limited availability, different provider landscape, and shorter planning window.
 
 ## Planning Workflow
@@ -16,7 +18,7 @@ Plan camp coverage for the Ontario March break week (typically the third week of
 
 Ontario March break is set by the Ministry of Education. Determine the exact dates using the **3-Tier School Calendar Lookup**:
 
-1. Read the family profile from `.claude/kids-camp-planner.local.md` for school board/school info
+1. Read the family profile from `<research_dir>/family-profile.md` for school board/school info
 2. **Tier 1 - Check internal library**: Search `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/` for the family's school. If found, extract March break dates directly.
 3. **Tier 2 - Ask the user**: If no internal data, ask: "Do you have the school calendar URL or PDF handy?" If provided, extract dates and save to internal library.
 4. **Tier 3 - Web search**: If the user doesn't have it, search for "[school board] March break [year]". Download and save any PDF found. Extract dates and save to internal library.
@@ -101,9 +103,9 @@ March break is a single week, so the schedule is simpler:
 ### Step 6: Generate Output Files
 
 Create or update:
-1. **`camp-research/march-break-YYYY/schedule.md`** - Daily schedule
-2. **`camp-research/march-break-YYYY/budget.md`** - Cost breakdown (use budget-optimization skill)
-3. **Provider files** in `camp-research/providers/` for any new providers
+1. **`<research_dir>/march-break-YYYY/schedule.md`** - Daily schedule
+2. **`<research_dir>/march-break-YYYY/budget.md`** - Cost breakdown (use budget-optimization skill)
+3. **Provider files** in `<research_dir>/providers/` for any new providers
 
 ### Step 7: Registration Reminders
 

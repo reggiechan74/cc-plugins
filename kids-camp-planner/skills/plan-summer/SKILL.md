@@ -8,13 +8,15 @@ version: 0.1.0
 
 ## Overview
 
+**Locate research directory:** Read `.claude/kids-camp-planner.local.md` to get the `research_dir` path (default: `camp-research`). All user data paths below are relative to this directory. The family profile is at `<research_dir>/family-profile.md`.
+
 Build a complete summer camp schedule covering every weekday from the last day of school through to the day before the new school year begins (typically the day after Labour Day in Ontario). Identify coverage gaps, match camps to children's ages and interests, respect budget and logistics constraints, and produce a visual schedule.
 
 ## Planning Workflow
 
 ### Step 1: Determine the Summer Window
 
-Read the family profile from `.claude/kids-camp-planner.local.md` for school dates. If school dates are not specified in the profile, use the **3-Tier School Calendar Lookup**:
+Read the family profile from `<research_dir>/family-profile.md` for school dates. If school dates are not specified in the profile, use the **3-Tier School Calendar Lookup**:
 
 **Tier 1 - Check internal library first:**
 - Search `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/` for the family's school board/school
@@ -74,7 +76,7 @@ Summer 2025 Coverage Needs:
 
 ### Step 3: Gather Camp Options
 
-Check if provider files already exist in `camp-research/providers/`. If not, suggest using the research-camps skill or camp-researcher agent to find options.
+Check if provider files already exist in `<research_dir>/providers/`. If not, suggest using the research-camps skill or camp-researcher agent to find options.
 
 For each child, filter providers by:
 - Age eligibility
@@ -141,9 +143,9 @@ Flag issues clearly and suggest alternatives.
 ### Step 6: Generate Output Files
 
 Create or update:
-1. **`camp-research/summer-YYYY/schedule.md`** - The week-by-week schedule table
-2. **`camp-research/summer-YYYY/budget.md`** - Budget summary (use budget-optimization skill)
-3. **Provider files** in `camp-research/providers/` for any new providers identified
+1. **`<research_dir>/summer-YYYY/schedule.md`** - The week-by-week schedule table
+2. **`<research_dir>/summer-YYYY/budget.md`** - Budget summary (use budget-optimization skill)
+3. **Provider files** in `<research_dir>/providers/` for any new providers identified
 
 ### Step 7: Present for Review
 
