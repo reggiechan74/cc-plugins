@@ -172,3 +172,8 @@ After saving:
 Reference these for format consistency:
 - `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/public-boards/tdsb.md`
 - `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/private-schools/gist.md`
+
+### Scripts
+
+- **`scripts/scrape_board_calendar.py`** - HTML calendar page scraper. Produces draft-quality markdown from school board websites. Requires human/agent review. Use for boards with HTML calendar pages; PDF-only boards still need manual extraction.
+- **`scripts/validate_calendar.py`** - Calendar file validator. Checks required sections, parseable dates, school year format. Use `--all` to validate an entire directory.
