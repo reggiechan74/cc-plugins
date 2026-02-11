@@ -41,6 +41,11 @@ If the user doesn't have it, conduct a web search for "[school board name] schoo
 - The first day of school in September is often a PA day (staggered entry)
 - PA days are board-wide; individual school PA days may also exist (less common)
 
+**Multi-board families:** If children attend different schools, look up PA days per school. Cross-reference to identify:
+- **Both off**: All children need coverage (standard PA day)
+- **Partial**: Only some children off (mark others "In school")
+Present the merged PA day table showing which children are off each day.
+
 **For private schools (CRITICAL - different handling required):**
 - Ask the user for their school's specific calendar URL or PDF
 - Private schools may call these "in-service days", "faculty days", or "professional development days"

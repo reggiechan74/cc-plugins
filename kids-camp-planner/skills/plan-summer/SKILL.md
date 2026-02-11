@@ -31,6 +31,8 @@ If the user doesn't have it, search for "[school board] school year calendar [ye
 - Download and save the PDF if one is found to `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/pdfs/`
 - Extract dates and save structured data to the internal library
 
+**Multi-school families:** If children attend different schools, determine the summer window per child. The coverage window starts on the earliest last-school-day and ends on the latest first-fall-day across all schools. On days when one child's school is still in session (or has already started), that child does not need camp coverage.
+
 From the calendar data, determine:
 1. **Last day of school**: For most Ontario public boards, the last day is typically the last Thursday or Friday of June.
 2. **First day of fall**: Usually the day after Labour Day for public schools. **For private schools, the fall start date may differ significantly** - some start before Labour Day (e.g., German International School Toronto starts in late August). Always verify from the school's actual calendar rather than assuming Labour Day + 1.

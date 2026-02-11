@@ -73,6 +73,7 @@ Guide the user through providing their family information using AskUserQuestion.
 - Public or private school
 - School board name (e.g., TDSB, YRDSB, PDSB, OCDSB, DPCDSB, DDSB, HDSB)
 - School name
+- **Multi-school families:** If children attend different schools, collect school info per child (the family-profile.md supports per-child school blocks under each child entry).
 - After collecting the school name/board, run the **3-Tier School Calendar Lookup**:
   1. Check `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/` for existing data
   2. If not found, ask if the user has the school calendar URL or PDF

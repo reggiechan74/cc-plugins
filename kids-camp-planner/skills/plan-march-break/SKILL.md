@@ -24,6 +24,8 @@ Ontario March break is set by the Ministry of Education. Determine the exact dat
 4. **Tier 3 - Web search**: If the user doesn't have it, search for "[school board] March break [year]". Download and save any PDF found. Extract dates and save to internal library.
 5. For private schools, note that break dates may differ significantly from public boards.
 
+**Multi-school families:** If children attend different schools, their March break dates may differ. Determine each child's break dates separately. On days when only some children are off, only those children need camp coverage (others are marked "In school"). The generate-annual-schedule script handles this automatically via `build_annual_days_multi()`.
+
 **Typical pattern:** Third Monday through Friday in March, but confirm annually as it occasionally shifts.
 
 **Private school extended breaks (CRITICAL):**

@@ -99,6 +99,22 @@ The overrides file lets you assign different providers to each child on any date
 
 All provider names in the overrides file must exist in the Provider Comparison tab.
 
+**Multi-school families:** If children attend different schools, pass per-child calendars:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/generate-annual-schedule/scripts/generate_annual_schedule.py \
+  --xlsx examples/sample-budget.xlsx \
+  --calendar "Emma:${CLAUDE_PLUGIN_ROOT}/.../tdsb.md" \
+  --calendar "Liam:${CLAUDE_PLUGIN_ROOT}/.../gist.md" \
+  --children "Emma,Liam" \
+  --pa-day-provider "City of Toronto" \
+  --break-provider "YMCA Cedar Glen" \
+  --output-md <research_dir>/annual-schedule-2025-2026.md \
+  --update-xlsx
+```
+
+On days where only some children are off school, the others show "In school" with $0 cost.
+
 ### Step 4: Review Output
 
 The script produces:
