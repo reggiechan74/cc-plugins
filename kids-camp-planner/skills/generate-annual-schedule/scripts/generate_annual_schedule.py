@@ -513,6 +513,9 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
         elif period == "march_break":
             lines.append(f"{count} weekdays")
             lines.append("")
+        elif period == "fall_break":
+            lines.append(f"{count} weekdays")
+            lines.append("")
 
         # Table header
         child_headers = []
@@ -582,10 +585,12 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
     grand_total = 0
 
     # Summarize by period type
-    summary_order = ["summer", "pa_day", "winter_break", "march_break"]
+    summary_order = ["summer", "pa_day", "school_holiday", "fall_break", "winter_break", "march_break"]
     summary_labels = {
         "summer": "Summer {year}",
         "pa_day": "PA Days ({count})",
+        "school_holiday": "School Holidays ({count})",
+        "fall_break": "Fall Break",
         "winter_break": "Winter Break",
         "march_break": "March Break",
     }
@@ -657,8 +662,8 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
 def _group_into_sections(annual_days):
     """Group annual days into sections for markdown rendering.
 
-    Summer is one big section. PA days are individual sections.
-    Winter break and March break are each one section.
+    Summer is one big section. PA days and school holidays are individual sections.
+    Winter break, March break, and fall break are each one section.
     """
     sections = []
 
@@ -667,6 +672,8 @@ def _group_into_sections(annual_days):
     pa_days = [d for d in annual_days if d["period"] == "pa_day"]
     winter_days = [d for d in annual_days if d["period"] == "winter_break"]
     march_days = [d for d in annual_days if d["period"] == "march_break"]
+    school_holiday_days = [d for d in annual_days if d["period"] == "school_holiday"]
+    fall_break_days = [d for d in annual_days if d["period"] == "fall_break"]
 
     # Summer section
     if summer_days:
@@ -718,6 +725,31 @@ def _group_into_sections(annual_days):
             "summary_title": "March Break",
             "subtotal_label": "March Break",
             "days": march_days,
+        })
+
+    # School holidays - each as its own section (like PA days)
+    for sh in school_holiday_days:
+        d = sh["date"]
+        sections.append({
+            "period": "school_holiday",
+            "period_key": "school_holidays",
+            "title": f"School Holiday: {sh['notes']} ({d.strftime('%b %d, %Y')})",
+            "summary_title": "School Holidays",
+            "subtotal_label": "School Holiday",
+            "days": [sh],
+        })
+
+    # Fall break
+    if fall_break_days:
+        first = fall_break_days[0]["date"]
+        last = fall_break_days[-1]["date"]
+        sections.append({
+            "period": "fall_break",
+            "period_key": "fall_break",
+            "title": f"Fall Break {first.year} ({first.strftime('%b %d')}-{last.strftime('%b %d')})",
+            "summary_title": "Fall Break",
+            "subtotal_label": "Fall Break",
+            "days": fall_break_days,
         })
 
     # Sort sections chronologically by first day

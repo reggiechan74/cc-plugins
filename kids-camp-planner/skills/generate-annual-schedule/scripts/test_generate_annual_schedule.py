@@ -421,3 +421,71 @@ class TestBuildAnnualDaysFallBreak:
         days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma"])
         all_dates = [d["date"] for d in days]
         assert len(all_dates) == len(set(all_dates))
+
+
+class TestGroupIntoSectionsNewPeriods:
+    """Tests for new period types in _group_into_sections."""
+
+    def test_school_holidays_grouped_individually(self):
+        """Each school holiday should be its own section (like PA days)."""
+        days = [
+            {"date": date(2025, 10, 13), "day_name": "Mon", "period": "school_holiday",
+             "period_label": "School Holiday", "assignments": {"Emma": "CoT"}, "notes": "Thanksgiving"},
+            {"date": date(2026, 2, 16), "day_name": "Mon", "period": "school_holiday",
+             "period_label": "School Holiday", "assignments": {"Emma": "CoT"}, "notes": "Family Day"},
+        ]
+        sections = _group_into_sections(days)
+        assert len(sections) == 2
+        assert sections[0]["period"] == "school_holiday"
+        assert "Thanksgiving" in sections[0]["title"]
+
+    def test_fall_break_single_section(self):
+        """Fall break should be one section (like winter/March break)."""
+        days = [
+            {"date": date(2025, 11, d), "day_name": "Mon", "period": "fall_break",
+             "period_label": "Fall Break", "assignments": {"Emma": "YMCA"}, "notes": ""}
+            for d in range(3, 8)
+        ]
+        sections = _group_into_sections(days)
+        assert len(sections) == 1
+        assert sections[0]["period"] == "fall_break"
+        assert "Fall Break" in sections[0]["title"]
+
+    def test_mixed_periods_sorted_chronologically(self):
+        days = [
+            {"date": date(2025, 10, 13), "day_name": "Mon", "period": "school_holiday",
+             "period_label": "School Holiday", "assignments": {"E": "C"}, "notes": "Thanksgiving"},
+            {"date": date(2025, 11, 3), "day_name": "Mon", "period": "fall_break",
+             "period_label": "Fall Break", "assignments": {"E": "C"}, "notes": ""},
+            {"date": date(2025, 9, 26), "day_name": "Fri", "period": "pa_day",
+             "period_label": "PA Day", "assignments": {"E": "C"}, "notes": "PA Day 1"},
+        ]
+        sections = _group_into_sections(days)
+        dates = [s["days"][0]["date"] for s in sections]
+        assert dates == sorted(dates)
+
+
+class TestRenderMarkdownNewPeriods:
+    """Tests for new period types in render_markdown and annual summary."""
+
+    def test_summary_includes_school_holidays(self):
+        days = [
+            {"date": date(2025, 10, 13), "day_name": "Mon", "period": "school_holiday",
+             "period_label": "School Holiday", "assignments": {"Emma": "City of Toronto"},
+             "notes": "Thanksgiving"},
+        ]
+        rates = {"City of Toronto": {"daily": 50, "before": 5, "after": 5, "lunch": 2, "total": 62}}
+        md = render_markdown(days, rates, ["Emma"])
+        assert "School Holidays" in md
+        assert "Thanksgiving" in md
+
+    def test_summary_includes_fall_break(self):
+        days = [
+            {"date": date(2025, 11, d), "day_name": "Mon", "period": "fall_break",
+             "period_label": "Fall Break", "assignments": {"Emma": "YMCA"},
+             "notes": ""}
+            for d in range(3, 8)
+        ]
+        rates = {"YMCA": {"daily": 70, "before": 8, "after": 8, "lunch": 1, "total": 87}}
+        md = render_markdown(days, rates, ["Emma"])
+        assert "Fall Break" in md
