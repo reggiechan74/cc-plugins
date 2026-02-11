@@ -125,7 +125,7 @@ def _read_rate_block(row, start_col):
     after = after or 0
     lunch = lunch or 0
     return {"daily": daily, "before": before, "after": after, "lunch": lunch,
-            "total": daily + before + after + lunch}
+            "total": round(daily + before + after + lunch, 2)}
 
 
 def read_provider_rates(xlsx_path):
@@ -869,10 +869,10 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
                 camp_rates = provider_rates.get(camp, {})
                 resolved = resolve_period_rate(camp_rates, day["period"]) if camp_rates.get("summer") else camp_rates
                 rate = resolved.get("total", 0) if isinstance(resolved, dict) else 0
-                cells.extend([camp, f"${rate}"])
+                cells.extend([camp, f"${rate:.2f}"])
                 section_child_totals[child] += rate
                 daily_total += rate
-            cells.extend([f"${daily_total}", day["notes"]])
+            cells.extend([f"${round(daily_total, 2):.2f}", day["notes"]])
             lines.append("| " + " | ".join(str(c) for c in cells) + " |")
             section_total += daily_total
 
@@ -896,8 +896,8 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
         if count > 1:
             parts = []
             for child in children:
-                parts.append(f"{child} ${section_child_totals[child]:,}")
-            parts.append(f"Combined ${section_total:,}")
+                parts.append(f"{child} ${round(section_child_totals[child], 2):,.2f}")
+            parts.append(f"Combined ${round(section_total, 2):,.2f}")
             lines.append(f"**{section['subtotal_label']} subtotal**: " + " | ".join(parts))
             lines.append("")
 
@@ -948,8 +948,8 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
         if "{count}" in label:
             label = label.format(count=days_count)
 
-        child_cells = [f"${child_sums[child]:,}" for child in children]
-        lines.append(f"| {label} | {days_count} | " + " | ".join(child_cells) + f" | ${combined:,} |")
+        child_cells = [f"${round(child_sums[child], 2):,.2f}" for child in children]
+        lines.append(f"| {label} | {days_count} | " + " | ".join(child_cells) + f" | ${round(combined, 2):,.2f} |")
 
         grand_days += days_count
         for child in children:
@@ -957,8 +957,8 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
         grand_total += combined
 
     # Total row
-    child_cells = [f"**${grand_child_totals[child]:,}**" for child in children]
-    lines.append(f"| **Annual Total** | **{grand_days}** | " + " | ".join(child_cells) + f" | **${grand_total:,}** |")
+    child_cells = [f"**${round(grand_child_totals[child], 2):,.2f}**" for child in children]
+    lines.append(f"| **Annual Total** | **{grand_days}** | " + " | ".join(child_cells) + f" | **${round(grand_total, 2):,.2f}** |")
     lines.append("")
 
     # Cost notes -- dynamically reference actual providers and rates
@@ -969,8 +969,10 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
     # Use actual provider args and rates (passed in via render context)
     pa_prov = render_context.get("pa_provider", "")
     break_prov = render_context.get("break_provider", "")
-    pa_rate = provider_rates.get(pa_prov, {}).get("total", 0)
-    break_rate = provider_rates.get(break_prov, {}).get("total", 0)
+    pa_resolved = resolve_period_rate(provider_rates.get(pa_prov, {}), "pa_day")
+    pa_rate = pa_resolved.get("total", 0) if isinstance(pa_resolved, dict) else 0
+    break_resolved = resolve_period_rate(provider_rates.get(break_prov, {}), "winter_break")
+    break_rate = break_resolved.get("total", 0) if isinstance(break_resolved, dict) else 0
     has_overrides = render_context.get("has_overrides", False)
     if has_overrides:
         lines.append(f"- PA day default: {pa_prov} (${pa_rate}/day); per-child overrides applied where specified")
@@ -1104,6 +1106,22 @@ def _group_into_sections(annual_days):
 # XLSX update
 # ---------------------------------------------------------------------------
 
+def _vlookup_col_indices(period, has_pa_cols, has_break_cols):
+    """Return VLOOKUP column indices (daily, before, after, lunch) based on period type.
+
+    Summer rates: cols C-F (indices 3,4,5,6)
+    PA Day rates: cols G-J (indices 7,8,9,10) — only if has_pa_cols
+    Break rates:  cols K-N (indices 11,12,13,14) — only if has_break_cols
+    Falls back to summer columns when period-specific columns are unavailable.
+    """
+    if period in ("pa_day", "school_holiday") and has_pa_cols:
+        return 7, 8, 9, 10  # daily, before, after, lunch
+    elif period in ("winter_break", "march_break", "fall_break") and has_break_cols:
+        return 11, 12, 13, 14
+    else:
+        return 3, 4, 5, 6
+
+
 def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
     """Add or replace an 'Annual Schedule' tab in the xlsx.
 
@@ -1116,14 +1134,22 @@ def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
 
     wb = openpyxl.load_workbook(xlsx_path)
 
+    # Detect whether expanded rate columns exist
+    ws_pc = wb["Provider Comparison"]
+    header_g = str(ws_pc.cell(row=3, column=7).value or "").lower()
+    header_k = str(ws_pc.cell(row=3, column=11).value or "").lower()
+    has_pa_cols = "pa" in header_g
+    has_break_cols = "br" in header_k
+
     # Remove existing Annual Schedule tab if present
     if "Annual Schedule" in wb.sheetnames:
         del wb["Annual Schedule"]
 
     ws = wb.create_sheet("Annual Schedule")
 
-    # VLOOKUP range reference
-    vlookup_range = f"'Provider Comparison'!$A$4:$M${3 + provider_count}"
+    # VLOOKUP range — extend to col N when period-specific rates exist
+    max_vlookup_col = "N" if (has_pa_cols or has_break_cols) else "M"
+    vlookup_range = f"'Provider Comparison'!$A$4:${max_vlookup_col}${3 + provider_count}"
 
     # Row 1: Title
     ws["A1"] = "Annual Schedule"
@@ -1163,6 +1189,10 @@ def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
         ws.cell(row=row, column=3, value=day["period_label"])
 
         # Per-child columns (6 cols each: Camp Name, Before Care, Camp Fee, After Care, Lunch, Day Total)
+        # Select VLOOKUP column indices based on period type
+        vl_daily, vl_before, vl_after, vl_lunch = _vlookup_col_indices(
+            day["period"], has_pa_cols, has_break_cols)
+
         child_day_total_cols = []
         for ci, child in enumerate(children):
             # 1-indexed column for camp name
@@ -1172,25 +1202,28 @@ def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
             camp_name = day["assignments"].get(child, "")
             ws.cell(row=row, column=camp_col, value=camp_name)
 
+            # Guard: skip VLOOKUP for empty or "In school" camp names
+            guard = f'OR({camp_letter}{row}="",{camp_letter}{row}="In school")'
+
             # Before Care (offset+1)
             before_col = camp_col + 1
             ws.cell(row=row, column=before_col,
-                    value=f'=IF({camp_letter}{row}="","",VLOOKUP({camp_letter}{row},{vlookup_range},4,FALSE))')
+                    value=f'=IF({guard},0,VLOOKUP({camp_letter}{row},{vlookup_range},{vl_before},FALSE))')
 
             # Camp Fee (offset+2)
             fee_col = camp_col + 2
             ws.cell(row=row, column=fee_col,
-                    value=f'=IF({camp_letter}{row}="","",VLOOKUP({camp_letter}{row},{vlookup_range},3,FALSE))')
+                    value=f'=IF({guard},0,VLOOKUP({camp_letter}{row},{vlookup_range},{vl_daily},FALSE))')
 
             # After Care (offset+3)
             after_col = camp_col + 3
             ws.cell(row=row, column=after_col,
-                    value=f'=IF({camp_letter}{row}="","",VLOOKUP({camp_letter}{row},{vlookup_range},5,FALSE))')
+                    value=f'=IF({guard},0,VLOOKUP({camp_letter}{row},{vlookup_range},{vl_after},FALSE))')
 
             # Lunch (offset+4)
             lunch_col = camp_col + 4
             ws.cell(row=row, column=lunch_col,
-                    value=f'=IF({camp_letter}{row}="","",VLOOKUP({camp_letter}{row},{vlookup_range},6,FALSE))')
+                    value=f'=IF({guard},0,VLOOKUP({camp_letter}{row},{vlookup_range},{vl_lunch},FALSE))')
 
             # Child Day Total (offset+5) = SUM of before..lunch
             day_total_col = camp_col + 5

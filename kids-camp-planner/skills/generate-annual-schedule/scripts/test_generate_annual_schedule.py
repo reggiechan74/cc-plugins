@@ -1044,3 +1044,208 @@ class TestRenderMarkdownPeriodRates:
         }
         md = render_markdown(days, rates, ["Emma"])
         assert "$102" in md
+
+
+class TestCoherenceFix1XlsxInSchool:
+    """Fix #1: 'In school' must not cause #N/A in xlsx VLOOKUP formulas."""
+
+    def test_in_school_formula_returns_zero(self):
+        """When camp name is 'In school', VLOOKUP formula should return 0, not #N/A."""
+        tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+        tmp.close()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Provider Comparison"
+        ws.cell(row=3, column=1, value="Provider")
+        ws.cell(row=4, column=1, value="City of Toronto")
+        ws.cell(row=4, column=3, value=50)
+        ws.cell(row=4, column=4, value=5)
+        ws.cell(row=4, column=5, value=5)
+        ws.cell(row=4, column=6, value=2)
+        wb.create_sheet("Daily Schedule")
+        wb.save(tmp.name)
+        wb.close()
+
+        days = [
+            {"date": date(2025, 10, 24), "day_name": "Fri", "period": "pa_day",
+             "period_label": "PA Day",
+             "assignments": {"Emma": "City of Toronto", "Liam": "In school"},
+             "notes": "PA Day (Emma off)"},
+        ]
+        update_xlsx(tmp.name, days, ["Emma", "Liam"])
+
+        wb = openpyxl.load_workbook(tmp.name)
+        ws = wb["Annual Schedule"]
+        # Liam's camp name column (J for 2-child layout) should be "In school"
+        liam_camp_col = 10  # J = col 10 (1-indexed), 0-indexed offset 9 + 1
+        assert ws.cell(row=4, column=liam_camp_col).value == "In school"
+        # Liam's Before Care formula (col K) must guard against "In school"
+        before_formula = ws.cell(row=4, column=11).value
+        assert '"In school"' in before_formula or "'In school'" in before_formula, \
+            f"Formula does not guard against 'In school': {before_formula}"
+        # All 4 rate formulas (Before, Camp, After, Lunch) must have the guard
+        for col_offset in [1, 2, 3, 4]:
+            formula = ws.cell(row=4, column=liam_camp_col + col_offset).value
+            assert "In school" in formula, \
+                f"Col {liam_camp_col + col_offset} formula missing 'In school' guard: {formula}"
+        wb.close()
+        os.unlink(tmp.name)
+
+
+class TestCoherenceFix2FloatPrecision:
+    """Fix #2: Currency values must not show float precision artifacts."""
+
+    def test_fractional_rates_display_two_decimals(self):
+        """Rates like $59.95 + $9.95 + $9.95 + $6.95 = $86.80, not $86.80000000000001."""
+        days = [
+            {"date": date(2025, 7, 7), "day_name": "Mon", "period": "summer",
+             "period_label": "Summer Wk 1", "assignments": {"Emma": "FractionalCamp"},
+             "notes": "Week 1"},
+        ]
+        rates = {
+            "FractionalCamp": {
+                "summer": {"daily": 59.95, "before": 9.95, "after": 9.95, "lunch": 6.95, "total": 86.8},
+                "pa_day": None, "break": None,
+                "daily": 59.95, "before": 9.95, "after": 9.95, "lunch": 6.95, "total": 86.8,
+            }
+        }
+        md = render_markdown(days, rates, ["Emma"])
+        # Must show clean currency, not float artifacts
+        assert "86.80000000" not in md, f"Float precision artifact found in markdown"
+        # Should show $86.80 or $86.8
+        table_lines = [l for l in md.split("\n") if "2025-07-07" in l]
+        assert len(table_lines) == 1
+        assert "$86.80" in table_lines[0] or "$86.8" in table_lines[0]
+
+    def test_read_rate_block_rounds_total(self):
+        """_read_rate_block total should be rounded to 2 decimal places."""
+        from unittest.mock import MagicMock
+        row = [MagicMock(value=v) for v in [None, None, 59.95, 9.95, 9.95, 6.95]]
+        result = _read_rate_block(row, 2)
+        # 59.95 + 9.95 + 9.95 + 6.95 = 86.8 exactly (after rounding)
+        assert result["total"] == 86.8, f"Total should be 86.8, got {result['total']}"
+        # Verify no float artifact
+        assert "000000" not in str(result["total"])
+
+    def test_summary_totals_no_float_artifacts(self):
+        """Summary table with many fractional days should not show float artifacts."""
+        days = [
+            {"date": date(2025, 7, d), "day_name": "Mon", "period": "summer",
+             "period_label": "Summer Wk 1", "assignments": {"Emma": "FractionalCamp"},
+             "notes": ""}
+            for d in range(7, 12)  # 5 days
+        ]
+        rates = {
+            "FractionalCamp": {
+                "summer": {"daily": 59.95, "before": 9.95, "after": 9.95, "lunch": 6.95, "total": 86.8},
+                "pa_day": None, "break": None,
+                "daily": 59.95, "before": 9.95, "after": 9.95, "lunch": 6.95, "total": 86.8,
+            }
+        }
+        md = render_markdown(days, rates, ["Emma"])
+        # 5 * 86.8 = 434.0 — no precision issue here, but check format
+        assert "000000" not in md, f"Float precision artifact found in summary"
+
+
+class TestCoherenceFix3CostNotesPeriodRates:
+    """Fix #3: Cost notes must show period-specific rates, not summer rates."""
+
+    def test_cost_notes_show_pa_rate_not_summer(self):
+        """When PA day rate differs from summer, cost notes should show the PA rate."""
+        days = [
+            {"date": date(2025, 10, 13), "day_name": "Mon", "period": "pa_day",
+             "period_label": "PA Day", "assignments": {"Emma": "FullRates Camp"},
+             "notes": "PA Day 1"},
+        ]
+        rates = {
+            "FullRates Camp": {
+                "summer": {"daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87},
+                "pa_day": {"daily": 45, "before": 8, "after": 8, "lunch": 5, "total": 66},
+                "break": {"daily": 50, "before": 8, "after": 8, "lunch": 5, "total": 71},
+                "daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87,
+            }
+        }
+        ctx = {"pa_provider": "FullRates Camp", "break_provider": "FullRates Camp", "has_overrides": False}
+        md = render_markdown(days, rates, ["Emma"], render_context=ctx)
+        # Cost notes should mention $66/day for PA, not $87/day
+        notes_section = md[md.index("### Cost Notes"):]
+        assert "$66" in notes_section, f"Cost notes should show PA rate $66, not summer rate"
+        # Break rate in notes should be $71
+        assert "$71" in notes_section, f"Cost notes should show break rate $71"
+
+    def test_cost_notes_fallback_when_no_period_rates(self):
+        """When no period-specific rates exist, cost notes should show summer rates."""
+        days = [
+            {"date": date(2025, 10, 13), "day_name": "Mon", "period": "pa_day",
+             "period_label": "PA Day", "assignments": {"Emma": "SummerOnly Camp"},
+             "notes": "PA Day 1"},
+        ]
+        rates = {
+            "SummerOnly Camp": {
+                "summer": {"daily": 70, "before": 12, "after": 12, "lunch": 8, "total": 102},
+                "pa_day": None, "break": None,
+                "daily": 70, "before": 12, "after": 12, "lunch": 8, "total": 102,
+            }
+        }
+        ctx = {"pa_provider": "SummerOnly Camp", "break_provider": "SummerOnly Camp", "has_overrides": False}
+        md = render_markdown(days, rates, ["Emma"], render_context=ctx)
+        notes_section = md[md.index("### Cost Notes"):]
+        assert "$102" in notes_section
+
+
+class TestCoherenceFix4XlsxPeriodVlookup:
+    """Fix #4: xlsx VLOOKUP should reference period-specific rate columns."""
+
+    def test_pa_day_vlookup_uses_pa_columns(self):
+        """PA day rows should use VLOOKUP columns 7-10 (PA Day rates), not 3-6 (summer)."""
+        tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+        tmp.close()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Provider Comparison"
+        # Headers with PA and Break columns
+        ws.cell(row=3, column=7, value="PA Daily")
+        ws.cell(row=3, column=11, value="Brk Daily")
+        ws.cell(row=4, column=1, value="City of Toronto")
+        ws.cell(row=4, column=3, value=50)
+        ws.cell(row=4, column=4, value=5)
+        ws.cell(row=4, column=5, value=5)
+        ws.cell(row=4, column=6, value=2)
+        ws.cell(row=4, column=7, value=45)
+        ws.cell(row=4, column=8, value=4)
+        ws.cell(row=4, column=9, value=4)
+        ws.cell(row=4, column=10, value=1)
+        wb.create_sheet("Daily Schedule")
+        wb.save(tmp.name)
+        wb.close()
+
+        days = [
+            {"date": date(2025, 7, 7), "day_name": "Mon", "period": "summer",
+             "period_label": "Summer Wk 1",
+             "assignments": {"Emma": "City of Toronto"}, "notes": ""},
+            {"date": date(2025, 10, 13), "day_name": "Mon", "period": "pa_day",
+             "period_label": "PA Day",
+             "assignments": {"Emma": "City of Toronto"}, "notes": "PA Day"},
+            {"date": date(2025, 12, 22), "day_name": "Mon", "period": "winter_break",
+             "period_label": "Winter Break",
+             "assignments": {"Emma": "City of Toronto"}, "notes": ""},
+        ]
+        update_xlsx(tmp.name, days, ["Emma"], provider_count=1)
+
+        wb = openpyxl.load_workbook(tmp.name)
+        ws = wb["Annual Schedule"]
+
+        # Row 4 = summer day — VLOOKUP should use column 3 (summer daily)
+        summer_formula = ws.cell(row=4, column=6).value  # Camp Fee col
+        assert ",3," in summer_formula, f"Summer VLOOKUP should use col 3: {summer_formula}"
+
+        # Row 5 = PA day — VLOOKUP should use column 7 (PA daily)
+        pa_formula = ws.cell(row=5, column=6).value  # Camp Fee col
+        assert ",7," in pa_formula, f"PA day VLOOKUP should use col 7: {pa_formula}"
+
+        # Row 6 = winter break — VLOOKUP should use column 11 (break daily)
+        break_formula = ws.cell(row=6, column=6).value  # Camp Fee col
+        assert ",11," in break_formula, f"Break VLOOKUP should use col 11: {break_formula}"
+
+        wb.close()
+        os.unlink(tmp.name)
