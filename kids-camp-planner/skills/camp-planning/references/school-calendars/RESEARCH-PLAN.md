@@ -12,23 +12,23 @@ These are the highest-impact boards and should be researched first.
 | Board | Abbreviation | Region | Status |
 |-------|-------------|--------|--------|
 | Toronto DSB | TDSB | Toronto | DONE |
-| York Region DSB | YRDSB | York Region | TODO |
-| Peel DSB | PDSB | Peel Region | TODO |
-| Durham DSB | DDSB | Durham Region | TODO |
-| Halton DSB | HDSB | Halton Region | TODO |
-| Ottawa-Carleton DSB | OCDSB | Ottawa | TODO |
-| Toronto CDSB | TCDSB | Toronto (Catholic) | TODO |
-| Dufferin-Peel CDSB | DPCDSB | Peel (Catholic) | TODO |
-| York CDSB | YCDSB | York (Catholic) | TODO |
+| York Region DSB | YRDSB | York Region | DONE |
+| Peel DSB | PDSB | Peel Region | DONE |
+| Durham DSB | DDSB | Durham Region | DONE |
+| Halton DSB | HDSB | Halton Region | DONE |
+| Ottawa-Carleton DSB | OCDSB | Ottawa | DONE |
+| Toronto CDSB | TCDSB | Toronto (Catholic) | DONE |
+| Dufferin-Peel CDSB | DPCDSB | Peel (Catholic) | DONE |
+| York CDSB | YCDSB | York (Catholic) | DONE |
 
 ### Tier 2: Other GTA and Major City Boards
 | Board | Abbreviation | Region | Status |
 |-------|-------------|--------|--------|
-| Hamilton-Wentworth DSB | HWDSB | Hamilton | TODO |
-| Waterloo Region DSB | WRDSB | Waterloo | TODO |
-| Simcoe County DSB | SCDSB | Simcoe | TODO |
-| Thames Valley DSB | TVDSB | London | TODO |
-| Upper Canada DSB | UCDSB | Eastern Ontario | TODO |
+| Hamilton-Wentworth DSB | HWDSB | Hamilton | DONE |
+| Waterloo Region DSB | WRDSB | Waterloo | DONE |
+| Simcoe County DSB | SCDSB | Simcoe | DONE |
+| Thames Valley DSB | TVDSB | London | DONE |
+| Upper Canada DSB | UCDSB | Eastern Ontario | DONE |
 
 ### Tier 3: Well-Known Private Schools (Toronto/GTA)
 These have non-standard calendars that cause the most planning challenges.
