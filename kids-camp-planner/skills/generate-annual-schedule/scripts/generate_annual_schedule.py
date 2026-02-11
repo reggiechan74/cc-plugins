@@ -100,29 +100,61 @@ def resolve_period_rate(provider_rates, period_type):
 # Reading inputs
 # ---------------------------------------------------------------------------
 
-def read_provider_rates(xlsx_path):
-    """Read provider daily rates from the Provider Comparison tab.
+def _read_rate_block(row, start_col):
+    """Read a 4-column rate block (daily, before, after, lunch).
 
-    Returns {provider_name: {daily, before, after, lunch, total}}
+    Returns dict with {daily, before, after, lunch, total} or None if all empty.
+    """
+    daily = row[start_col].value if len(row) > start_col else None
+    before = row[start_col + 1].value if len(row) > start_col + 1 else None
+    after = row[start_col + 2].value if len(row) > start_col + 2 else None
+    lunch = row[start_col + 3].value if len(row) > start_col + 3 else None
+
+    if all(v is None or v == 0 for v in [daily, before, after, lunch]):
+        return None
+
+    daily = daily or 0
+    before = before or 0
+    after = after or 0
+    lunch = lunch or 0
+    return {"daily": daily, "before": before, "after": after, "lunch": lunch,
+            "total": daily + before + after + lunch}
+
+
+def read_provider_rates(xlsx_path):
+    """Read provider rates from the Provider Comparison tab.
+
+    Returns {provider: {summer: {daily, before, after, lunch, total},
+                        pa_day: {...} or None, break: {...} or None,
+                        daily, before, after, lunch, total}}
+    Flat keys (daily, before, etc.) are backward-compat aliases for summer rates.
     """
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
     ws = wb["Provider Comparison"]
     rates = {}
-    for row in ws.iter_rows(min_row=4, max_col=10, values_only=False):
+    for row in ws.iter_rows(min_row=4, max_col=14, values_only=False):
         name = row[0].value  # col A
         if not name or name.startswith("8-Week"):
             break
-        daily = row[2].value or 0   # col C - Daily Cost
-        before = row[3].value or 0  # col D - Before Care/day
-        after = row[4].value or 0   # col E - After Care/day
-        lunch = row[5].value or 0   # col F - Lunch/day
-        total = daily + before + after + lunch
+
+        # Summer rates (cols C-F, 0-indexed: 2-5)
+        summer = _read_rate_block(row, 2)
+        if summer is None:
+            # No summer rates means this row is not a valid provider
+            continue
+
+        # PA Day rates (cols G-J, 0-indexed: 6-9) — optional
+        pa_day = _read_rate_block(row, 6)
+
+        # Break rates (cols K-N, 0-indexed: 10-13) — optional
+        brk = _read_rate_block(row, 10)
+
         rates[name] = {
-            "daily": daily,
-            "before": before,
-            "after": after,
-            "lunch": lunch,
-            "total": total,
+            "summer": summer,
+            "pa_day": pa_day,
+            "break": brk,
+            # Backward compat: flat rate keys = summer rates
+            **summer,
         }
     wb.close()
     return rates
@@ -166,12 +198,14 @@ def read_summer_assignments(xlsx_path, children):
 
 
 def parse_calendar(calendar_path):
-    """Parse school calendar markdown for PA days, winter break, March break.
+    """Parse school calendar markdown for PA days, breaks, holidays.
 
     Returns {
-        pa_days: [{date, purpose}],
-        winter_break: {start_str, end_str},
-        march_break: {start_str, end_str},
+        pa_days: [{date_str, purpose}],
+        winter_break: {start_str, end_str} or None,
+        march_break: {start_str, end_str} or None,
+        school_holidays: [{name, date_str}],
+        fall_break: {start_str, end_str} or None,
     }
     """
     with open(calendar_path) as f:
@@ -811,7 +845,9 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
             daily_total = 0
             for child in children:
                 camp = day["assignments"].get(child, "")
-                rate = provider_rates.get(camp, {}).get("total", 0)
+                camp_rates = provider_rates.get(camp, {})
+                resolved = resolve_period_rate(camp_rates, day["period"]) if camp_rates.get("summer") else camp_rates
+                rate = resolved.get("total", 0) if isinstance(resolved, dict) else 0
                 cells.extend([camp, f"${rate}"])
                 section_child_totals[child] += rate
                 daily_total += rate
@@ -925,10 +961,20 @@ def render_markdown(annual_days, provider_rates, children, render_context=None):
 
     # List provider rates
     rate_parts = []
-    for name, rates in sorted(provider_rates.items()):
-        rate_parts.append(f"{name} ${rates['total']}/day")
-    lines.append(f"- Daily rates: {', '.join(rate_parts)}")
-    lines.append("- Non-summer rates are assumed equal to summer rates from Provider Comparison; confirm actual PA day and break program pricing with providers")
+    for name, prates in sorted(provider_rates.items()):
+        summer_total = prates.get("summer", prates).get("total", prates.get("total", 0)) if isinstance(prates.get("summer", prates), dict) else prates.get("total", 0)
+        rate_parts.append(f"{name} ${summer_total}/day")
+    lines.append(f"- Daily rates (summer): {', '.join(rate_parts)}")
+    # Note about per-period rates
+    has_period_rates = any(
+        r.get("pa_day") is not None or r.get("break") is not None
+        for r in provider_rates.values()
+        if isinstance(r, dict)
+    )
+    if has_period_rates:
+        lines.append("- Per-period rates applied where available (PA Day, Break); falls back to summer rates when not set")
+    else:
+        lines.append("- Non-summer rates are assumed equal to summer rates from Provider Comparison; confirm actual PA day and break program pricing with providers")
     lines.append("- Dates flagged VERIFY may be statutory/civic holidays when camps are closed")
     lines.append("")
 
@@ -1170,8 +1216,8 @@ def main():
     parser = argparse.ArgumentParser(description="Annual Schedule Generator")
     parser.add_argument("--xlsx", required=True,
                         help="Path to budget spreadsheet (reads Provider Comparison + Daily Schedule)")
-    parser.add_argument("--calendar", required=True,
-                        help="Path to school calendar markdown file")
+    parser.add_argument("--calendar", required=True, action="append",
+                        help="School calendar markdown. Single: path. Multi: 'Child:path' per entry")
     parser.add_argument("--children", required=True,
                         help="Comma-separated children's names (e.g., 'Emma,Liam')")
     parser.add_argument("--pa-day-provider", default="City of Toronto",
@@ -1196,7 +1242,6 @@ def main():
     # Read inputs
     provider_rates = read_provider_rates(args.xlsx)
     summer_days = read_summer_assignments(args.xlsx, children)
-    calendar_data = parse_calendar(args.calendar)
 
     # Load overrides
     overrides = {}
@@ -1216,13 +1261,26 @@ def main():
         print(f"Available providers: {', '.join(sorted(provider_rates.keys()))}", file=sys.stderr)
         sys.exit(1)
 
-    # Build unified schedule
-    annual_days = build_annual_days(
-        summer_days, calendar_data,
-        args.pa_day_provider, args.break_provider, children,
-        overrides=overrides,
-        fall_break_provider=args.fall_break_provider,
-    )
+    # Resolve calendars and build unified schedule
+    if len(args.calendar) == 1 and ":" not in args.calendar[0]:
+        # Single calendar mode (backward compatible)
+        calendar_data = parse_calendar(args.calendar[0])
+        annual_days = build_annual_days(
+            summer_days, calendar_data,
+            args.pa_day_provider, args.break_provider, children,
+            overrides=overrides,
+            fall_break_provider=args.fall_break_provider,
+        )
+    else:
+        # Multi-calendar mode
+        cal_map = resolve_calendars(args.calendar, children)
+        per_child_cals = {child: parse_calendar(path) for child, path in cal_map.items()}
+        annual_days = build_annual_days_multi(
+            summer_days, per_child_cals,
+            args.pa_day_provider, args.break_provider, children,
+            overrides=overrides,
+            fall_break_provider=args.fall_break_provider,
+        )
 
     # Summary stats
     period_counts = {}

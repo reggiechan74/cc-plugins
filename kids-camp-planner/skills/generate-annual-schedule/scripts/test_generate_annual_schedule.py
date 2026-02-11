@@ -22,6 +22,7 @@ from generate_annual_schedule import (
     get_summer_holidays,
     find_civic_holiday,
     _group_into_sections,
+    _read_rate_block,
     render_markdown,
     read_provider_rates,
     update_xlsx,
@@ -29,6 +30,7 @@ from generate_annual_schedule import (
     get_child_col_offsets,
     validate_child_count,
     resolve_period_rate,
+    main,
 )
 
 
@@ -672,3 +674,298 @@ class TestPerPeriodRates:
                  "break": {"daily": 50, "before": 8, "after": 8, "lunch": 5, "total": 71}}
         resolved = resolve_period_rate(rates, "winter_break")
         assert resolved["total"] == 71
+
+
+class TestMultiCalendarCLIIntegration:
+    """Tests that --calendar works with action='append' in main()."""
+
+    def test_argparse_accepts_multiple_calendars(self):
+        """--calendar should accept multiple values via action='append'."""
+        from generate_annual_schedule import main
+        import argparse
+        # Build parser the same way main() does internally
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--xlsx", required=True)
+        parser.add_argument("--calendar", required=True, action="append")
+        parser.add_argument("--children", required=True)
+        args = parser.parse_args([
+            "--xlsx", "fake.xlsx",
+            "--calendar", "Emma:/path/to/tdsb.md",
+            "--calendar", "Liam:/path/to/gist.md",
+            "--children", "Emma,Liam",
+        ])
+        assert args.calendar == ["Emma:/path/to/tdsb.md", "Liam:/path/to/gist.md"]
+
+    def test_single_calendar_via_append(self):
+        """Single --calendar should produce a list of one element."""
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--calendar", required=True, action="append")
+        args = parser.parse_args(["--calendar", "/path/to/tdsb.md"])
+        assert args.calendar == ["/path/to/tdsb.md"]
+
+    def test_main_calls_multi_when_per_child_calendars(self):
+        """When --calendar has 'Child:path' entries, main() should use build_annual_days_multi."""
+        tdsb_path = _write_temp_calendar(TDSB_CALENDAR)
+        gist_path = _write_temp_calendar(GIST_CALENDAR)
+        try:
+            # Create a minimal xlsx with Provider Comparison and Daily Schedule
+            tmp_xlsx = _create_minimal_xlsx(["Emma", "Liam"])
+            with patch("generate_annual_schedule.build_annual_days_multi") as mock_multi, \
+                 patch("generate_annual_schedule.build_annual_days") as mock_single:
+                mock_multi.return_value = []
+                mock_single.return_value = []
+                with patch("sys.argv", [
+                    "prog", "--xlsx", tmp_xlsx,
+                    "--calendar", f"Emma:{tdsb_path}",
+                    "--calendar", f"Liam:{gist_path}",
+                    "--children", "Emma,Liam",
+                    "--pa-day-provider", "TestProvider",
+                    "--break-provider", "TestProvider",
+                ]):
+                    main()
+                mock_multi.assert_called_once()
+                mock_single.assert_not_called()
+        finally:
+            os.unlink(tdsb_path)
+            os.unlink(gist_path)
+            os.unlink(tmp_xlsx)
+
+    def test_main_calls_single_when_one_calendar(self):
+        """When --calendar is a plain path, main() should use build_annual_days."""
+        tcdsb_path = _write_temp_calendar(TCDSB_CALENDAR)
+        try:
+            tmp_xlsx = _create_minimal_xlsx(["Emma", "Liam"])
+            with patch("generate_annual_schedule.build_annual_days_multi") as mock_multi, \
+                 patch("generate_annual_schedule.build_annual_days") as mock_single:
+                mock_single.return_value = []
+                mock_multi.return_value = []
+                with patch("sys.argv", [
+                    "prog", "--xlsx", tmp_xlsx,
+                    "--calendar", tcdsb_path,
+                    "--children", "Emma,Liam",
+                    "--pa-day-provider", "TestProvider",
+                    "--break-provider", "TestProvider",
+                ]):
+                    main()
+                mock_single.assert_called_once()
+                mock_multi.assert_not_called()
+        finally:
+            os.unlink(tcdsb_path)
+            os.unlink(tmp_xlsx)
+
+
+def _create_minimal_xlsx(children):
+    """Create a minimal xlsx with Provider Comparison and Daily Schedule tabs for testing."""
+    tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+    tmp.close()
+    wb = openpyxl.Workbook()
+
+    # Provider Comparison tab
+    ws_pc = wb.active
+    ws_pc.title = "Provider Comparison"
+    ws_pc.cell(row=1, column=1, value="Provider Comparison")
+    ws_pc.cell(row=3, column=1, value="Provider")
+    ws_pc.cell(row=3, column=3, value="Daily Cost")
+    ws_pc.cell(row=4, column=1, value="TestProvider")
+    ws_pc.cell(row=4, column=3, value=50)  # daily
+    ws_pc.cell(row=4, column=4, value=5)   # before
+    ws_pc.cell(row=4, column=5, value=5)   # after
+    ws_pc.cell(row=4, column=6, value=2)   # lunch
+
+    # Daily Schedule tab
+    ws_ds = wb.create_sheet("Daily Schedule")
+    ws_ds.cell(row=3, column=1, value="Date")
+    # One summer day
+    ws_ds.cell(row=4, column=1, value=date(2025, 6, 30))
+    ws_ds.cell(row=4, column=3, value=1)  # week
+    offsets = get_child_col_offsets(len(children))
+    for i, child in enumerate(children):
+        ws_ds.cell(row=4, column=offsets[i] + 1, value="TestProvider")
+
+    wb.save(tmp.name)
+    wb.close()
+    return tmp.name
+
+
+def _create_xlsx_with_period_rates():
+    """Create xlsx with Provider Comparison that has Summer, PA Day, and Break rate columns."""
+    tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+    tmp.close()
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Provider Comparison"
+
+    # Headers (row 3)
+    headers = ["Provider", "Age Range",
+               "Daily Cost", "Before Care", "After Care", "Lunch",  # Summer C-F
+               "PA Daily", "PA Before", "PA After", "PA Lunch",      # PA Day G-J
+               "Brk Daily", "Brk Before", "Brk After", "Brk Lunch"] # Break K-N
+    for i, h in enumerate(headers, 1):
+        ws.cell(row=3, column=i, value=h)
+
+    # Provider with all 3 rate sections (row 4)
+    ws.cell(row=4, column=1, value="FullRates Camp")
+    ws.cell(row=4, column=3, value=60)   # summer daily
+    ws.cell(row=4, column=4, value=10)   # summer before
+    ws.cell(row=4, column=5, value=10)   # summer after
+    ws.cell(row=4, column=6, value=7)    # summer lunch
+    ws.cell(row=4, column=7, value=45)   # pa daily
+    ws.cell(row=4, column=8, value=8)    # pa before
+    ws.cell(row=4, column=9, value=8)    # pa after
+    ws.cell(row=4, column=10, value=5)   # pa lunch
+    ws.cell(row=4, column=11, value=50)  # break daily
+    ws.cell(row=4, column=12, value=8)   # break before
+    ws.cell(row=4, column=13, value=8)   # break after
+    ws.cell(row=4, column=14, value=5)   # break lunch
+
+    # Provider with only summer rates (row 5) — PA Day and Break cols empty
+    ws.cell(row=5, column=1, value="SummerOnly Camp")
+    ws.cell(row=5, column=3, value=70)
+    ws.cell(row=5, column=4, value=12)
+    ws.cell(row=5, column=5, value=12)
+    ws.cell(row=5, column=6, value=8)
+
+    wb.save(tmp.name)
+    wb.close()
+    return tmp.name
+
+
+class TestReadProviderRatesWithPeriods:
+    """Tests for per-period rate reading from xlsx."""
+
+    def test_read_rate_block_with_values(self):
+        """_read_rate_block should return a dict when values exist."""
+        # Simulate a row of openpyxl cells as simple objects
+        from unittest.mock import MagicMock
+        row = [MagicMock(value=v) for v in [None, None, 60, 10, 10, 7]]
+        result = _read_rate_block(row, 2)
+        assert result is not None
+        assert result["daily"] == 60
+        assert result["total"] == 87
+
+    def test_read_rate_block_all_empty(self):
+        """_read_rate_block should return None when all values are empty."""
+        from unittest.mock import MagicMock
+        row = [MagicMock(value=v) for v in [None, None, None, None, None, None, None, None, None, None]]
+        result = _read_rate_block(row, 6)
+        assert result is None
+
+    def test_provider_with_all_period_rates(self):
+        """Provider with Summer+PA+Break rates should have all three sections."""
+        xlsx = _create_xlsx_with_period_rates()
+        try:
+            rates = read_provider_rates(xlsx)
+            camp = rates["FullRates Camp"]
+            assert camp["summer"]["total"] == 87
+            assert camp["pa_day"]["total"] == 66
+            assert camp["break"]["total"] == 71
+        finally:
+            os.unlink(xlsx)
+
+    def test_provider_with_summer_only(self):
+        """Provider with only summer rates should have None for pa_day and break."""
+        xlsx = _create_xlsx_with_period_rates()
+        try:
+            rates = read_provider_rates(xlsx)
+            camp = rates["SummerOnly Camp"]
+            assert camp["summer"]["total"] == 102
+            assert camp["pa_day"] is None
+            assert camp["break"] is None
+        finally:
+            os.unlink(xlsx)
+
+    def test_backward_compat_flat_keys(self):
+        """Flat rate keys (daily, before, after, lunch, total) should still work for backward compat."""
+        xlsx = _create_xlsx_with_period_rates()
+        try:
+            rates = read_provider_rates(xlsx)
+            camp = rates["FullRates Camp"]
+            # Flat keys should be summer rates
+            assert camp["total"] == 87
+            assert camp["daily"] == 60
+        finally:
+            os.unlink(xlsx)
+
+
+class TestRenderMarkdownPeriodRates:
+    """Tests that render_markdown uses resolve_period_rate for non-summer periods."""
+
+    def test_pa_day_uses_pa_rate_not_summer(self):
+        """PA day cost should use pa_day rate when available, not summer."""
+        days = [
+            {"date": date(2025, 10, 13), "day_name": "Mon", "period": "pa_day",
+             "period_label": "PA Day", "assignments": {"Emma": "FullRates Camp"},
+             "notes": "PA Day 1"},
+        ]
+        rates = {
+            "FullRates Camp": {
+                "summer": {"daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87},
+                "pa_day": {"daily": 45, "before": 8, "after": 8, "lunch": 5, "total": 66},
+                "break": None,
+                "daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87,
+            }
+        }
+        md = render_markdown(days, rates, ["Emma"])
+        # Data row should contain $66 (PA day rate)
+        table_lines = [l for l in md.split("\n") if "2025-10-13" in l]
+        assert len(table_lines) == 1
+        assert "$66" in table_lines[0]
+        assert "$87" not in table_lines[0]
+
+    def test_winter_break_uses_break_rate(self):
+        """Winter break cost should use break rate when available."""
+        days = [
+            {"date": date(2025, 12, 22), "day_name": "Mon", "period": "winter_break",
+             "period_label": "Winter Break", "assignments": {"Emma": "FullRates Camp"},
+             "notes": ""},
+        ]
+        rates = {
+            "FullRates Camp": {
+                "summer": {"daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87},
+                "pa_day": None,
+                "break": {"daily": 50, "before": 8, "after": 8, "lunch": 5, "total": 71},
+                "daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87,
+            }
+        }
+        md = render_markdown(days, rates, ["Emma"])
+        table_lines = [l for l in md.split("\n") if "2025-12-22" in l]
+        assert len(table_lines) == 1
+        assert "$71" in table_lines[0]
+        assert "$87" not in table_lines[0]
+
+    def test_summer_still_uses_summer_rate(self):
+        """Summer period should continue to use summer rates (no regression)."""
+        days = [
+            {"date": date(2025, 7, 7), "day_name": "Mon", "period": "summer",
+             "period_label": "Summer Wk 1", "assignments": {"Emma": "FullRates Camp"},
+             "notes": "Week 1"},
+        ]
+        rates = {
+            "FullRates Camp": {
+                "summer": {"daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87},
+                "pa_day": {"daily": 45, "before": 8, "after": 8, "lunch": 5, "total": 66},
+                "break": {"daily": 50, "before": 8, "after": 8, "lunch": 5, "total": 71},
+                "daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87,
+            }
+        }
+        md = render_markdown(days, rates, ["Emma"])
+        assert "$87" in md
+
+    def test_fallback_to_summer_when_no_period_rate(self):
+        """When pa_day rate is None, should fall back to summer rates."""
+        days = [
+            {"date": date(2025, 10, 13), "day_name": "Mon", "period": "pa_day",
+             "period_label": "PA Day", "assignments": {"Emma": "SummerOnly Camp"},
+             "notes": "PA Day 1"},
+        ]
+        rates = {
+            "SummerOnly Camp": {
+                "summer": {"daily": 70, "before": 12, "after": 12, "lunch": 8, "total": 102},
+                "pa_day": None,
+                "break": None,
+                "daily": 70, "before": 12, "after": 12, "lunch": 8, "total": 102,
+            }
+        }
+        md = render_markdown(days, rates, ["Emma"])
+        assert "$102" in md
