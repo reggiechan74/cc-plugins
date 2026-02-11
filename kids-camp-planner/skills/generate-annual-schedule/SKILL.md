@@ -40,8 +40,9 @@ The summer schedule comes from the spreadsheet. For non-summer periods, confirm 
 | PA Days | City of Toronto | Ask user if different |
 | Winter Break | YMCA Cedar Glen | Ask user if different |
 | March Break | YMCA Cedar Glen | Ask user if different |
+| Fall Break | Same as --break-provider | Ask user if different |
 
-Ask the user: "For PA days I'll use City of Toronto ($62/day) and for winter/March breaks I'll use YMCA Cedar Glen ($87/day). Want to change any of these?"
+Ask the user: "For PA days I'll use City of Toronto ($62/day) and for winter/March/fall breaks I'll use YMCA Cedar Glen ($87/day). Want to change any of these?"
 
 If children need **different providers** on specific days (e.g., Emma does Science Camp for a PA day while Liam does YMCA), create an overrides JSON file. Every day can have a different provider per child — see the `--overrides` argument below.
 
@@ -78,6 +79,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/generate-annual-schedule/scripts/generate_a
 - `--children`: Comma-separated children's names (must match spreadsheet column headers)
 - `--pa-day-provider`: Default provider for PA day coverage (must exist in Provider Comparison tab)
 - `--break-provider`: Default provider for winter break and March break (must exist in Provider Comparison tab)
+- `--fall-break-provider`: Default provider for fall break coverage (defaults to same as `--break-provider`; must exist in Provider Comparison tab)
 - `--overrides`: Optional JSON file with per-child, per-date provider overrides (see below)
 - `--output-md`: Path for the generated markdown file
 - `--update-xlsx`: Flag to add/replace "Annual Schedule" tab in the spreadsheet
@@ -102,13 +104,13 @@ All provider names in the overrides file must exist in the Provider Comparison t
 The script produces:
 
 **Markdown file** with:
-- Period-by-period sections (Summer, each PA Day, Winter Break, March Break)
+- Period-by-period sections (Summer, each PA Day, School Holidays, Fall Break, Winter Break, March Break)
 - Day-by-day tables with per-child camp assignments and costs
 - Period subtotals
 - Annual summary table with total days and costs
 
 **Updated spreadsheet** with:
-- New "Annual Schedule" tab covering all 59 days
+- New "Annual Schedule" tab covering all ~64 days
 - Same column layout as Daily Schedule (A-P, 16 columns)
 - VLOOKUP formulas referencing Provider Comparison tab for costs
 - SUM formulas for totals
@@ -122,9 +124,10 @@ Show the user the annual summary:
 Annual Schedule Generated:
 - Summer 2025: 40 days
 - PA Days: 7 days
+- School Holidays: 5 days
 - Winter Break: 7 days
 - March Break: 5 days
-- Total: 59 days
+- Total: 64 days
 
 Files updated:
 - <research_dir>/annual-schedule-2025-2026.md
@@ -142,6 +145,8 @@ Files updated:
 
 ### From school calendar markdown:
 - PA day dates and purposes (from `### PA Days - Elementary` table)
+- School holidays — single-day holidays like Thanksgiving, Family Day, Good Friday, Easter Monday, Victoria Day (from `### Holidays & Breaks`)
+- Fall break dates, if applicable (from `Fall Break` row in `### Holidays & Breaks`)
 - Winter break dates (from `Christmas Break` row in `### Holidays & Breaks`)
 - March break dates (from `Mid-Winter Break (March Break)` row)
 

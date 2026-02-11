@@ -73,6 +73,14 @@
 
 ---
 
+## School Holiday: Thanksgiving (Oct 13, 2025)
+
+| Date | Day | Emma's Camp | Emma Cost | Liam's Camp | Liam Cost | Daily Total | Notes |
+|------|-----|-------------|-----------|-------------|-----------|-------------|-------|
+| 2025-10-13 | Mon | City of Toronto | $62 | City of Toronto | $62 | $124 | Thanksgiving |
+
+---
+
 ## PA Day: Nov 14, 2025
 
 | Date | Day | Emma's Camp | Emma Cost | Liam's Camp | Liam Cost | Daily Total | Notes |
@@ -115,6 +123,14 @@
 
 ---
 
+## School Holiday: Family Day (Feb 16, 2026)
+
+| Date | Day | Emma's Camp | Emma Cost | Liam's Camp | Liam Cost | Daily Total | Notes |
+|------|-----|-------------|-----------|-------------|-----------|-------------|-------|
+| 2026-02-16 | Mon | City of Toronto | $62 | City of Toronto | $62 | $124 | Family Day |
+
+---
+
 ## March Break 2026 (Mar 16-20)
 
 5 weekdays
@@ -128,6 +144,30 @@
 | 2026-03-20 | Fri | YMCA Cedar Glen | $87 | YMCA Cedar Glen | $87 | $174 | |
 
 **March Break subtotal**: Emma $435 | Liam $435 | Combined $870
+
+---
+
+## School Holiday: Good Friday (Apr 3, 2026)
+
+| Date | Day | Emma's Camp | Emma Cost | Liam's Camp | Liam Cost | Daily Total | Notes |
+|------|-----|-------------|-----------|-------------|-----------|-------------|-------|
+| 2026-04-03 | Fri | City of Toronto | $62 | City of Toronto | $62 | $124 | Good Friday |
+
+---
+
+## School Holiday: Easter Monday (Apr 6, 2026)
+
+| Date | Day | Emma's Camp | Emma Cost | Liam's Camp | Liam Cost | Daily Total | Notes |
+|------|-----|-------------|-----------|-------------|-----------|-------------|-------|
+| 2026-04-06 | Mon | City of Toronto | $62 | City of Toronto | $62 | $124 | Easter Monday |
+
+---
+
+## School Holiday: Victoria Day (May 18, 2026)
+
+| Date | Day | Emma's Camp | Emma Cost | Liam's Camp | Liam Cost | Daily Total | Notes |
+|------|-----|-------------|-----------|-------------|-----------|-------------|-------|
+| 2026-05-18 | Mon | City of Toronto | $62 | City of Toronto | $62 | $124 | Victoria Day |
 
 ---
 
@@ -153,14 +193,16 @@
 |--------|------|------------|------------|----------|
 | Summer 2025 | 40 | $3,370 | $3,230 | $6,600 |
 | PA Days (7) | 7 | $434 | $434 | $868 |
+| School Holidays (5) | 5 | $310 | $310 | $620 |
 | Winter Break | 7 | $609 | $609 | $1,218 |
 | March Break | 5 | $435 | $435 | $870 |
-| **Annual Total** | **59** | **$4,848** | **$4,708** | **$9,556** |
+| **Annual Total** | **64** | **$5,158** | **$5,018** | **$10,176** |
 
 ### Cost Notes
 
 - Summer costs include daily camp fee + before care + after care + lunch (from Provider Comparison rates)
 - PA day costs use City of Toronto municipal drop-in program rates ($62/day all-in)
+- School holiday costs use City of Toronto rates ($62/day all-in) — same as PA days
 - Winter and March Break use YMCA Cedar Glen rates ($87/day all-in)
 - Costs shown are pre-discount; apply sibling/early-bird discounts to reduce totals
 - Daily rates: YMCA Cedar Glen $87/day, City of Toronto $62/day, Science Camp Toronto $90/day
