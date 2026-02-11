@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "A Bash command is about to execute. Context: $ARGUMENTS\n\nCheck if this is a deployment/publish command (git commit, npm publish, docker push) or destructive operation (rm -rf, docker rm). If deployment with high-stakes implications, respond with {\"ok\": false, \"reason\": \"DEPLOYMENT COMMAND: Recommend running /coherence-check first.\"}. If destructive, respond with {\"ok\": false, \"reason\": \"DESTRUCTIVE OPERATION: This command may cause data loss. Please confirm.\"}. Otherwise respond with {\"ok\": true}.",
+            "prompt": "A Bash command is about to execute. Context: $ARGUMENTS\n\nCheck if this is a publish command (npm publish, docker push to registry) or destructive operation (rm -rf, docker rm, git reset --hard, git push --force). Note: regular 'git push' and 'git commit' are normal development operations and should be allowed. If it is a publish or destructive command, respond with {\"ok\": false, \"reason\": \"DESTRUCTIVE/PUBLISH COMMAND: Please confirm.\"}. Otherwise respond with {\"ok\": true}.",
             "timeout": 30
           }
         ]
