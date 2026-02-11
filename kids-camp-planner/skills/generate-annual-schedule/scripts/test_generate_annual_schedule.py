@@ -16,6 +16,8 @@ from generate_annual_schedule import (
     parse_calendar,
     parse_date_flexible,
     build_annual_days,
+    build_annual_days_multi,
+    resolve_calendars,
     get_weekdays_between,
     get_summer_holidays,
     find_civic_holiday,
@@ -524,3 +526,85 @@ class TestUpdateXlsxNewPeriods:
             wb.close()
         finally:
             os.unlink(tmp.name)
+
+
+class TestMultiCalendarCLI:
+    """Tests for multi-calendar CLI arg parsing."""
+
+    def test_single_calendar_backward_compat(self):
+        """Single --calendar path applies to all children."""
+        path = _write_temp_calendar(TCDSB_CALENDAR)
+        try:
+            calendars = resolve_calendars(path, ["Emma", "Liam"])
+            assert calendars["Emma"] == path
+            assert calendars["Liam"] == path
+        finally:
+            os.unlink(path)
+
+    def test_multi_calendar_per_child(self):
+        path1 = _write_temp_calendar(TDSB_CALENDAR)
+        path2 = _write_temp_calendar(GIST_CALENDAR)
+        try:
+            calendars = resolve_calendars(
+                [f"Emma:{path1}", f"Liam:{path2}"],
+                ["Emma", "Liam"]
+            )
+            assert calendars["Emma"] == path1
+            assert calendars["Liam"] == path2
+        finally:
+            os.unlink(path1)
+            os.unlink(path2)
+
+
+class TestMultiCalendarMerge:
+    """Tests for merging calendars from different schools."""
+
+    def test_merged_includes_both_pa_days(self):
+        """TDSB and GIST PA days are different — merged calendar has both sets."""
+        tdsb_path = _write_temp_calendar(TDSB_CALENDAR)
+        gist_path = _write_temp_calendar(GIST_CALENDAR)
+        try:
+            cal_emma = parse_calendar(tdsb_path)
+            cal_liam = parse_calendar(gist_path)
+            summer = [{"date": date(2025, 6, 30), "week": 1,
+                       "assignments": {"Emma": "YMCA", "Liam": "YMCA"}}]
+            days = build_annual_days_multi(
+                summer,
+                {"Emma": cal_emma, "Liam": cal_liam},
+                "City of Toronto", "YMCA",
+                ["Emma", "Liam"],
+            )
+            pa_days = [d for d in days if d["period"] == "pa_day"]
+            pa_dates = {d["date"] for d in pa_days}
+            # TDSB PA: Sep 26, Oct 10, Nov 14, Jan 16, Feb 13, Jun 5, Jun 26
+            # GIST PA: Oct 24, Nov 21, Jan 30, May 29
+            # Merged unique: 11 PA days
+            assert date(2025, 9, 26) in pa_dates  # TDSB only
+            assert date(2025, 10, 24) in pa_dates  # GIST only
+        finally:
+            os.unlink(tdsb_path)
+            os.unlink(gist_path)
+
+    def test_in_school_child_marked(self):
+        """When only one child is off, the other shows 'In school' with $0."""
+        tdsb_path = _write_temp_calendar(TDSB_CALENDAR)
+        gist_path = _write_temp_calendar(GIST_CALENDAR)
+        try:
+            cal_emma = parse_calendar(tdsb_path)
+            cal_liam = parse_calendar(gist_path)
+            summer = [{"date": date(2025, 6, 30), "week": 1,
+                       "assignments": {"Emma": "YMCA", "Liam": "YMCA"}}]
+            days = build_annual_days_multi(
+                summer,
+                {"Emma": cal_emma, "Liam": cal_liam},
+                "City of Toronto", "YMCA",
+                ["Emma", "Liam"],
+            )
+            # Oct 24 is GIST PA day only — Emma is in school
+            oct24 = [d for d in days if d["date"] == date(2025, 10, 24)]
+            assert len(oct24) == 1
+            assert oct24[0]["assignments"]["Liam"] == "City of Toronto"
+            assert oct24[0]["assignments"]["Emma"] == "In school"
+        finally:
+            os.unlink(tdsb_path)
+            os.unlink(gist_path)
