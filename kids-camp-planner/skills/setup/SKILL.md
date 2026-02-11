@@ -34,7 +34,7 @@ Create the following directory structure in the user's current working directory
 ├── templates/
 │   └── provider-template.md      # Provider file template for reference
 ├── examples/
-│   ├── sample-provider.md        # YMCA Cedar Glen example
+│   ├── ymca-cedar-glen.md        # YMCA Cedar Glen example
 │   └── boulderz-etobicoke.md     # Boulderz Climbing example
 ├── drafts/                       # Draft emails
 ├── school-calendars/             # Saved school calendar data for this family
@@ -50,7 +50,7 @@ Create the following directory structure in the user's current working directory
 |----------------|---------------------------|
 | `${CLAUDE_PLUGIN_ROOT}/examples/family-profile.md` | `<research_dir>/family-profile.md` |
 | `${CLAUDE_PLUGIN_ROOT}/skills/research-camps/references/provider-template.md` | `<research_dir>/templates/provider-template.md` |
-| `${CLAUDE_PLUGIN_ROOT}/skills/research-camps/examples/sample-provider.md` | `<research_dir>/examples/sample-provider.md` |
+| `${CLAUDE_PLUGIN_ROOT}/skills/research-camps/examples/ymca-cedar-glen.md` | `<research_dir>/examples/ymca-cedar-glen.md` |
 | `${CLAUDE_PLUGIN_ROOT}/skills/research-camps/examples/boulderz-etobicoke.md` | `<research_dir>/examples/boulderz-etobicoke.md` |
 
 Read each source file with the Read tool and write it to the destination with the Write tool.
@@ -163,5 +163,5 @@ After generating the profile, verify:
 - [ ] Home address is provided
 - [ ] Budget has at least one constraint specified
 - [ ] Research folder structure was created successfully
-- [ ] Seed files were copied (family-profile.md, provider-template.md, sample-provider.md, boulderz-etobicoke.md)
+- [ ] Seed files were copied (family-profile.md, provider-template.md, ymca-cedar-glen.md, boulderz-etobicoke.md)
 - [ ] Thin config `.claude/kids-camp-planner.local.md` has correct `research_dir` value

@@ -204,7 +204,7 @@ The plugin creates and maintains (directory name is configurable):
 ├── templates/
 │   └── provider-template.md  # Provider file template
 ├── examples/
-│   ├── sample-provider.md    # YMCA Cedar Glen example
+│   ├── ymca-cedar-glen.md    # YMCA Cedar Glen example
 │   └── boulderz-etobicoke.md # Boulderz example
 ├── school-calendars/     # Your school's calendar data
 ├── drafts/               # Draft emails

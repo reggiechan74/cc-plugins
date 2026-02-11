@@ -57,7 +57,7 @@ For each camp provider found, create a markdown file in `<research_dir>/provider
 
 **Provider file template:** Use the template at `<research_dir>/templates/provider-template.md` (seeded during setup from the plugin). The template includes sections for: basic information, distance & commute, programs offered, costs (with discount tracking), quality indicators, logistics, suitability rating, and notes.
 
-For completed examples showing all fields filled in with realistic data, see `<research_dir>/examples/sample-provider.md` and `<research_dir>/examples/boulderz-etobicoke.md`.
+For completed examples showing all fields filled in with realistic data, see `<research_dir>/examples/ymca-cedar-glen.md` and `<research_dir>/examples/boulderz-etobicoke.md`.
 
 ### Step 4: Verify Key Details
 
@@ -113,5 +113,5 @@ Save this comparison to `<research_dir>/providers/comparison-summary.md`.
 ### Reference Files
 
 - **`<research_dir>/templates/provider-template.md`** - Blank provider file template for quick copying (seeded during setup)
-- **`<research_dir>/examples/sample-provider.md`** - Completed example provider file (YMCA Cedar Glen, multi-program)
+- **`<research_dir>/examples/ymca-cedar-glen.md`** - Completed example provider file (YMCA Cedar Glen, multi-program)
 - **`<research_dir>/examples/boulderz-etobicoke.md`** - Specialty camp example (Boulderz Climbing, single-program)
