@@ -214,3 +214,59 @@ class TestParseCalendarExisting:
             assert result["winter_break"]["start_str"] == "December 22, 2025"
         finally:
             os.unlink(path)
+
+
+class TestParseCalendarSchoolHolidays:
+    """Tests for new school_holidays parsing."""
+
+    def test_tcdsb_school_holidays_parsed(self):
+        path = _write_temp_calendar(TCDSB_CALENDAR)
+        try:
+            result = parse_calendar(path)
+            assert "school_holidays" in result
+            holidays = result["school_holidays"]
+            names = [h["name"] for h in holidays]
+            assert "Thanksgiving" in names
+            assert "Family Day" in names
+            assert "Good Friday" in names
+            assert "Easter Monday" in names
+            assert "Victoria Day" in names
+        finally:
+            os.unlink(path)
+
+    def test_tcdsb_holiday_dates_correct(self):
+        path = _write_temp_calendar(TCDSB_CALENDAR)
+        try:
+            result = parse_calendar(path)
+            holiday_map = {h["name"]: h["date_str"] for h in result["school_holidays"]}
+            assert holiday_map["Thanksgiving"] == "October 13, 2025"
+            assert holiday_map["Family Day"] == "February 16, 2026"
+            assert holiday_map["Good Friday"] == "April 3, 2026"
+            assert holiday_map["Easter Monday"] == "April 6, 2026"
+            assert holiday_map["Victoria Day"] == "May 18, 2026"
+        finally:
+            os.unlink(path)
+
+    def test_gist_holidays_parsed(self):
+        path = _write_temp_calendar(GIST_CALENDAR)
+        try:
+            result = parse_calendar(path)
+            names = [h["name"] for h in result["school_holidays"]]
+            assert "Thanksgiving" in names
+            assert "Good Friday" in names
+            assert "Easter Monday" in names
+            assert "Victoria Day" in names
+            assert "Remembrance Day" in names
+        finally:
+            os.unlink(path)
+
+    def test_holidays_exclude_multi_day_breaks(self):
+        """Multi-day breaks (Christmas, March) should NOT appear in school_holidays."""
+        path = _write_temp_calendar(TCDSB_CALENDAR)
+        try:
+            result = parse_calendar(path)
+            names = [h["name"] for h in result["school_holidays"]]
+            assert "Christmas Break" not in names
+            assert "Mid-Winter Break (March Break)" not in names
+        finally:
+            os.unlink(path)

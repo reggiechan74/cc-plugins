@@ -145,11 +145,11 @@ def parse_calendar(calendar_path):
                 purpose = cols[4].strip() if len(cols) > 4 else ""
                 pa_days.append({"date_str": date_str, "purpose": purpose})
 
-    # Parse winter break (Christmas Break) from Holidays & Breaks table
+    # Parse winter break (Christmas Break or Winter Break) from Holidays & Breaks table
     # Format: | Christmas Break | December 22, 2025 - January 2, 2026 | 8 |
     winter_break = None
     winter_match = re.search(
-        r"\|\s*Christmas Break\s*\|\s*(.+?)\s*\|\s*\d+\s*\|",
+        r"\|\s*(?:Christmas|Winter) Break\s*\|\s*(.+?)\s*\|\s*\d+\s*\|",
         content,
     )
     if winter_match:
@@ -176,10 +176,45 @@ def parse_calendar(calendar_path):
                 "end_str": f"{month_name} {end_day}, {year}",
             }
 
+    # Parse single-day school holidays from Holidays & Breaks table
+    # These are entries with Weekdays Off = 1 that aren't Christmas/March break
+    school_holidays = []
+    holidays_section = re.search(
+        r"### Holidays & Breaks\s*\n\|.*\n\|[-|]+\n((?:\|.*\n)*)",
+        content,
+    )
+    if holidays_section:
+        for line in holidays_section.group(1).strip().split("\n"):
+            cols = [c.strip() for c in line.split("|")]
+            # cols: ['', name, date(s), weekdays_off, ...]
+            if len(cols) < 4:
+                continue
+            name = cols[1].strip()
+            date_str = cols[2].strip()
+            weekdays_off_str = cols[3].strip()
+
+            # Skip multi-day breaks (already handled as winter_break, march_break, fall_break)
+            try:
+                weekdays_off = int(weekdays_off_str)
+            except ValueError:
+                continue
+            if weekdays_off != 1:
+                continue
+
+            # Skip if this is a break we already parse (Christmas, March, Winter)
+            if any(skip in name.lower() for skip in ["christmas", "march break", "mid-winter", "winter break"]):
+                continue
+
+            school_holidays.append({
+                "name": name,
+                "date_str": date_str,
+            })
+
     return {
         "pa_days": pa_days,
         "winter_break": winter_break,
         "march_break": march_break,
+        "school_holidays": school_holidays,
     }
 
 
