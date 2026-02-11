@@ -851,6 +851,16 @@ class TestReadProviderRatesWithPeriods:
         result = _read_rate_block(row, 6)
         assert result is None
 
+    def test_read_rate_block_ignores_strings(self):
+        """_read_rate_block should treat string values as None (e.g., rating or notes columns)."""
+        from unittest.mock import MagicMock
+        # Simulate row where cols 10-13 have: Total/Week(None), Rating("4.5 / 5"), Notes("text"), None
+        row = [MagicMock(value=v) for v in [
+            "YMCA", 300, 60, 10, 10, 7, 50, 50, 35, None, None, "4.5 / 5", "HIGH FIVE certified", None
+        ]]
+        result = _read_rate_block(row, 10)
+        assert result is None  # All non-numeric, should be None
+
     def test_provider_with_all_period_rates(self):
         """Provider with Summer+PA+Break rates should have all three sections."""
         xlsx = _create_xlsx_with_period_rates()
@@ -886,6 +896,38 @@ class TestReadProviderRatesWithPeriods:
             assert camp["daily"] == 60
         finally:
             os.unlink(xlsx)
+
+    def test_old_xlsx_without_period_headers_ignores_weekly_cols(self):
+        """When col G header is 'Before Care/wk' (not PA-related), skip PA/Break reading."""
+        tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+        tmp.close()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Provider Comparison"
+        # Old-style headers
+        ws.cell(row=3, column=1, value="Provider")
+        ws.cell(row=3, column=3, value="Daily Cost")
+        ws.cell(row=3, column=7, value="Before Care/wk")  # NOT PA Day
+        ws.cell(row=3, column=11, value="Total/Week")      # NOT Break
+        # Provider data
+        ws.cell(row=4, column=1, value="Test Camp")
+        ws.cell(row=4, column=3, value=60)
+        ws.cell(row=4, column=4, value=10)
+        ws.cell(row=4, column=5, value=10)
+        ws.cell(row=4, column=6, value=7)
+        ws.cell(row=4, column=7, value=50)   # weekly before care — should NOT be read as PA Day
+        ws.cell(row=4, column=8, value=50)   # weekly after care
+        ws.cell(row=4, column=9, value=35)   # weekly lunch
+        wb.save(tmp.name)
+        wb.close()
+        try:
+            rates = read_provider_rates(tmp.name)
+            camp = rates["Test Camp"]
+            assert camp["summer"]["total"] == 87
+            assert camp["pa_day"] is None  # Must be None, not weekly data
+            assert camp["break"] is None
+        finally:
+            os.unlink(tmp.name)
 
 
 class TestRenderMarkdownPeriodRates:

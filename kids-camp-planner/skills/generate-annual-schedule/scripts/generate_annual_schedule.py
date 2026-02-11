@@ -104,11 +104,18 @@ def _read_rate_block(row, start_col):
     """Read a 4-column rate block (daily, before, after, lunch).
 
     Returns dict with {daily, before, after, lunch, total} or None if all empty.
+    Non-numeric cell values are treated as empty.
     """
-    daily = row[start_col].value if len(row) > start_col else None
-    before = row[start_col + 1].value if len(row) > start_col + 1 else None
-    after = row[start_col + 2].value if len(row) > start_col + 2 else None
-    lunch = row[start_col + 3].value if len(row) > start_col + 3 else None
+    def _num(col_idx):
+        if len(row) <= col_idx:
+            return None
+        v = row[col_idx].value
+        return v if isinstance(v, (int, float)) else None
+
+    daily = _num(start_col)
+    before = _num(start_col + 1)
+    after = _num(start_col + 2)
+    lunch = _num(start_col + 3)
 
     if all(v is None or v == 0 for v in [daily, before, after, lunch]):
         return None
@@ -128,9 +135,20 @@ def read_provider_rates(xlsx_path):
                         pa_day: {...} or None, break: {...} or None,
                         daily, before, after, lunch, total}}
     Flat keys (daily, before, etc.) are backward-compat aliases for summer rates.
+
+    PA Day (cols G-J) and Break (cols K-N) are only read when the header row
+    contains matching labels (e.g., "PA Daily" or "PA Day"). Otherwise these
+    columns may hold weekly summaries or other data from older spreadsheets.
     """
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
     ws = wb["Provider Comparison"]
+
+    # Detect whether expanded rate columns exist by checking row 3 headers
+    header_g = str(ws.cell(row=3, column=7).value or "").lower()
+    header_k = str(ws.cell(row=3, column=11).value or "").lower()
+    has_pa_cols = "pa" in header_g
+    has_break_cols = "br" in header_k  # "Brk Daily" or "Break Daily"
+
     rates = {}
     for row in ws.iter_rows(min_row=4, max_col=14, values_only=False):
         name = row[0].value  # col A
@@ -143,11 +161,11 @@ def read_provider_rates(xlsx_path):
             # No summer rates means this row is not a valid provider
             continue
 
-        # PA Day rates (cols G-J, 0-indexed: 6-9) — optional
-        pa_day = _read_rate_block(row, 6)
+        # PA Day rates (cols G-J, 0-indexed: 6-9) — only if headers match
+        pa_day = _read_rate_block(row, 6) if has_pa_cols else None
 
-        # Break rates (cols K-N, 0-indexed: 10-13) — optional
-        brk = _read_rate_block(row, 10)
+        # Break rates (cols K-N, 0-indexed: 10-13) — only if headers match
+        brk = _read_rate_block(row, 10) if has_break_cols else None
 
         rates[name] = {
             "summer": summer,
