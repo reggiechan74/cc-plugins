@@ -7,6 +7,7 @@ import tempfile
 from datetime import date
 from unittest.mock import patch
 
+import openpyxl
 import pytest
 
 # Add script directory to path
@@ -21,6 +22,7 @@ from generate_annual_schedule import (
     _group_into_sections,
     render_markdown,
     read_provider_rates,
+    update_xlsx,
 )
 
 
@@ -489,3 +491,36 @@ class TestRenderMarkdownNewPeriods:
         rates = {"YMCA": {"daily": 70, "before": 8, "after": 8, "lunch": 1, "total": 87}}
         md = render_markdown(days, rates, ["Emma"])
         assert "Fall Break" in md
+
+
+class TestUpdateXlsxNewPeriods:
+    """Verify xlsx includes new period types."""
+
+    def test_xlsx_contains_school_holiday_rows(self):
+        import tempfile, shutil
+        # Copy sample budget xlsx to temp
+        src = os.path.join(os.path.dirname(__file__), "..", "..", "..", "examples", "sample-budget.xlsx")
+        if not os.path.exists(src):
+            pytest.skip("sample-budget.xlsx not found")
+        tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+        tmp.close()
+        shutil.copy2(src, tmp.name)
+        try:
+            from generate_annual_schedule import update_xlsx
+            days = [
+                {"date": date(2025, 10, 13), "day_name": "Mon", "period": "school_holiday",
+                 "period_label": "School Holiday", "assignments": {"Emma": "City of Toronto", "Liam": "City of Toronto"},
+                 "notes": "Thanksgiving"},
+                {"date": date(2025, 11, 3), "day_name": "Mon", "period": "fall_break",
+                 "period_label": "Fall Break", "assignments": {"Emma": "YMCA Cedar Glen", "Liam": "YMCA Cedar Glen"},
+                 "notes": ""},
+            ]
+            update_xlsx(tmp.name, days, ["Emma", "Liam"])
+            import openpyxl
+            wb = openpyxl.load_workbook(tmp.name)
+            ws = wb["Annual Schedule"]
+            assert ws["C4"].value == "School Holiday"
+            assert ws["C5"].value == "Fall Break"
+            wb.close()
+        finally:
+            os.unlink(tmp.name)
