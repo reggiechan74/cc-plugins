@@ -87,9 +87,10 @@ The sample annual schedule (`examples/sample-annual-schedule.md`) demonstrates f
 |--------|------|
 | Summer 2025 | 40 weekdays (8 weeks) |
 | PA Days | 7 individual days |
+| School Holidays | 5 days (Thanksgiving, Family Day, Good Friday, Easter Monday, Victoria Day) |
 | Winter Break | 7 camp-eligible days |
 | March Break | 5 weekdays |
-| **Total** | **59 days** |
+| **Total** | **~64 days** |
 
 ## Components
 
@@ -225,11 +226,7 @@ The plugin includes specific handling for private schools whose calendars don't 
 
 ### Pre-Saved Calendar Data
 
-Ships with calendar data for:
-- **TDSB** (2025-2026): Toronto District School Board — PA days, holidays, breaks
-- **TCDSB** (2025-2026): Toronto Catholic District School Board — PA days, holidays, breaks
-- **GIST** (2025-2026, 2026-2027): German International School Toronto — full calendar with public board cross-reference
-- **KCS** (2025-2026): Kingsway College School
+Ships with calendar data for 12+ Ontario public school boards (TDSB, TCDSB, PDSB, DDSB, HDSB, YRDSB, YCDSB, OCSB, OCDSB, WRDSB, WCDSB, HWDSB) plus private schools (GIST, KCS) — all 2025-2026 PA days, holidays, and breaks.
 
 See `RESEARCH-PLAN.md` for the roadmap to add more Ontario schools.
 
@@ -241,6 +238,10 @@ See `RESEARCH-PLAN.md` for the roadmap to add more Ontario schools.
 - Geoapify API key (optional, free tier — for automated commute calculations via commute-matrix skill)
 - [Anthropic xlsx skill](https://github.com/anthropics/skills/blob/main/skills/xlsx/SKILL.md) (optional, for Excel budget export)
 - Google Calendar connectivity via external plugin/MCP (optional, for calendar integration)
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add school calendar data for Ontario schools. The most impactful contribution is adding calendar files for Tier 3 (private) and Tier 4 (international) schools.
 
 ## License
 
