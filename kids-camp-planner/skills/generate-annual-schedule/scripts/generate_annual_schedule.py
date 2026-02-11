@@ -307,7 +307,7 @@ def _resolve_assignments(d, children, default_provider, overrides):
 
 
 def build_annual_days(summer_days, calendar_data, pa_provider, break_provider,
-                      children, overrides=None):
+                      children, overrides=None, fall_break_provider=None):
     """Combine summer + non-summer into a unified list of annual days.
 
     Args:
@@ -439,6 +439,25 @@ def build_annual_days(summer_days, calendar_data, pa_provider, break_provider,
             "notes": holiday["name"],
         })
         seen_dates.add(d)
+
+    # Fall break (multi-day, use fall_break_provider or break_provider)
+    fb_provider = fall_break_provider or break_provider
+    if calendar_data.get("fall_break"):
+        fb_start = parse_date_flexible(calendar_data["fall_break"]["start_str"])
+        fb_end = parse_date_flexible(calendar_data["fall_break"]["end_str"])
+        fall_days = get_weekdays_between(fb_start, fb_end)
+        for d in fall_days:
+            if d in seen_dates:
+                continue
+            all_days.append({
+                "date": d,
+                "day_name": d.strftime("%a"),
+                "period": "fall_break",
+                "period_label": "Fall Break",
+                "assignments": _resolve_assignments(d, children, fb_provider, overrides),
+                "notes": "",
+            })
+            seen_dates.add(d)
 
     all_days.sort(key=lambda x: x["date"])
     return all_days
@@ -838,6 +857,8 @@ def main():
                         help="Provider for PA day coverage")
     parser.add_argument("--break-provider", default="YMCA Cedar Glen",
                         help="Provider for winter and March break coverage")
+    parser.add_argument("--fall-break-provider",
+                        help="Provider for fall break coverage (default: same as --break-provider)")
     parser.add_argument("--overrides",
                         help="JSON file with per-child, per-date provider overrides. "
                              "Format: {\"YYYY-MM-DD\": {\"ChildName\": \"Provider\"}}")
@@ -883,6 +904,7 @@ def main():
         summer_days, calendar_data,
         args.pa_day_provider, args.break_provider, children,
         overrides=overrides,
+        fall_break_provider=args.fall_break_provider,
     )
 
     # Summary stats

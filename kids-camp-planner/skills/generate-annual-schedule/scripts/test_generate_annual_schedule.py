@@ -363,3 +363,61 @@ class TestBuildAnnualDaysSchoolHolidays:
         holiday_days = [d for d in days if d["period"] == "school_holiday"]
         holiday_dates = {d["date"] for d in holiday_days}
         assert date(2025, 9, 1) not in holiday_dates
+
+
+class TestBuildAnnualDaysFallBreak:
+    """Tests for fall break in build_annual_days."""
+
+    def _make_summer_days(self):
+        return [
+            {"date": date(2025, 6, 30), "week": 1, "assignments": {"Emma": "YMCA"}},
+        ]
+
+    def test_gist_fall_break_included(self):
+        cal = parse_calendar(_write_temp_calendar(GIST_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma"])
+        periods = {d["period"] for d in days}
+        assert "fall_break" in periods
+
+    def test_fall_break_uses_break_provider_default(self):
+        cal = parse_calendar(_write_temp_calendar(GIST_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma"])
+        fall_days = [d for d in days if d["period"] == "fall_break"]
+        for d in fall_days:
+            assert d["assignments"]["Emma"] == "YMCA"
+
+    def test_fall_break_uses_custom_provider(self):
+        cal = parse_calendar(_write_temp_calendar(GIST_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(
+            summer, cal, "City of Toronto", "YMCA", ["Emma"],
+            fall_break_provider="Science Camp"
+        )
+        fall_days = [d for d in days if d["period"] == "fall_break"]
+        for d in fall_days:
+            assert d["assignments"]["Emma"] == "Science Camp"
+
+    def test_fall_break_day_count(self):
+        """GIST Nov 3-7 = 5 weekdays."""
+        cal = parse_calendar(_write_temp_calendar(GIST_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma"])
+        fall_days = [d for d in days if d["period"] == "fall_break"]
+        assert len(fall_days) == 5
+
+    def test_tdsb_no_fall_break_days(self):
+        cal = parse_calendar(_write_temp_calendar(TDSB_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma"])
+        fall_days = [d for d in days if d["period"] == "fall_break"]
+        assert len(fall_days) == 0
+
+    def test_no_double_counting_with_pa_days(self):
+        """Fall break days should not overlap with PA days."""
+        cal = parse_calendar(_write_temp_calendar(GIST_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma"])
+        all_dates = [d["date"] for d in days]
+        assert len(all_dates) == len(set(all_dates))
