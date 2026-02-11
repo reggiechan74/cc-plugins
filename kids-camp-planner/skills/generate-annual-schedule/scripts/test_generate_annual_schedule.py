@@ -301,3 +301,65 @@ class TestParseCalendarFallBreak:
             assert result["fall_break"] is None
         finally:
             os.unlink(path)
+
+
+class TestBuildAnnualDaysSchoolHolidays:
+    """Tests for school holidays in build_annual_days."""
+
+    def _make_summer_days(self):
+        """Create minimal summer days fixture."""
+        return [
+            {"date": date(2025, 6, 30), "week": 1, "assignments": {"Emma": "YMCA", "Liam": "YMCA"}},
+            {"date": date(2025, 7, 1), "week": 1, "assignments": {"Emma": "YMCA", "Liam": "YMCA"}},
+        ]
+
+    def test_school_holidays_included(self):
+        cal = parse_calendar(_write_temp_calendar(TCDSB_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma", "Liam"])
+        periods = {d["period"] for d in days}
+        assert "school_holiday" in periods
+
+    def test_school_holiday_uses_pa_provider(self):
+        cal = parse_calendar(_write_temp_calendar(TCDSB_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma", "Liam"])
+        holiday_days = [d for d in days if d["period"] == "school_holiday"]
+        for d in holiday_days:
+            for child in ["Emma", "Liam"]:
+                assert d["assignments"][child] == "City of Toronto"
+
+    def test_school_holidays_not_during_summer(self):
+        """Canada Day (Jul 1) should NOT appear as a school_holiday."""
+        cal = parse_calendar(_write_temp_calendar(TCDSB_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma", "Liam"])
+        holiday_days = [d for d in days if d["period"] == "school_holiday"]
+        holiday_dates = {d["date"] for d in holiday_days}
+        assert date(2025, 7, 1) not in holiday_dates  # Canada Day is summer
+
+    def test_school_holidays_not_during_breaks(self):
+        """Holidays during winter/March break should not be double-counted."""
+        cal = parse_calendar(_write_temp_calendar(TCDSB_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma", "Liam"])
+        # Count total days - should not have duplicates
+        all_dates = [d["date"] for d in days]
+        assert len(all_dates) == len(set(all_dates)), "Duplicate dates found!"
+
+    def test_tcdsb_school_holiday_count(self):
+        """TCDSB should have 5 school holidays: Thanksgiving, Family Day, Good Friday, Easter Monday, Victoria Day."""
+        cal = parse_calendar(_write_temp_calendar(TCDSB_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma", "Liam"])
+        school_holidays = [d for d in days if d["period"] == "school_holiday"]
+        assert len(school_holidays) == 5
+
+    def test_labour_day_excluded(self):
+        """Labour Day (Sep 1) is before school starts - excluded from coverage."""
+        cal = parse_calendar(_write_temp_calendar(TCDSB_CALENDAR))
+        summer = self._make_summer_days()
+        days = build_annual_days(summer, cal, "City of Toronto", "YMCA", ["Emma", "Liam"])
+        holiday_days = [d for d in days if d["period"] == "school_holiday"]
+        holiday_dates = {d["date"] for d in holiday_days}
+        assert date(2025, 9, 1) not in holiday_dates

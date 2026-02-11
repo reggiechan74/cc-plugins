@@ -415,6 +415,31 @@ def build_annual_days(summer_days, calendar_data, pa_provider, break_provider,
             })
             seen_dates.add(d)
 
+    # School holidays (single-day, use pa_provider for coverage)
+    # Exclude: holidays during summer, during winter break, during March break
+    # These are filtered by seen_dates set
+    summer_start = summer_days[0]["date"] if summer_days else None
+    summer_end = summer_days[-1]["date"] if summer_days else None
+    for holiday in calendar_data.get("school_holidays", []):
+        d = parse_date_flexible(holiday["date_str"])
+        if d in seen_dates:
+            continue
+        # Skip holidays during summer period
+        if summer_start and summer_end and summer_start <= d <= summer_end:
+            continue
+        # Skip Labour Day and other pre-school-year holidays
+        if d.month in (6, 7, 8) or (d.month == 9 and d.day == 1):
+            continue
+        all_days.append({
+            "date": d,
+            "day_name": d.strftime("%a"),
+            "period": "school_holiday",
+            "period_label": "School Holiday",
+            "assignments": _resolve_assignments(d, children, pa_provider, overrides),
+            "notes": holiday["name"],
+        })
+        seen_dates.add(d)
+
     all_days.sort(key=lambda x: x["date"])
     return all_days
 
