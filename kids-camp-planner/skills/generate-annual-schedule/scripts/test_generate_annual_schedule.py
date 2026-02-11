@@ -994,6 +994,39 @@ class TestRenderMarkdownPeriodRates:
         md = render_markdown(days, rates, ["Emma"])
         assert "$87" in md
 
+    def test_bold_markdown_in_table_cells(self):
+        """Calendar files with **bold** table cells should still parse correctly."""
+        bold_cal = """\
+# Test School
+
+## 2025-2026 School Year
+
+### PA Days
+| # | Date | Day | Purpose |
+|---|------|-----|---------|
+| 1 | October 24, 2025 | Friday | PD Day |
+
+### Holidays & Breaks
+| Holiday/Break | Date(s) | Weekdays Off |
+|---------------|---------|-------------|
+| Labour Day | September 1, 2025 | 1 |
+| Thanksgiving | October 13, 2025 | 1 |
+| **Fall Break** | **November 3-7, 2025** | **5** |
+| Christmas Break | December 22, 2025 - January 2, 2026 | 8 |
+| Family Day | February 16, 2026 | 1 |
+| **March Break** | **March 16-27, 2026** | **10** |
+| Good Friday | April 3, 2026 | 1 |
+"""
+        path = _write_temp_calendar(bold_cal)
+        try:
+            result = parse_calendar(path)
+            assert result["fall_break"] is not None, "Fall break with bold markers not parsed"
+            assert result["fall_break"]["start_str"] == "November 3, 2025"
+            assert result["march_break"] is not None, "March break with bold markers not parsed"
+            assert result["march_break"]["start_str"] == "March 16, 2026"
+        finally:
+            os.unlink(path)
+
     def test_fallback_to_summer_when_no_period_rate(self):
         """When pa_day rate is None, should fall back to summer rates."""
         days = [

@@ -229,6 +229,9 @@ def parse_calendar(calendar_path):
     with open(calendar_path) as f:
         content = f.read()
 
+    # Strip bold markers from table cells so regexes match uniformly
+    content = content.replace("**", "")
+
     # Parse PA Days table (matches "PA Days - Elementary" or just "PA Days")
     # Format: | # | Date | Day | Purpose |
     pa_days = []
@@ -259,10 +262,10 @@ def parse_calendar(calendar_path):
             winter_break = {"start_str": parts[0].strip(), "end_str": parts[1].strip()}
 
     # Parse March Break from Holidays & Breaks table
-    # Format: | Mid-Winter Break (March Break) | March 16-20, 2026 | 5 |
+    # Matches "Mid-Winter Break (March Break)" or standalone "March Break"
     march_break = None
     march_match = re.search(
-        r"\|\s*Mid-Winter Break \(March Break\)\s*\|\s*(.+?)\s*\|\s*\d+\s*\|",
+        r"\|\s*(?:Mid-Winter Break \(March Break\)|March Break)\s*\|\s*(.+?)\s*\|\s*\d+\s*\|",
         content,
     )
     if march_match:
