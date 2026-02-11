@@ -7,6 +7,10 @@
 kids:
   - name: "Child 1"
     dob: "2017-05-15"
+    school:
+      type: "public"
+      board: "TDSB"
+      name: "Example Public School"
     interests: ["swimming", "art", "robotics"]
     allergies: ["peanuts"]
     dietary: [""]
@@ -14,6 +18,10 @@ kids:
     special_accommodations: ""
   - name: "Child 2"
     dob: "2019-09-20"
+    school:
+      type: "public"
+      board: "TDSB"
+      name: "Example Public School"
     interests: ["soccer", "nature", "drama"]
     allergies: []
     dietary: [""]
@@ -22,6 +30,8 @@ kids:
 
 # School Information
 # For private schools: board field is the nearest public board (for PA day program alignment)
+# DEPRECATED - Top-level school block (backward compat: used when no per-child school)
+# New profiles should put school under each child in the kids array above.
 school:
   type: "public"  # public or private
   board: "TDSB"   # nearest public board (e.g., TDSB, YRDSB, PDSB, OCDSB, DPCDSB)
