@@ -270,3 +270,34 @@ class TestParseCalendarSchoolHolidays:
             assert "Mid-Winter Break (March Break)" not in names
         finally:
             os.unlink(path)
+
+
+class TestParseCalendarFallBreak:
+    """Tests for fall_break parsing."""
+
+    def test_gist_fall_break_parsed(self):
+        path = _write_temp_calendar(GIST_CALENDAR)
+        try:
+            result = parse_calendar(path)
+            assert "fall_break" in result
+            assert result["fall_break"] is not None
+            assert result["fall_break"]["start_str"] == "November 3, 2025"
+            assert result["fall_break"]["end_str"] == "November 7, 2025"
+        finally:
+            os.unlink(path)
+
+    def test_tdsb_no_fall_break(self):
+        path = _write_temp_calendar(TDSB_CALENDAR)
+        try:
+            result = parse_calendar(path)
+            assert result["fall_break"] is None
+        finally:
+            os.unlink(path)
+
+    def test_tcdsb_no_fall_break(self):
+        path = _write_temp_calendar(TCDSB_CALENDAR)
+        try:
+            result = parse_calendar(path)
+            assert result["fall_break"] is None
+        finally:
+            os.unlink(path)

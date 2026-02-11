@@ -210,11 +210,41 @@ def parse_calendar(calendar_path):
                 "date_str": date_str,
             })
 
+    # Parse fall break (multi-day, typically private schools)
+    # Match "Fall Break" or "Midterm break" with Weekdays Off > 1 in Oct/Nov
+    fall_break = None
+    fall_match = re.search(
+        r"\|\s*(?:Fall Break|Midterm [Bb]reak)\s*\|\s*(.+?)\s*\|\s*(\d+)\s*\|",
+        content,
+    )
+    if fall_match:
+        date_range = fall_match.group(1).strip()
+        weekdays_off = int(fall_match.group(2))
+        if weekdays_off > 1:
+            # Parse date range: "November 3-7, 2025" or "November 3, 2025 - November 7, 2025"
+            # Short form: "Month DD-DD, YYYY"
+            m = re.match(r"(\w+)\s+(\d+)-(\d+),\s*(\d+)", date_range)
+            if m:
+                month_name, start_day, end_day, year = m.groups()
+                fall_break = {
+                    "start_str": f"{month_name} {start_day}, {year}",
+                    "end_str": f"{month_name} {end_day}, {year}",
+                }
+            else:
+                # Long form: "Month DD, YYYY - Month DD, YYYY"
+                parts = date_range.split(" - ")
+                if len(parts) == 2:
+                    fall_break = {
+                        "start_str": parts[0].strip(),
+                        "end_str": parts[1].strip(),
+                    }
+
     return {
         "pa_days": pa_days,
         "winter_break": winter_break,
         "march_break": march_break,
         "school_holidays": school_holidays,
+        "fall_break": fall_break,
     }
 
 
