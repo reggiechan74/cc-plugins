@@ -17,6 +17,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "kids-camp-planner",
+      "source": "./kids-camp-planner",
+      "description": "Plan and book kids' summer camps, March break programs, and PA day coverage with budget tracking, schedule optimization, and provider research for Ontario families",
+      "version": "0.1.0"
+    },
+    {
       "name": "rubric-creator",
       "source": "./rubric-creator",
       "description": "Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code",

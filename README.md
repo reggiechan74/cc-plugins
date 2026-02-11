@@ -67,6 +67,40 @@ Create professional course curricula for 1-2 day workshops using backward design
 
 ---
 
+### kids-camp-planner
+
+Plan and book kids' summer camps, March break programs, and PA day coverage with budget tracking, schedule optimization, and provider research for Ontario families.
+
+**Install:**
+```bash
+/plugin install kids-camp-planner@reggiechan74
+```
+
+**Features:**
+- Schedule Planning: Build gap-free coverage from last day of school through fall, including March break and PA days
+- Provider Research: Systematically discover and document camp providers with structured comparison files
+- Budget Tracking: Calculate costs across children, providers, and weeks with discount optimization and tax recovery estimates
+- Private School Support: Handle calendar mismatches between private schools and public board PA day/break schedules
+- Email Drafting: Generate inquiry, registration, waitlist, special needs, and cancellation emails
+- Pre-Saved Calendars: Ships with TDSB and GIST calendar data; extensible to other Ontario schools
+
+**Skills:**
+- **Setup** - Initialize research folder and family profile
+- **Camp Planning** - Ontario camp evaluation knowledge and quality indicators
+- **Budget Optimization** - Cost calculation, discount optimization, tax recovery
+- **Plan Summer** - Full summer coverage scheduling
+- **Plan March Break** - March break planning (handles 2-week private school breaks)
+- **Plan PA Days** - PA day lookup and single-day coverage
+- **Research Camps** - Provider discovery and documentation
+- **Draft Email** - Email composition for camp communications
+- **Add School Calendar** - Import school calendar from URL/PDF into reference data
+
+**Agents:**
+- **Camp Researcher** - Autonomous web research creating provider files
+- **Schedule Optimizer** - Builds and refines schedules across constraints
+
+---
+
 ### rubric-creator
 
 Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code.

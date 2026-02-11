@@ -1,0 +1,22 @@
+{
+  "name": "kids-camp-planner",
+  "version": "0.1.0",
+  "description": "Plan and book kids' summer camps, March break programs, and PA day coverage with budget tracking, schedule optimization, and provider research for Ontario families",
+  "author": {
+    "name": "Reggie Chan"
+  },
+  "keywords": [
+    "kids",
+    "camp",
+    "summer-camp",
+    "march-break",
+    "pa-days",
+    "childcare",
+    "planning",
+    "budget",
+    "ontario",
+    "school",
+    "scheduling"
+  ],
+  "license": "MIT"
+}
