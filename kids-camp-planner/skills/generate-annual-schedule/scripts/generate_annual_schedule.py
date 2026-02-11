@@ -49,6 +49,54 @@ from openpyxl.utils import get_column_letter
 
 
 # ---------------------------------------------------------------------------
+# Dynamic child column layout constants
+# ---------------------------------------------------------------------------
+
+SHARED_PREFIX_COLS = 3  # Date, Day, Period/Week#
+COLS_PER_CHILD = 6      # Camp Name, Before Care, Camp Fee, After Care, Lunch, Day Total
+
+
+def calculate_total_cols(n_children):
+    """Total columns = prefix + (N * child_block) + daily_total."""
+    return SHARED_PREFIX_COLS + (n_children * COLS_PER_CHILD) + 1
+
+
+def get_child_col_offsets(n_children):
+    """Return 0-indexed column offsets for each child's camp name column."""
+    return [SHARED_PREFIX_COLS + i * COLS_PER_CHILD for i in range(n_children)]
+
+
+def validate_child_count(n):
+    if n > 4:
+        print(f"Error: Maximum 4 children supported. Got {n}.", file=sys.stderr)
+        sys.exit(1)
+    if n < 1:
+        print("Error: At least 1 child required.", file=sys.stderr)
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# Per-period rate differentiation
+# ---------------------------------------------------------------------------
+
+def resolve_period_rate(provider_rates, period_type):
+    """Get rate for a specific period, falling back to summer if not available."""
+    period_map = {
+        "summer": "summer",
+        "pa_day": "pa_day",
+        "school_holiday": "pa_day",
+        "winter_break": "break",
+        "march_break": "break",
+        "fall_break": "break",
+    }
+    rate_key = period_map.get(period_type, "summer")
+    rate = provider_rates.get(rate_key)
+    if rate is None:
+        rate = provider_rates.get("summer", provider_rates)
+    return rate
+
+
+# ---------------------------------------------------------------------------
 # Reading inputs
 # ---------------------------------------------------------------------------
 
@@ -89,10 +137,10 @@ def read_summer_assignments(xlsx_path, children):
     ws = wb["Daily Schedule"]
     days = []
 
-    # Child camp columns: first child col D (4), second child col J (10)
-    child_cols = [3, 9]  # 0-indexed: col D=3, col J=9
+    # Child camp columns: dynamically computed based on number of children
+    child_cols = get_child_col_offsets(len(children))
 
-    for row in ws.iter_rows(min_row=4, max_col=16, values_only=False):
+    for row in ws.iter_rows(min_row=4, max_col=calculate_total_cols(len(children)), values_only=False):
         date_val = row[0].value  # col A
         if date_val is None or (isinstance(date_val, str) and date_val == "TOTAL"):
             break
@@ -992,9 +1040,13 @@ def _group_into_sections(annual_days):
 def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
     """Add or replace an 'Annual Schedule' tab in the xlsx.
 
-    Uses the same column layout as Daily Schedule (A-P, 16 columns)
-    with VLOOKUP formulas referencing Provider Comparison.
+    Uses dynamic column layout: 3 prefix + (N * 6 child block) + 1 daily total.
+    VLOOKUP formulas reference Provider Comparison.
     """
+    n_children = len(children)
+    total_cols = calculate_total_cols(n_children)
+    child_offsets = get_child_col_offsets(n_children)
+
     wb = openpyxl.load_workbook(xlsx_path)
 
     # Remove existing Annual Schedule tab if present
@@ -1012,20 +1064,14 @@ def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
     # Row 2: Instructions
     ws["A2"] = "Auto-generated from Daily Schedule + school calendar. Camp names reference Provider Comparison tab."
 
-    # Row 3: Headers (same as Daily Schedule)
-    headers = [
-        "Date", "Day", "Period",
-        f"{children[0]}'s Camp",
-        f"{children[0]} Before Care", f"{children[0]} Camp",
-        f"{children[0]} After Care", f"{children[0]} Lunch",
-        f"{children[0]} Day Total",
-    ]
-    if len(children) > 1:
+    # Row 3: Headers — dynamically generated for N children
+    headers = ["Date", "Day", "Period"]
+    for child in children:
         headers.extend([
-            f"{children[1]}'s Camp",
-            f"{children[1]} Before Care", f"{children[1]} Camp",
-            f"{children[1]} After Care", f"{children[1]} Lunch",
-            f"{children[1]} Day Total",
+            f"{child}'s Camp",
+            f"{child} Before Care", f"{child} Camp",
+            f"{child} After Care", f"{child} Lunch",
+            f"{child} Day Total",
         ])
     headers.append("Daily Total")
 
@@ -1033,6 +1079,8 @@ def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
         ws.cell(row=3, column=col, value=h)
 
     # Data rows start at row 4
+    daily_total_col = total_cols  # last column
+
     for i, day in enumerate(annual_days):
         row = i + 4
         d = day["date"]
@@ -1047,51 +1095,64 @@ def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
         # Col C: Period label
         ws.cell(row=row, column=3, value=day["period_label"])
 
-        # Child 1 (cols D-I)
-        camp1 = day["assignments"].get(children[0], "")
-        ws.cell(row=row, column=4, value=camp1)  # D: Camp name
-        # E: Before Care VLOOKUP
-        ws.cell(row=row, column=5, value=f'=IF(D{row}="","",VLOOKUP(D{row},{vlookup_range},4,FALSE))')
-        # F: Camp fee VLOOKUP
-        ws.cell(row=row, column=6, value=f'=IF(D{row}="","",VLOOKUP(D{row},{vlookup_range},3,FALSE))')
-        # G: After Care VLOOKUP
-        ws.cell(row=row, column=7, value=f'=IF(D{row}="","",VLOOKUP(D{row},{vlookup_range},5,FALSE))')
-        # H: Lunch VLOOKUP
-        ws.cell(row=row, column=8, value=f'=IF(D{row}="","",VLOOKUP(D{row},{vlookup_range},6,FALSE))')
-        # I: Child 1 Day Total
-        ws.cell(row=row, column=9, value=f"=SUM(E{row}:H{row})")
+        # Per-child columns (6 cols each: Camp Name, Before Care, Camp Fee, After Care, Lunch, Day Total)
+        child_day_total_cols = []
+        for ci, child in enumerate(children):
+            # 1-indexed column for camp name
+            camp_col = child_offsets[ci] + 1  # convert 0-indexed offset to 1-indexed
+            camp_letter = get_column_letter(camp_col)
 
-        if len(children) > 1:
-            # Child 2 (cols J-O)
-            camp2 = day["assignments"].get(children[1], "")
-            ws.cell(row=row, column=10, value=camp2)  # J: Camp name
-            # K: Before Care VLOOKUP
-            ws.cell(row=row, column=11, value=f'=IF(J{row}="","",VLOOKUP(J{row},{vlookup_range},4,FALSE))')
-            # L: Camp fee VLOOKUP
-            ws.cell(row=row, column=12, value=f'=IF(J{row}="","",VLOOKUP(J{row},{vlookup_range},3,FALSE))')
-            # M: After Care VLOOKUP
-            ws.cell(row=row, column=13, value=f'=IF(J{row}="","",VLOOKUP(J{row},{vlookup_range},5,FALSE))')
-            # N: Lunch VLOOKUP
-            ws.cell(row=row, column=14, value=f'=IF(J{row}="","",VLOOKUP(J{row},{vlookup_range},6,FALSE))')
-            # O: Child 2 Day Total
-            ws.cell(row=row, column=15, value=f"=SUM(K{row}:N{row})")
+            camp_name = day["assignments"].get(child, "")
+            ws.cell(row=row, column=camp_col, value=camp_name)
 
-        # P: Daily Total
-        if len(children) > 1:
-            ws.cell(row=row, column=16, value=f"=I{row}+O{row}")
+            # Before Care (offset+1)
+            before_col = camp_col + 1
+            ws.cell(row=row, column=before_col,
+                    value=f'=IF({camp_letter}{row}="","",VLOOKUP({camp_letter}{row},{vlookup_range},4,FALSE))')
+
+            # Camp Fee (offset+2)
+            fee_col = camp_col + 2
+            ws.cell(row=row, column=fee_col,
+                    value=f'=IF({camp_letter}{row}="","",VLOOKUP({camp_letter}{row},{vlookup_range},3,FALSE))')
+
+            # After Care (offset+3)
+            after_col = camp_col + 3
+            ws.cell(row=row, column=after_col,
+                    value=f'=IF({camp_letter}{row}="","",VLOOKUP({camp_letter}{row},{vlookup_range},5,FALSE))')
+
+            # Lunch (offset+4)
+            lunch_col = camp_col + 4
+            ws.cell(row=row, column=lunch_col,
+                    value=f'=IF({camp_letter}{row}="","",VLOOKUP({camp_letter}{row},{vlookup_range},6,FALSE))')
+
+            # Child Day Total (offset+5) = SUM of before..lunch
+            day_total_col = camp_col + 5
+            before_letter = get_column_letter(before_col)
+            lunch_letter = get_column_letter(lunch_col)
+            ws.cell(row=row, column=day_total_col,
+                    value=f"=SUM({before_letter}{row}:{lunch_letter}{row})")
+            child_day_total_cols.append(day_total_col)
+
+        # Daily Total = sum of all child day totals
+        if len(child_day_total_cols) == 1:
+            dt_letter = get_column_letter(child_day_total_cols[0])
+            ws.cell(row=row, column=daily_total_col, value=f"={dt_letter}{row}")
         else:
-            ws.cell(row=row, column=16, value=f"=I{row}")
+            parts = "+".join(f"{get_column_letter(c)}{row}" for c in child_day_total_cols)
+            ws.cell(row=row, column=daily_total_col, value=f"={parts}")
 
     # TOTAL row
     total_row = len(annual_days) + 4
     ws.cell(row=total_row, column=1, value="TOTAL")
     last_data_row = total_row - 1
 
-    # SUM formulas for cost columns
-    sum_cols = [5, 6, 7, 8, 9]  # E, F, G, H, I
-    if len(children) > 1:
-        sum_cols.extend([11, 12, 13, 14, 15])  # K, L, M, N, O
-    sum_cols.append(16)  # P
+    # SUM formulas for cost columns (all child cost columns + daily total)
+    sum_cols = []
+    for ci in range(n_children):
+        camp_col = child_offsets[ci] + 1
+        # Before care, camp fee, after care, lunch, child day total
+        sum_cols.extend([camp_col + 1, camp_col + 2, camp_col + 3, camp_col + 4, camp_col + 5])
+    sum_cols.append(daily_total_col)
 
     for col in sum_cols:
         col_letter = get_column_letter(col)
@@ -1130,11 +1191,7 @@ def main():
     args = parser.parse_args()
     children = [c.strip() for c in args.children.split(",")]
 
-    # Validate child count (spreadsheet supports max 2 children in columns D and J)
-    if len(children) > 2:
-        print("Error: The spreadsheet layout supports at most 2 children (columns D and J).", file=sys.stderr)
-        print(f"Got {len(children)} children: {', '.join(children)}", file=sys.stderr)
-        sys.exit(1)
+    validate_child_count(len(children))
 
     # Read inputs
     provider_rates = read_provider_rates(args.xlsx)

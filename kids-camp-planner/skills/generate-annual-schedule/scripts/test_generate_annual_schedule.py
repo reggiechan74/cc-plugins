@@ -25,6 +25,10 @@ from generate_annual_schedule import (
     render_markdown,
     read_provider_rates,
     update_xlsx,
+    calculate_total_cols,
+    get_child_col_offsets,
+    validate_child_count,
+    resolve_period_rate,
 )
 
 
@@ -608,3 +612,63 @@ class TestMultiCalendarMerge:
         finally:
             os.unlink(tdsb_path)
             os.unlink(gist_path)
+
+
+class TestDynamicChildColumns:
+    """Tests for dynamic child column layout."""
+
+    def test_column_formula_2_children(self):
+        """2 children: 3 + 12 + 1 = 16 cols (backward compat)."""
+        assert calculate_total_cols(2) == 16
+
+    def test_column_formula_3_children(self):
+        """3 children: 3 + 18 + 1 = 22 cols."""
+        assert calculate_total_cols(3) == 22
+
+    def test_column_formula_4_children(self):
+        """4 children: 3 + 24 + 1 = 28 cols."""
+        assert calculate_total_cols(4) == 28
+
+    def test_child_col_offsets_2(self):
+        offsets = get_child_col_offsets(2)
+        assert offsets == [3, 9]  # 0-indexed: D=3, J=9
+
+    def test_child_col_offsets_3(self):
+        offsets = get_child_col_offsets(3)
+        assert offsets == [3, 9, 15]
+
+    def test_child_col_offsets_4(self):
+        offsets = get_child_col_offsets(4)
+        assert offsets == [3, 9, 15, 21]
+
+    def test_max_4_children_enforced(self):
+        with pytest.raises(SystemExit):
+            validate_child_count(5)
+
+    def test_1_child_supported(self):
+        assert calculate_total_cols(1) == 10  # 3 + 6 + 1
+
+
+class TestPerPeriodRates:
+    """Tests for per-period rate differentiation."""
+
+    def test_fallback_to_summer_rates(self):
+        """When PA Day/Break columns are empty, fall back to summer rates."""
+        rates = {"summer": {"daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87},
+                 "pa_day": None, "break": None}
+        resolved = resolve_period_rate(rates, "pa_day")
+        assert resolved == rates["summer"]
+
+    def test_period_specific_rate(self):
+        rates = {"summer": {"daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87},
+                 "pa_day": {"daily": 45, "before": 8, "after": 8, "lunch": 5, "total": 66},
+                 "break": None}
+        resolved = resolve_period_rate(rates, "pa_day")
+        assert resolved["total"] == 66
+
+    def test_break_rate_for_winter(self):
+        rates = {"summer": {"daily": 60, "before": 10, "after": 10, "lunch": 7, "total": 87},
+                 "pa_day": None,
+                 "break": {"daily": 50, "before": 8, "after": 8, "lunch": 5, "total": 71}}
+        resolved = resolve_period_rate(rates, "winter_break")
+        assert resolved["total"] == 71
