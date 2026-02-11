@@ -127,7 +127,7 @@ The script produces:
 
 **Updated spreadsheet** with:
 - New "Annual Schedule" tab covering all ~64 days
-- Same column layout as Daily Schedule (A-P, 16 columns)
+- Dynamic column layout matching Daily Schedule: 3 prefix + (N x 6 child block) + 1 daily total (supports 1-4 children)
 - VLOOKUP formulas referencing Provider Comparison tab for costs
 - SUM formulas for totals
 - Existing 4 tabs preserved untouched
@@ -152,11 +152,15 @@ Files updated:
 
 ## What the Script Reads
 
-### From Provider Comparison tab (cols A-F, rows 4-6):
+### From Provider Comparison tab (cols A-M, rows 4+):
 - Provider names and daily rates (camp fee, before care, after care, lunch, total)
+- Supports up to 3 rate sections: Summer, PA Day, and Break (Winter/March/Fall)
+- PA Day and Break columns are optional; when empty, summer rates are used as fallback
 
-### From Daily Schedule tab (cols A, C, D, J, rows 4-43):
-- Date, week number, child 1 camp name, child 2 camp name
+### From Daily Schedule tab (dynamic columns, rows 4-43):
+- Date, week number, and camp name per child (up to 4 children)
+- Column layout: 3 prefix cols (Date, Day, Week#) + 6 cols per child + 1 Daily Total
+- For 2 children: cols A-P (16 cols); for 3: cols A-V (22 cols); for 4: cols A-AB (28 cols)
 - These are the summer assignments (40 rows)
 
 ### From school calendar markdown:

@@ -72,16 +72,16 @@ The sample budget spreadsheet (`examples/sample-budget.xlsx`) has four tabs:
 
 | Tab | Role |
 |-----|------|
-| **Provider Comparison** | Camp rates with both daily and weekly columns, Total/Day and Total/Week formulas |
-| **Daily Schedule** | Source of truth — one row per weekday with VLOOKUP formulas pulling costs from Provider Comparison |
+| **Provider Comparison** | Camp rates with both daily and weekly columns, Total/Day and Total/Week formulas. Supports per-period rate sections (Summer, PA Day, Break) — empty sections fall back to summer rates. |
+| **Daily Schedule** | Source of truth — one row per weekday with VLOOKUP formulas pulling costs from Provider Comparison. Dynamic column layout supports 1-4 children: 3 prefix cols + 6 cols per child + 1 daily total. |
 | **Weekly Schedule** | Derived from Daily Schedule via SUMIF formulas |
 | **Budget Summary** | All cost totals (camp fees, care, lunch, per-provider breakdown) derived from Daily Schedule |
 
-Users only fill in four columns per row in the Daily Schedule: **date**, **week number**, and **camp name** per child. All costs are formula-driven.
+Users only fill in the prefix columns plus one **camp name** column per child per row. All costs are formula-driven. The layout scales dynamically: 2 children = 16 columns (A-P), 3 children = 22 columns (A-V), 4 children = 28 columns (A-AB).
 
 ### Annual Schedule
 
-The sample annual schedule (`examples/sample-annual-schedule.md`) demonstrates full-year coverage across all school-break periods for a TCDSB elementary family:
+The sample annual schedule (`examples/sample-annual-schedule.md`) demonstrates full-year coverage across all school-break periods for a TCDSB elementary family (supports up to 4 children with dynamic column layout):
 
 | Period | Days |
 |--------|------|

@@ -111,8 +111,8 @@ Create the budget file at the appropriate location:
 ```
 
 **Excel format:** See `${CLAUDE_PLUGIN_ROOT}/examples/sample-budget.xlsx` for the reference Excel budget template. The spreadsheet has four tabs:
-- **Provider Comparison**: Camp rates including both daily and weekly columns with Total/Day and Total/Week formulas
-- **Daily Schedule**: Day-by-day assignments (source of truth) with VLOOKUP formulas referencing Provider Comparison
+- **Provider Comparison**: Camp rates including both daily and weekly columns with Total/Day and Total/Week formulas. Supports per-period rate columns (Summer, PA Day, Break) — when PA Day or Break columns are empty, summer rates are used as fallback.
+- **Daily Schedule**: Day-by-day assignments (source of truth) with VLOOKUP formulas referencing Provider Comparison. Dynamic column layout supports 1-4 children: 3 prefix cols + 6 cols per child + 1 daily total.
 - **Weekly Schedule**: Derived from Daily Schedule via SUMIF formulas
 - **Budget Summary**: All cost totals derived from Daily Schedule via SUM/SUMIF formulas
 

@@ -31,6 +31,8 @@
 - **Description**: [Brief description]
 
 ## Costs
+
+### Summer Rates
 | Item | Cost | Notes |
 |------|------|-------|
 | Base fee (daily) | $[X] | Per day rate |
@@ -43,6 +45,24 @@
 | Sibling discount | [X]% | [Conditions] |
 | Early bird discount | [Details] | [Deadline] |
 | Multi-week discount | [Details] | [Minimum weeks] |
+
+### PA Day Rates
+<!-- Leave blank to fall back to Summer rates -->
+| Item | Cost | Notes |
+|------|------|-------|
+| Base fee (daily) | $[X] | Per day rate |
+| Before care | $[X]/day | [Hours] |
+| After care | $[X]/day | [Hours] |
+| Lunch program | $[X]/day | [Optional/Required] |
+
+### Break Rates (Winter / March / Fall)
+<!-- Leave blank to fall back to Summer rates -->
+| Item | Cost | Notes |
+|------|------|-------|
+| Base fee (daily) | $[X] | Per day rate |
+| Before care | $[X]/day | [Hours] |
+| After care | $[X]/day | [Hours] |
+| Lunch program | $[X]/day | [Optional/Required] |
 
 ## Quality Indicators
 - **Certifications**: [HIGH FIVE, OCA, etc.]
