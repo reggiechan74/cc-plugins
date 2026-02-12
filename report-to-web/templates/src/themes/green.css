@@ -1,0 +1,26 @@
+/**
+ * Green — shadcn Green preset adapted for dark mode
+ */
+:root {
+  --color-accent-primary: #22c55e;
+  --color-accent-secondary: #14b8a6;
+  --color-accent-tertiary: #6366f1;
+
+  --color-border-accent: rgba(34, 197, 94, 0.2);
+
+  /* shadcn semantic overrides */
+  --color-primary: #22c55e;
+  --color-primary-foreground: #0f1117;
+  --color-ring: #22c55e;
+
+  /* Gradient overrides */
+  --gradient-gold-subtle: linear-gradient(135deg, rgba(34, 197, 94, 0.04) 0%, rgba(34, 197, 94, 0.01) 100%);
+  --gradient-teal-subtle: linear-gradient(135deg, rgba(20, 184, 166, 0.06) 0%, rgba(20, 184, 166, 0.01) 100%);
+  --gradient-hero-text: linear-gradient(135deg, var(--color-text-primary) 0%, #22c55e 50%, #14b8a6 100%);
+  --gradient-tab-indicator: linear-gradient(90deg, #22c55e, #14b8a6);
+  --gradient-timeline-line: linear-gradient(180deg, #22c55e 0%, #14b8a6 50%, #6366f1 100%);
+
+  /* Shadow glow overrides */
+  --shadow-glow-gold: 0 0 20px rgba(34, 197, 94, 0.15);
+  --shadow-glow-teal: 0 0 20px rgba(20, 184, 166, 0.15);
+}

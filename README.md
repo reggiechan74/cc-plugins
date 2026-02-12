@@ -101,6 +101,51 @@ Plan and book kids' summer camps, March break programs, and PA day coverage with
 
 ---
 
+### mississauga-permits
+
+Query Mississauga building permit data by address with filtering and summary stats.
+
+**Install:**
+```bash
+/plugin install mississauga-permits@reggiechan74
+```
+
+**Features:**
+- 20 municipal datasets: building permits, parcels, land use, transit, infrastructure, and more
+- Text search with partial matching and address normalization
+- Spatial queries by latitude/longitude
+- Auto-discovered field metadata from ArcGIS FeatureServer
+- Zero external dependencies (Python stdlib only)
+- JSON output with summary statistics
+
+**Commands:**
+- `/fetch-permits <address>` - Building permit lookup with rich filtering (type, scope, ward, date range, construction value)
+- `/fetch-mississauga [options]` - General-purpose query for any of 20 City of Mississauga datasets
+
+---
+
+### report-to-web
+
+Convert markdown research reports into interactive React presentation websites for GitHub Pages.
+
+**Install:**
+```bash
+/plugin install report-to-web@reggiechan74
+```
+
+**Features:**
+- Reusable generator for any structured markdown research report
+- Tailwind CSS v4 + shadcn/ui with 8 built-in dark color themes
+- Interactive elements: calculators, scenario sliders, comparison tables, timelines
+- Knowledge vault with searchable full-text report content
+- Dark professional theme with refined typography
+- GitHub Pages ready with included deploy workflow
+
+**Commands:**
+- `/report-to-web:generate <path>` - Parse a markdown report and generate a complete React site
+
+---
+
 ### rubric-creator
 
 Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code.

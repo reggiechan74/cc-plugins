@@ -1,0 +1,26 @@
+/**
+ * Violet — shadcn Violet preset adapted for dark mode
+ */
+:root {
+  --color-accent-primary: #8b5cf6;
+  --color-accent-secondary: #6366f1;
+  --color-accent-tertiary: #3b82f6;
+
+  --color-border-accent: rgba(139, 92, 246, 0.2);
+
+  /* shadcn semantic overrides */
+  --color-primary: #8b5cf6;
+  --color-primary-foreground: #ffffff;
+  --color-ring: #8b5cf6;
+
+  /* Gradient overrides */
+  --gradient-gold-subtle: linear-gradient(135deg, rgba(139, 92, 246, 0.04) 0%, rgba(139, 92, 246, 0.01) 100%);
+  --gradient-teal-subtle: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.01) 100%);
+  --gradient-hero-text: linear-gradient(135deg, var(--color-text-primary) 0%, #8b5cf6 50%, #6366f1 100%);
+  --gradient-tab-indicator: linear-gradient(90deg, #8b5cf6, #6366f1);
+  --gradient-timeline-line: linear-gradient(180deg, #8b5cf6 0%, #6366f1 50%, #3b82f6 100%);
+
+  /* Shadow glow overrides */
+  --shadow-glow-gold: 0 0 20px rgba(139, 92, 246, 0.15);
+  --shadow-glow-teal: 0 0 20px rgba(99, 102, 241, 0.15);
+}

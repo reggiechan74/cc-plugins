@@ -1,0 +1,10 @@
+{
+  "name": "report-to-web",
+  "version": "1.0.0",
+  "description": "Convert markdown research reports into interactive React presentation websites for GitHub Pages",
+  "author": {
+    "name": "Claude Code Plugin",
+    "email": "noreply@anthropic.com"
+  },
+  "keywords": ["react", "presentation", "research", "website", "github-pages", "interactive"]
+}

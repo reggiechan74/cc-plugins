@@ -1,0 +1,8 @@
+{
+  "name": "mississauga-permits",
+  "version": "0.1.0",
+  "description": "Query Mississauga building permit data by address with filtering and summary stats",
+  "author": {
+    "name": "Reggie Chan"
+  }
+}

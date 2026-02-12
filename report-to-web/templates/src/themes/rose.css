@@ -1,0 +1,26 @@
+/**
+ * Rose — shadcn Rose preset adapted for dark mode
+ */
+:root {
+  --color-accent-primary: #f43f5e;
+  --color-accent-secondary: #ec4899;
+  --color-accent-tertiary: #8b5cf6;
+
+  --color-border-accent: rgba(244, 63, 94, 0.2);
+
+  /* shadcn semantic overrides */
+  --color-primary: #f43f5e;
+  --color-primary-foreground: #ffffff;
+  --color-ring: #f43f5e;
+
+  /* Gradient overrides */
+  --gradient-gold-subtle: linear-gradient(135deg, rgba(244, 63, 94, 0.04) 0%, rgba(244, 63, 94, 0.01) 100%);
+  --gradient-teal-subtle: linear-gradient(135deg, rgba(236, 72, 153, 0.06) 0%, rgba(236, 72, 153, 0.01) 100%);
+  --gradient-hero-text: linear-gradient(135deg, var(--color-text-primary) 0%, #f43f5e 50%, #ec4899 100%);
+  --gradient-tab-indicator: linear-gradient(90deg, #f43f5e, #ec4899);
+  --gradient-timeline-line: linear-gradient(180deg, #f43f5e 0%, #ec4899 50%, #8b5cf6 100%);
+
+  /* Shadow glow overrides */
+  --shadow-glow-gold: 0 0 20px rgba(244, 63, 94, 0.15);
+  --shadow-glow-teal: 0 0 20px rgba(236, 72, 153, 0.15);
+}

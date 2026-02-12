@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://data.mississauga.ca/schemas/building_permit.schema.json",
+  "title": "Mississauga Building Permits",
+  "description": "Building permit records from City of Mississauga Open Data (post-2018)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this JSON Schema"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Query metadata and summary statistics",
+      "properties": {
+        "source": {
+          "type": "string",
+          "const": "City of Mississauga Open Data - Issued Building Permits"
+        },
+        "api_endpoint": {
+          "type": "string",
+          "format": "uri"
+        },
+        "query_address": {
+          "type": "string",
+          "description": "Address search term used"
+        },
+        "filters_applied": {
+          "type": "object",
+          "properties": {
+            "date_field": { "type": "string" },
+            "date_from": { "type": ["string", "null"], "format": "date" },
+            "date_to": { "type": ["string", "null"], "format": "date" },
+            "file_type": { "type": ["string", "null"] },
+            "scope": { "type": ["string", "null"] },
+            "ward": { "type": ["integer", "null"] },
+            "min_value": { "type": ["number", "null"] },
+            "max_value": { "type": ["number", "null"] }
+          }
+        },
+        "total_records": {
+          "type": "integer",
+          "description": "Number of permits returned"
+        },
+        "fetched_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of query execution"
+        },
+        "summary": {
+          "type": "object",
+          "description": "Aggregate statistics for the result set",
+          "properties": {
+            "total_estimated_value": { "type": ["number", "null"] },
+            "average_estimated_value": { "type": ["number", "null"] },
+            "date_range": {
+              "type": "object",
+              "properties": {
+                "earliest": { "type": ["string", "null"] },
+                "latest": { "type": ["string", "null"] }
+              }
+            },
+            "by_file_type": {
+              "type": "object",
+              "additionalProperties": { "type": "integer" }
+            },
+            "by_scope": {
+              "type": "object",
+              "additionalProperties": { "type": "integer" }
+            },
+            "by_status": {
+              "type": "object",
+              "additionalProperties": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "required": ["source", "query_address", "total_records", "fetched_at"]
+    },
+    "permits": {
+      "type": "array",
+      "description": "Array of building permit records",
+      "items": {
+        "type": "object",
+        "properties": {
+          "OBJECTID": { "type": "integer", "description": "System-maintained unique ID" },
+          "BP_NO": { "type": ["string", "null"], "description": "Building Permit Number" },
+          "STATUS": { "type": ["string", "null"], "description": "Permit status (ISSUED, COM)" },
+          "ADDRESS": { "type": ["string", "null"], "description": "Property address" },
+          "UNIT_NO": { "type": ["string", "null"], "description": "Unit number" },
+          "DESCRIPTION": { "type": ["string", "null"], "description": "Application description" },
+          "SCOPE": { "type": ["string", "null"], "description": "Scope description" },
+          "FILE_TYPE": { "type": ["string", "null"], "description": "RESIDENTIAL, PUBLIC, UNKNOWN, INDUSTRIAL, COMMERCIAL" },
+          "BLDG_TYPE": { "type": ["string", "null"], "description": "Building type description" },
+          "APP_DETAIL": { "type": ["string", "null"], "description": "Additional scope/type details" },
+          "APPL_AREA": { "type": ["number", "null"], "description": "Permit area in square metres" },
+          "STOREYS": { "type": ["number", "null"], "description": "Number of storeys" },
+          "EST_CON_VALUE": { "type": ["integer", "null"], "description": "Estimated construction value in CAD" },
+          "RES_UNITS": { "type": ["integer", "null"], "description": "Residential units impacted" },
+          "DEMO": { "type": ["string", "null"], "description": "Demolition included (Y/N)" },
+          "POSTAL_CODE": { "type": ["string", "null"], "description": "Postal code" },
+          "BLDG_NO": { "type": ["string", "null"], "description": "Building number" },
+          "WARD": { "type": ["integer", "null"], "description": "Ward designation" },
+          "ZAREA": { "type": ["string", "null"], "description": "Zoning area" },
+          "LATITUDE": { "type": ["number", "null"], "description": "WGS84 latitude" },
+          "LONGITUDE": { "type": ["number", "null"], "description": "WGS84 longitude" },
+          "APPLICATION_DATE": { "type": ["string", "null"], "description": "Submission date (ISO 8601)" },
+          "ISSUE_DATE": { "type": ["string", "null"], "description": "Permit issuance date (ISO 8601)" },
+          "COMPLETE_DATE": { "type": ["string", "null"], "description": "Completion date (ISO 8601)" }
+        },
+        "required": ["OBJECTID"]
+      }
+    }
+  },
+  "required": ["metadata", "permits"]
+}

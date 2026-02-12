@@ -1,0 +1,147 @@
+{
+  "_comment": "City of Mississauga Open Data — Dataset Registry",
+  "_base_url": "https://services6.arcgis.com/hM5ymMLbxIyWTjn2/arcgis/rest/services",
+
+  "building-permits": {
+    "service": "Issued_Building_Permits",
+    "layer": 0,
+    "description": "Building permits issued since Jan 2018 — type, scope, status, value",
+    "search_field": "ADDRESS",
+    "category": "development"
+  },
+  "parcels": {
+    "service": "Parcel",
+    "layer": 0,
+    "description": "Tax parcel boundaries for property analysis",
+    "search_field": null,
+    "spatial": true,
+    "category": "property"
+  },
+  "addresses": {
+    "service": "Address",
+    "layer": 0,
+    "description": "Civic address points, updated monthly",
+    "search_field": "FULLNAME",
+    "category": "property"
+  },
+  "building-footprints": {
+    "service": "BldgRoof",
+    "layer": 0,
+    "description": "Building footprint polygons from 2023 imagery",
+    "search_field": null,
+    "spatial": true,
+    "category": "property"
+  },
+  "land-use": {
+    "service": "MOP_2010_Landuse",
+    "layer": 0,
+    "description": "Official Plan land use designations",
+    "search_field": null,
+    "spatial": true,
+    "category": "planning"
+  },
+  "character-areas": {
+    "service": "CharacterArea",
+    "layer": 0,
+    "description": "Designated character area classifications",
+    "search_field": null,
+    "spatial": true,
+    "category": "planning"
+  },
+  "policy-codes": {
+    "service": "2019_PolicyCodes",
+    "layer": 0,
+    "description": "ELU policy code zones and designations",
+    "search_field": null,
+    "spatial": true,
+    "category": "planning"
+  },
+  "wards": {
+    "service": "Ward_Boundaries",
+    "layer": 0,
+    "description": "11 city ward/electoral boundaries with council info",
+    "search_field": null,
+    "spatial": true,
+    "category": "administrative"
+  },
+  "census-2016": {
+    "service": "2016_Census_Data_By_Neighbourhoods_Shape_File",
+    "layer": 0,
+    "description": "2016 Census demographics by neighbourhood",
+    "search_field": null,
+    "spatial": true,
+    "category": "demographics"
+  },
+  "city-poi": {
+    "service": "CITY_POI",
+    "layer": 0,
+    "description": "200+ landmark types — parks, schools, hospitals, facilities",
+    "search_field": "LANDMARKNAME",
+    "category": "infrastructure"
+  },
+  "streets": {
+    "service": "Street",
+    "layer": 0,
+    "description": "Street network data",
+    "search_field": "FULLNAME",
+    "category": "infrastructure"
+  },
+  "bus-stops": {
+    "service": "BusStop",
+    "layer": 0,
+    "description": "Mississauga transit stop locations",
+    "search_field": "stp_descri",
+    "category": "infrastructure"
+  },
+  "trails": {
+    "service": "Existing_Pedestrian_Trail_Network",
+    "layer": 0,
+    "description": "Multi-use trails and engineered walkways",
+    "search_field": "TRAILNAME1",
+    "category": "infrastructure"
+  },
+  "construction-plans": {
+    "service": "COM_Construction_Plans",
+    "layer": 0,
+    "description": "Active municipal construction projects (roads, intersections)",
+    "search_field": "Location",
+    "category": "infrastructure"
+  },
+  "stormwater-projects": {
+    "service": "COM_Stormwater_v2_WFL1",
+    "layer": 0,
+    "description": "Stormwater infrastructure and management projects",
+    "search_field": "stormwater_exceltotable_street_",
+    "category": "infrastructure"
+  },
+  "road-projects": {
+    "service": "COM_Construction2_WFL1",
+    "layer": 0,
+    "description": "Road construction and improvement projects",
+    "search_field": "Street_Name",
+    "category": "infrastructure"
+  },
+  "speed-cameras": {
+    "service": "ASE_Location",
+    "layer": 0,
+    "description": "Automated Speed Enforcement camera locations",
+    "search_field": "LOCATION",
+    "category": "safety"
+  },
+  "winter-maintenance": {
+    "service": "Winter_Maintenance_Routes__for_online_public_maps_view",
+    "layer": 0,
+    "description": "Salt and plow routes",
+    "search_field": null,
+    "spatial": true,
+    "category": "infrastructure"
+  },
+  "planimetric-points": {
+    "service": "Planimetric_Points",
+    "layer": 0,
+    "description": "Feature points — antennas, hydrants, poles, trees (2023 imagery)",
+    "search_field": null,
+    "spatial": true,
+    "category": "infrastructure"
+  }
+}

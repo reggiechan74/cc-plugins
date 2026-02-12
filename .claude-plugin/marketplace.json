@@ -23,6 +23,18 @@
       "version": "0.1.0"
     },
     {
+      "name": "mississauga-permits",
+      "source": "./mississauga-permits",
+      "description": "Query Mississauga building permit data by address with filtering and summary stats",
+      "version": "0.1.0"
+    },
+    {
+      "name": "report-to-web",
+      "source": "./report-to-web",
+      "description": "Convert markdown research reports into interactive React presentation websites for GitHub Pages",
+      "version": "1.0.0"
+    },
+    {
       "name": "rubric-creator",
       "source": "./rubric-creator",
       "description": "Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code",

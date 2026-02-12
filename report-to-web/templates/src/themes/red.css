@@ -1,0 +1,26 @@
+/**
+ * Red — shadcn Red preset adapted for dark mode
+ */
+:root {
+  --color-accent-primary: #ef4444;
+  --color-accent-secondary: #f97316;
+  --color-accent-tertiary: #8b5cf6;
+
+  --color-border-accent: rgba(239, 68, 68, 0.2);
+
+  /* shadcn semantic overrides */
+  --color-primary: #ef4444;
+  --color-primary-foreground: #ffffff;
+  --color-ring: #ef4444;
+
+  /* Gradient overrides */
+  --gradient-gold-subtle: linear-gradient(135deg, rgba(239, 68, 68, 0.04) 0%, rgba(239, 68, 68, 0.01) 100%);
+  --gradient-teal-subtle: linear-gradient(135deg, rgba(249, 115, 22, 0.06) 0%, rgba(249, 115, 22, 0.01) 100%);
+  --gradient-hero-text: linear-gradient(135deg, var(--color-text-primary) 0%, #ef4444 50%, #f97316 100%);
+  --gradient-tab-indicator: linear-gradient(90deg, #ef4444, #f97316);
+  --gradient-timeline-line: linear-gradient(180deg, #ef4444 0%, #f97316 50%, #8b5cf6 100%);
+
+  /* Shadow glow overrides */
+  --shadow-glow-gold: 0 0 20px rgba(239, 68, 68, 0.15);
+  --shadow-glow-teal: 0 0 20px rgba(249, 115, 22, 0.15);
+}
