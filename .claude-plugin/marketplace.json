@@ -17,6 +17,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "install-private-plugin",
+      "source": "./install-private-plugin",
+      "description": "Configure git auth for installing Claude Code plugins from private GitHub repos. Guides PAT creation, Codespace secret storage, and git URL rewriting when /plugin marketplace add fails with 403 or HTTPS auth errors.",
+      "version": "0.1.0"
+    },
+    {
       "name": "kids-camp-planner",
       "source": "./kids-camp-planner",
       "description": "Plan and book kids' summer camps, March break programs, and PA day coverage with budget tracking, schedule optimization, and provider research for Ontario families",

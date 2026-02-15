@@ -1,0 +1,10 @@
+{
+  "name": "install-private-plugin",
+  "version": "0.1.0",
+  "description": "Configure git auth for installing Claude Code plugins from private GitHub repos. Guides PAT creation, Codespace secret storage, and git URL rewriting when /plugin marketplace add fails with 403 or HTTPS auth errors.",
+  "author": {
+    "name": "Reggie Chan"
+  },
+  "keywords": ["git", "auth", "private-repo", "codespace", "pat", "plugin-install"],
+  "license": "MIT"
+}

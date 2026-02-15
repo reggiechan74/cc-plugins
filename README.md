@@ -28,11 +28,18 @@ Multi-agent verification system implementing organizational intelligence for pro
 - Automatic verification gates via PreToolUse and PostToolUse hooks
 - Per-project configuration with `.claude/code-coherence.local.md`
 
-**Commands:**
+**Skills:**
 - `/coherence-check` - Full multi-agent verification workflow
 - `/plan-review` - Review execution plans with acceptance criteria
 - `/audit-trail` - Bidirectional decision history with search
 - `/acceptance-criteria` - Define and enforce success criteria
+- `/swiss-cheese-validation` - Multi-layer error checking with independence verification
+
+**Agents:**
+- **Planner** - Creates execution DAGs with pre-declared acceptance criteria
+- **Code Critic** - Validates syntax, logic, performance, style, complexity
+- **Security Critic** - OWASP Top 10, data exposure, timing attacks, supply chain
+- **Domain Critic** - Business logic validation (financial, healthcare, legal specializations)
 
 ---
 
@@ -65,6 +72,32 @@ Create professional course curricula for 1-2 day workshops using backward design
 - `/create-from-template` - Create new course from existing template
 - `/review-curriculum` - Validate curriculum quality and alignment
 
+**Agents:**
+- **Curriculum Architect** - Autonomous agent that designs complete curricula from high-level requirements
+- **Quality Reviewer** - Validates alignment between outcomes, assessments, and activities
+
+---
+
+### install-private-plugin
+
+Configure git auth for installing Claude Code plugins from private GitHub repos. Guides PAT creation, Codespace secret storage, and git URL rewriting when `/plugin marketplace add` fails with 403 or HTTPS auth errors.
+
+**Install:**
+```bash
+/plugin install install-private-plugin@reggiechan74
+```
+
+**Features:**
+- Step-by-step guide for creating fine-grained GitHub PATs with minimal permissions
+- Codespace secret storage and container rebuild workflow
+- Git URL rewriting to inject PAT credentials transparently
+- Access verification before attempting plugin install
+- Works with any git-based private repo (GitHub, GitLab, Bitbucket)
+
+**Commands:**
+- `/install-private-plugin` - Show full prerequisites guide for PAT and secret setup
+- `/install-private-plugin <github-repo-url> <env-var-name>` - Configure git auth and verify access
+
 ---
 
 ### kids-camp-planner
@@ -77,27 +110,29 @@ Plan and book kids' summer camps, March break programs, and PA day coverage with
 ```
 
 **Features:**
-- Schedule Planning: Build gap-free coverage from last day of school through fall, including March break and PA days
+- Schedule Planning: Build gap-free day-by-day coverage from last day of school through fall, including March break and PA days
 - Provider Research: Systematically discover and document camp providers with structured comparison files
-- Budget Tracking: Calculate costs across children, providers, and weeks with discount optimization and tax recovery estimates
+- Budget Tracking: Calculate costs across children, providers, and days/weeks with discount optimization and tax recovery estimates
 - Private School Support: Handle calendar mismatches between private schools and public board PA day/break schedules
 - Email Drafting: Generate inquiry, registration, waitlist, special needs, and cancellation emails
-- Pre-Saved Calendars: Ships with TDSB and GIST calendar data; extensible to other Ontario schools
+- Pre-Saved Calendars: Ships with 12+ Ontario public school board calendars (TDSB, TCDSB, PDSB, DDSB, HDSB, YRDSB, and more) plus private schools (GIST, KCS)
 
 **Skills:**
 - **Setup** - Initialize research folder and family profile
 - **Camp Planning** - Ontario camp evaluation knowledge and quality indicators
 - **Budget Optimization** - Cost calculation, discount optimization, tax recovery
-- **Plan Summer** - Full summer coverage scheduling
+- **Plan Summer** - Day-by-day summer coverage scheduling
 - **Plan March Break** - March break planning (handles 2-week private school breaks)
 - **Plan PA Days** - PA day lookup and single-day coverage
 - **Research Camps** - Provider discovery and documentation
 - **Draft Email** - Email composition for camp communications
 - **Add School Calendar** - Import school calendar from URL/PDF into reference data
+- **Generate Annual Schedule** - Consolidate all periods into one annual view with markdown + xlsx output
+- **Commute Matrix** - Automated commute calculation using Geoapify API
 
 **Agents:**
-- **Camp Researcher** - Autonomous web research creating provider files
-- **Schedule Optimizer** - Builds and refines schedules across constraints
+- **Camp Researcher** - Autonomous web research creating provider files with daily and weekly rates
+- **Schedule Optimizer** - Builds and refines day-level schedules across constraints
 
 ---
 
@@ -143,6 +178,9 @@ Convert markdown research reports into interactive React presentation websites f
 
 **Commands:**
 - `/report-to-web:generate <path>` - Parse a markdown report and generate a complete React site
+
+**Agents:**
+- **Site Builder** - Autonomous agent that parses reports and generates React projects
 
 ---
 
