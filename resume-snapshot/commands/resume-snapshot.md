@@ -215,6 +215,25 @@ Be specific about the problem it solves and who benefits.>
 - **<Quality indicators>**: <testing, CI/CD, types, linting, etc.>
 - **Production Features**: <config management, logging, error handling, caching, etc.>
 
+**Code Quality Evidence**:
+- **Test Coverage**: <test-to-source file ratio, test framework(s) detected, which modules have test coverage and which don't>
+- **Type Safety**: <type annotation usage, TypeScript strict mode, mypy/pyright config — or "not applicable" for dynamic languages without annotations>
+- **Error Handling**: <dominant patterns (try/catch, Result types, error returns), consistency across modules, coverage of failure paths>
+- **Complexity Profile**: <where complexity concentrates, whether it's justified by the problem domain, complexity-to-test correlation>
+
+**Architecture**:
+
+    <ASCII box-and-arrow diagram from Phase 2.5>
+
+<1-2 sentence caption: the key architectural insight — e.g., "Clean layered architecture with
+unidirectional dependencies flowing from CLI entry through core engine to data layer.">
+
+**Codebase Evolution**:
+- **Timeline**: <first commit date> → <last commit date> (<total duration>)
+- **Development Phases**: <narrative from Phase 2.5 evolution analysis, e.g., "Rapid prototyping Jan-Mar 2025 (45 commits), feature stabilization Apr-May (12 commits), maintenance since Jun">
+- **Churn Hotspots**: <top 3 most-changed files with context — e.g., "core/engine.py (82 commits) — central pipeline, actively refined">
+- **Refactoring Maturity**: <evidence-based assessment, e.g., "High churn on core modules with decreasing complexity signals active refactoring discipline">
+
 **Skills Demonstrated**:
 - <Skill 1> (<qualifier: beginner/intermediate/advanced — based on code evidence>)
 - <Skill 2>
@@ -227,10 +246,13 @@ Be specific about the problem it solves and who benefits.>
 - <Target users or use cases>
 
 **Development Approach**:
-<1 paragraph synthesizing: development timeline (from first/last commit dates),
-iteration cadence (from commit density), solo vs. collaborative (from contributors),
-development methodology signals (from commit messages, branching, CI/CD), and
-any AI-assisted development indicators (from commit messages or tooling).>
+<1 paragraph focusing on methodology signals NOT covered in Codebase Evolution above:
+solo vs. collaborative (from contributor count and pattern), development methodology
+(from commit message conventions, branching strategy, PR usage), quality practices
+(from CI/CD, linting, pre-commit hooks), and any AI-assisted development indicators
+(from commit messages mentioning copilot/claude/AI or Co-Authored-By trailers).
+Cross-reference the Codebase Evolution section for timeline and cadence details rather
+than repeating them here.>
 ```
 
 ### Synthesis Rules
