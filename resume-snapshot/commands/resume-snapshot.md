@@ -72,6 +72,23 @@ echo "@@TESTS@@" && find . -type f \( -name '*test*' -o -name '*spec*' -o -name 
 echo "TEST_COUNT:" && find . -type f \( -name '*test*' -o -name '*spec*' -o -name '*_test.*' \) -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/.venv/*' -not -path '*/__pycache__/*' -not -name '*.pyc' 2>/dev/null | wc -l
 ```
 
+**1f. Complexity hotspots:**
+
+```bash
+echo "@@TOP_FILES_BY_SIZE@@" && \
+find . -type f \( -name '*.py' -o -name '*.js' -o -name '*.ts' -o -name '*.tsx' -o -name '*.jsx' -o -name '*.go' -o -name '*.rs' -o -name '*.java' -o -name '*.rb' -o -name '*.cpp' -o -name '*.c' \) \
+  -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/.venv/*' -not -path '*/venv/*' -not -path '*/dist/*' -not -path '*/build/*' -not -path '*/target/*' -not -path '*/.next/*' \
+  -exec wc -l {} + 2>/dev/null | sort -rn | head -16 && \
+echo "@@FUNCTION_COUNTS@@" && \
+find . -type f \( -name '*.py' -o -name '*.js' -o -name '*.ts' -o -name '*.tsx' -o -name '*.jsx' -o -name '*.go' -o -name '*.rs' -o -name '*.java' -o -name '*.rb' \) \
+  -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/.venv/*' -not -path '*/dist/*' -not -path '*/build/*' \
+  -exec sh -c 'count=$(grep -cE "^\s*(def |function |const \w+ = |async function |func |fn |public |private |protected )" "$1" 2>/dev/null); [ "$count" -gt 0 ] && echo "  $count $1"' _ {} \; 2>/dev/null | sort -rn | head -15 && \
+echo "@@DEEP_NESTING@@" && \
+find . -type f \( -name '*.py' -o -name '*.js' -o -name '*.ts' -o -name '*.go' -o -name '*.rs' -o -name '*.java' \) \
+  -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/.venv/*' -not -path '*/dist/*' \
+  -exec sh -c 'max=$(awk "{ match(\$0, /^[[:space:]]*/); len=RLENGTH; if(len>max) max=len } END { print max+0 }" "$1" 2>/dev/null); [ "$max" -gt 16 ] && echo "  depth:$max $1"' _ {} \; 2>/dev/null | sort -t: -k2 -rn | head -10
+```
+
 ---
 
 ## Phase 2: Read Key Files
