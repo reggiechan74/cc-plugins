@@ -140,6 +140,58 @@ Use **Glob** to find the 5 largest source code files (by common extensions: `.py
 
 ---
 
+## Phase 2.5: Analyze Codebase Intelligence
+
+Before synthesizing the output, reason over ALL data collected in Phases 1 and 2. Do NOT make additional tool calls — work from what you already have. Produce the following four internal analyses (these are working notes that feed Phase 3, not written to the output file):
+
+### Complexity Assessment
+
+Using the 1f data (file sizes, function counts, nesting depth) and 1e data (test file list):
+
+- Identify the 3-5 most complex modules. For each, note: file path, line count, function count, nesting depth, and what role it plays in the project.
+- Characterize complexity distribution: Is it concentrated in a few files or spread evenly?
+- Assess complexity-to-test correlation: Are the most complex files covered by test files? List any complex files with no apparent test coverage.
+
+### Design Pattern Detection
+
+Using the 1h data (imports), 1c data (directory tree), and Phase 2 file reads:
+
+- Identify the primary architectural pattern (MVC, layered, plugin-based, pipeline, event-driven, monolith, microservices, etc.) with specific evidence.
+- Describe the code organization strategy (by feature, by layer, by domain) based on directory structure.
+- Note abstraction quality signals: Are there clear interfaces/boundaries between modules? Deep modules (few exports, rich internals) vs shallow modules (many small files)?
+
+### Evolution Narrative
+
+Using the 1g data (churn, commit cadence, recent activity) and 1a data (commit history, contributors):
+
+- Map development phases by correlating commit cadence with content: initial build, rapid feature development, stabilization, maintenance periods.
+- Assess refactoring maturity: Do high-churn files show growing or shrinking complexity? Are changes concentrated in established code (refactoring) or new files (feature growth)?
+- Identify hot spots: Files with both high complexity AND high churn may signal technical debt. Files with high churn but low complexity may signal active, healthy iteration.
+
+### Architecture Diagram
+
+Using 1h (imports), 1c (directory tree), and pattern detection results:
+
+- Produce an ASCII box-and-arrow diagram showing the major modules/packages and their dependency relationships.
+- Use `---->` for dependency direction (A depends on B means A ---> B).
+- Mark external integration points with `[brackets]` (e.g., `[PostgreSQL]`, `[REST API]`, `[File System]`).
+- Keep to 5-10 boxes maximum — group related files into logical modules.
+- Example format:
+
+      +------------------+
+      |   CLI / Entry    |
+      +--------+---------+
+               |
+      +--------v---------+     +----------------+
+      |   Core Engine    +----->  [External API] |
+      +--------+---------+     +----------------+
+               |
+      +--------v---------+
+      |   Data Layer     +-----> [File System]
+      +------------------+
+
+---
+
 ## Phase 3: Synthesize Portfolio Entry
 
 Using ALL collected data, generate a portfolio entry in this **exact structure**:
