@@ -89,6 +89,22 @@ find . -type f \( -name '*.py' -o -name '*.js' -o -name '*.ts' -o -name '*.go' -
   -exec sh -c 'max=$(awk "{ match(\$0, /^[[:space:]]*/); len=RLENGTH; if(len>max) max=len } END { print max+0 }" "$1" 2>/dev/null); [ "$max" -gt 16 ] && echo "  depth:$max $1"' _ {} \; 2>/dev/null | sort -t: -k2 -rn | head -10
 ```
 
+**1g. Evolution analysis:**
+
+```bash
+echo "@@CHURN_BY_COMMITS@@" && \
+git log --name-only --pretty=format: 2>/dev/null | grep -v '^$' | sort | uniq -c | sort -rn | head -15 && \
+echo "@@CHURN_BY_LINES@@" && \
+git log --numstat --pretty=format: 2>/dev/null | grep -v '^$' | awk '{ add[$3]+=$1; del[$3]+=$2 } END { for(f in add) print add[f]+del[f], "+"add[f], "-"del[f], f }' | sort -rn | head -15 && \
+echo "@@COMMIT_CADENCE@@" && \
+git log --format='%ai' 2>/dev/null | cut -d'-' -f1,2 | sort | uniq -c | sort -k2 && \
+echo "@@RECENT_ACTIVITY@@" && \
+echo "Files modified in last 90 days:" && \
+git log --since="90 days ago" --name-only --pretty=format: 2>/dev/null | grep -v '^$' | sort -u | wc -l && \
+echo "Total tracked files:" && \
+git ls-files 2>/dev/null | wc -l
+```
+
 ---
 
 ## Phase 2: Read Key Files
