@@ -105,6 +105,17 @@ echo "Total tracked files:" && \
 git ls-files 2>/dev/null | wc -l
 ```
 
+**1h. Import/dependency mapping:**
+
+```bash
+echo "@@IMPORTS@@" && \
+grep -rn --include='*.py' '^\s*\(from\|import\) ' . 2>/dev/null | grep -v '.venv/' | grep -v '__pycache__/' | head -60 && \
+grep -rn --include='*.js' --include='*.ts' --include='*.tsx' --include='*.jsx' '^\s*import\b\|^\s*require(' . 2>/dev/null | grep -v 'node_modules/' | grep -v 'dist/' | head -60 && \
+grep -rn --include='*.go' '^\s*import\b\|^\s*"' . 2>/dev/null | head -40 && \
+grep -rn --include='*.rs' '^\s*use \|^\s*mod ' . 2>/dev/null | head -20 && \
+grep -rn --include='*.java' '^\s*import ' . 2>/dev/null | head -20
+```
+
 ---
 
 ## Phase 2: Read Key Files
