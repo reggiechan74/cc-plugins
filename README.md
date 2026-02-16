@@ -184,6 +184,28 @@ Convert markdown research reports into interactive React presentation websites f
 
 ---
 
+### resume-snapshot
+
+Generate portfolio-ready repository snapshots for resume and job documentation.
+
+**Install:**
+```bash
+/plugin install resume-snapshot@reggiechan74
+```
+
+**Features:**
+- Automated git metadata collection: commits, contributors, timeline, tags
+- File statistics and lines-of-code analysis by language
+- Infrastructure and tooling detection (CI/CD, Docker, linting, tests)
+- Professional portfolio-entry synthesis with technical architecture, skills, and business impact
+- Honest, evidence-based output — only claims what the code supports
+
+**Commands:**
+- `/resume-snapshot` - Generate a portfolio-quality markdown summary of the current repository
+- `/resume-snapshot --output FILE` - Write snapshot to a custom file path
+
+---
+
 ### rubric-creator
 
 Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code.

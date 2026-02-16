@@ -1,0 +1,7 @@
+{
+  "name": "resume-snapshot",
+  "version": "1.0.0",
+  "description": "Generate portfolio-ready repository snapshots for resume and job documentation",
+  "license": "MIT",
+  "keywords": ["resume", "portfolio", "documentation", "repository-analysis", "job-search"]
+}

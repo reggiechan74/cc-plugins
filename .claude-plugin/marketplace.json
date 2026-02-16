@@ -41,6 +41,12 @@
       "version": "1.0.0"
     },
     {
+      "name": "resume-snapshot",
+      "source": "./resume-snapshot",
+      "description": "Generate portfolio-ready repository snapshots for resume and job documentation",
+      "version": "1.0.0"
+    },
+    {
       "name": "rubric-creator",
       "source": "./rubric-creator",
       "description": "Professional-grade rubric creation skill with validity, reliability, and fairness controls for Claude Code",
