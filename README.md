@@ -197,6 +197,10 @@ Generate portfolio-ready repository snapshots for resume and job documentation.
 - Automated git metadata collection: commits, contributors, timeline, tags
 - File statistics and lines-of-code analysis by language
 - Infrastructure and tooling detection (CI/CD, Docker, linting, tests)
+- Complexity hotspot detection: file sizes, function counts, nesting depth
+- Evolution analysis: churn hotspots, commit cadence, refactoring maturity
+- Import/dependency mapping with ASCII architecture diagrams
+- Code quality evidence: test ratios, type safety, error handling patterns
 - Professional portfolio-entry synthesis with technical architecture, skills, and business impact
 - Honest, evidence-based output — only claims what the code supports
 
