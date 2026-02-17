@@ -13,13 +13,13 @@
     { "id": "lines", "file": "lines.json", "count": 15 },
     { "id": "areas", "file": "areas.json", "count": 11 },
     { "id": "dots", "file": "dots.json", "count": 11 },
-    { "id": "radial", "file": "radial.json", "count": 5 },
+    { "id": "radial", "file": "radial.json", "count": 6 },
     { "id": "annotation", "file": "annotation.json", "count": 8 },
     { "id": "maps", "file": "maps.json", "count": 22 },
     { "id": "essays", "file": "essays.json", "count": 4 },
     { "id": "fun", "file": "fun.json", "count": 12 }
   ],
-  "total_templates": 173,
+  "total_templates": 174,
   "config_schema": {
     "id": "Kebab-case unique identifier",
     "name": "Display name matching Observable gallery",
@@ -34,6 +34,7 @@
     "scales": "Object mapping visual channels to D3 scale types",
     "layout": "Object with margin, dimensions, and layout hints",
     "key_patterns": "Array of key D3 methods and patterns used",
-    "notes": "Implementation tips specific to this chart type"
+    "notes": "Implementation tips specific to this chart type",
+    "code_skeleton": "(optional) Array of code lines showing the critical D3 implementation pattern. Present on advanced templates."
   }
 }

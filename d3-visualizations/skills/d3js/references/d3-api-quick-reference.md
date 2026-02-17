@@ -498,3 +498,47 @@ d3.randomLogNormal(mu, sigma)()
 d3.randomExponential(lambda)()
 d3.randomInt(min, max)()
 ```
+
+---
+
+## External Modules — CDN Imports
+
+These commonly used modules are **not** part of core D3 and must be imported separately:
+
+```javascript
+// Sankey diagrams
+import {sankey, sankeyLinkHorizontal, sankeyLeft, sankeyRight, sankeyCenter, sankeyJustify}
+  from "https://cdn.jsdelivr.net/npm/d3-sankey@0.12/+esm";
+
+// Hexagonal binning
+import {hexbin as d3Hexbin}
+  from "https://cdn.jsdelivr.net/npm/d3-hexbin@0.2/+esm";
+
+// Word cloud layout
+import cloud from "https://cdn.jsdelivr.net/npm/d3-cloud@1/+esm";
+
+// Contour density (included in core d3 but importable standalone)
+import {contourDensity} from "https://cdn.jsdelivr.net/npm/d3-contour@4/+esm";
+
+// TopoJSON client (convert TopoJSON → GeoJSON)
+import * as topojson from "https://cdn.jsdelivr.net/npm/topojson-client@3/+esm";
+
+// Versor (quaternion math for globe dragging)
+import versor from "https://cdn.jsdelivr.net/npm/versor@0.2/+esm";
+
+// Delaunay/Voronoi (included in core d3, but useful standalone)
+import {Delaunay} from "https://cdn.jsdelivr.net/npm/d3-delaunay@6/+esm";
+```
+
+### Common Data Sources (CDN-hosted)
+
+```javascript
+// US Atlas (TopoJSON)
+const us = await d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json");
+const states = topojson.feature(us, us.objects.states);
+const counties = topojson.feature(us, us.objects.counties);
+
+// World Atlas (TopoJSON)
+const world = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
+const countries = topojson.feature(world, world.objects.countries);
+```

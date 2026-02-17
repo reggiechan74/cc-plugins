@@ -101,5 +101,27 @@
       "Different color scheme or grouping"
     ],
     "notes": "Variant with alternative label placement and styling."
+  },
+  {
+    "id": "radar-chart",
+    "name": "Radar / Spider Chart",
+    "description": "Polygon chart with axes radiating from center, each representing a variable. Data points connect to form a filled polygon showing multi-dimensional profiles.",
+    "observable_url": "https://observablehq.com/@d3/radar-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-shape", "d3-selection"],
+    "data_shape": "Array of objects, each with a name and values for every axis dimension.",
+    "data_fields": { "name": "string", "axis1": "number", "axis2": "number", "axisN": "number" },
+    "scales": { "radial": "d3.scaleLinear (0 to maxValue → 0 to radius)", "angle": "d3.scalePoint or evenly divided 2*PI/N" },
+    "layout": { "type": "radial", "levels": 5 },
+    "key_patterns": [
+      "Axes: N lines from center at angle = i * 2*PI / N",
+      "Grid: concentric polygons at each level (connect points at same radius across all axes)",
+      "d3.lineRadial().angle((d,i) => i * 2*PI/N).radius(d => rScale(d)).curve(d3.curveLinearClosed)",
+      "Fill polygons with low opacity, stroke with full opacity for each data series",
+      "Dots at each vertex for tooltip targets"
+    ],
+    "notes": "Normalize axes to common scale or use per-axis scales. Limit to 5-12 axes for readability. Concentric grid polygons (not circles) are traditional. Low fill opacity (0.1-0.25) lets overlapping series show through."
   }
 ]

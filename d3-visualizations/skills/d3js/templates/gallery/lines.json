@@ -140,7 +140,30 @@
       "Slope = speed (steeper = faster)",
       "Crossing lines indicate trains passing each other"
     ],
-    "notes": "Classic time-space diagram. Each line is one train's journey. Slope shows speed. Intersections show where trains meet. Filter by time of day or direction."
+    "notes": "Classic time-space diagram. Each line is one train's journey. Slope shows speed. Intersections show where trains meet. Filter by time of day or direction.",
+    "code_skeleton": [
+      "// Stations as y-axis (ordered by distance from terminus)",
+      "const stations = ['Boston','Worcester','Springfield','Hartford','New Haven','Stamford','New York'];",
+      "const y = d3.scalePoint().domain(stations).range([margin.top, height - margin.bottom]);",
+      "",
+      "// Time of day as x-axis (minutes from midnight or Date)",
+      "const x = d3.scaleLinear().domain([4.5*60, 25.5*60]).range([margin.left, width - margin.right]);",
+      "",
+      "// Each train is an array of {station, time} stops",
+      "const line = d3.line().x(d => x(d.time)).y(d => y(d.station));",
+      "",
+      "svg.selectAll('path.train').data(trains).join('path').attr('class', 'train')",
+      "  .attr('d', d => line(d.stops))",
+      "  .attr('fill', 'none')",
+      "  .attr('stroke', d => d.direction === 'S' ? '#1b9e77' : '#d95f02')",
+      "  .attr('stroke-width', d => d.type === 'express' ? 2 : 0.75)",
+      "  .attr('stroke-opacity', 0.7);",
+      "",
+      "// Station labels on y-axis",
+      "svg.selectAll('text.station').data(stations).join('text').attr('class', 'station')",
+      "  .attr('x', margin.left - 6).attr('y', d => y(d)).attr('text-anchor', 'end')",
+      "  .attr('dy', '0.35em').text(d => d);"
+    ]
   },
   {
     "id": "candlestick-chart",

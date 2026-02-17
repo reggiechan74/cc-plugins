@@ -123,7 +123,32 @@
       "Axis ticker showing value labels that count up",
       "Date label overlay updating with each frame"
     ],
-    "notes": "Pre-compute keyframes by interpolating between time periods. Show top N bars. Bars enter/exit with y transitions. Value labels and axis animate simultaneously."
+    "notes": "Pre-compute keyframes by interpolating between time periods. Show top N bars. Bars enter/exit with y transitions. Value labels and axis animate simultaneously.",
+  "code_skeleton": [
+    "// 1. Build keyframes: interpolate values between each pair of time steps",
+    "const keyframes = []; // [{date, data: [{name, value, rank}, ...]}, ...]",
+    "for (const [a, b] of d3.pairs(dateValues)) {",
+    "  for (let i = 0; i < k; ++i) {  // k = interpolation steps between dates",
+    "    const t = i / k;",
+    "    keyframes.push([new Date(a[0] * (1-t) + b[0] * t),",
+    "      names.map(name => ({name, value: (a[1].get(name)||0)*(1-t) + (b[1].get(name)||0)*t}))]);",
+    "  }",
+    "}",
+    "",
+    "// 2. Rank each keyframe (top n only)",
+    "keyframes.forEach(([, data]) => { data.sort((a,b) => b.value - a.value); data.forEach((d,i) => d.rank = i); });",
+    "",
+    "// 3. Animate: async loop through keyframes",
+    "for (const keyframe of keyframes) {",
+    "  const transition = svg.transition().duration(duration).ease(d3.easeLinear);",
+    "  x.domain([0, keyframe[1][0].value]);                // update x domain to leader",
+    "  y.domain(keyframe[1].slice(0, n).map(d => d.name)); // update y domain to top n",
+    "  bars.data(keyframe[1].slice(0,n), d=>d.name).join(enter, update, exit).call(sel => sel.transition(transition)...);",
+    "  labels.data(keyframe[1].slice(0,n), d=>d.name)...;  // value labels",
+    "  ticker.text(formatDate(keyframe[0]));                // date overlay",
+    "  await transition.end();",
+    "}"
+  ]
   },
   {
     "id": "stacked-to-grouped-bars",
@@ -310,7 +335,24 @@
       "transition().duration(750) for rect positions",
       "Clip path to prevent overflow during transitions"
     ],
-    "notes": "On click, map the clicked node's treemap coordinates to fill the viewport. Use linear scales that remap [node.x0, node.x1] to [0, width]. Breadcrumb for navigation."
+    "notes": "On click, map the clicked node's treemap coordinates to fill the viewport. Use linear scales that remap [node.x0, node.x1] to [0, width]. Breadcrumb for navigation.",
+  "code_skeleton": [
+    "const treemap = d3.treemap().tile(d3.treemapBinary).size([width, height]).padding(1).round(true);",
+    "const root = treemap(d3.hierarchy(data).sum(d => d.value).sort((a,b) => b.value - a.value));",
+    "",
+    "const x = d3.scaleLinear().rangeRound([0, width]);",
+    "const y = d3.scaleLinear().rangeRound([0, height]);",
+    "",
+    "function zoom(d) {",
+    "  x.domain([d.x0, d.x1]);",
+    "  y.domain([d.y0, d.y1]);",
+    "  const t = svg.transition().duration(750);",
+    "  rects.transition(t)",
+    "    .attr('x', d => x(d.x0)).attr('y', d => y(d.y0))",
+    "    .attr('width', d => x(d.x1) - x(d.x0)).attr('height', d => y(d.y1) - y(d.y0));",
+    "  labels.transition(t).attr('x', d => x(d.x0) + 4).attr('y', d => y(d.y0) + 14);",
+    "}"
+  ]
   },
   {
     "id": "zoomable-circle-packing",
@@ -352,7 +394,33 @@
       "d3.linkHorizontal().x(d => d.y).y(d => d.x)",
       "Enter from parent, exit to parent position for smooth transitions"
     ],
-    "notes": "Store collapsed children in _children. On click, swap children/_children and re-run layout. New nodes enter from parent's previous position and transition to new position."
+    "notes": "Store collapsed children in _children. On click, swap children/_children and re-run layout. New nodes enter from parent's previous position and transition to new position.",
+  "code_skeleton": [
+    "const tree = d3.tree().nodeSize([dx, dy]);",
+    "const root = d3.hierarchy(data);",
+    "root.x0 = dy / 2; root.y0 = 0;",
+    "root.descendants().forEach((d, i) => { d.id = i; d._children = d.children; if (d.depth > 1) d.children = null; });",
+    "",
+    "function update(source) {",
+    "  const nodes = tree(root).descendants();",
+    "  const links = root.links();",
+    "  const t = svg.transition().duration(250);",
+    "",
+    "  const node = gNode.selectAll('g').data(nodes, d => d.id).join(",
+    "    enter => enter.append('g').attr('transform', d => `translate(${source.y0},${source.x0})`),",
+    "    update => update, exit => exit.transition(t).attr('transform', `translate(${source.y},${source.x})`).remove());",
+    "  node.transition(t).attr('transform', d => `translate(${d.y},${d.x})`);",
+    "",
+    "  const link = gLink.selectAll('path').data(links, d => d.target.id).join(",
+    "    enter => enter.append('path').attr('d', d3.linkHorizontal().x(d=>source.y0).y(d=>source.x0)),",
+    "    update => update, exit => exit.transition(t).attr('d', d3.linkHorizontal().x(d=>source.y).y(d=>source.x)).remove());",
+    "  link.transition(t).attr('d', d3.linkHorizontal().x(d=>d.y).y(d=>d.x));",
+    "",
+    "  root.eachBefore(d => { d.x0 = d.x; d.y0 = d.y; }); // stash positions",
+    "}",
+    "",
+    "function toggle(event, d) { d.children = d.children ? null : d._children; update(d); }"
+  ]
   },
   {
     "id": "zoomable-icicle",
@@ -394,7 +462,31 @@
       "arcTween: interpolate between old and new arc parameters",
       "d3.interpolate({x0, x1, y0, y1}, target) for zoom tween"
     ],
-    "notes": "On click, rescale angles [x0,x1] and radii [y0,y1] so clicked node fills the ring. Use attrTween with custom arc interpolator. Center hole is the 'back' button."
+    "notes": "On click, rescale angles [x0,x1] and radii [y0,y1] so clicked node fills the ring. Use attrTween with custom arc interpolator. Center hole is the 'back' button.",
+  "code_skeleton": [
+    "const root = d3.partition().size([2 * Math.PI, radius])(d3.hierarchy(data).sum(d => d.value));",
+    "const arc = d3.arc().startAngle(d => d.x0).endAngle(d => d.x1)",
+    "  .innerRadius(d => d.y0).outerRadius(d => d.y1);",
+    "",
+    "const path = g.selectAll('path').data(root.descendants().filter(d => d.depth))",
+    "  .join('path').attr('fill', d => color(d.ancestors().find(a => a.depth === 1)?.data.name))",
+    "  .attr('d', arc).on('click', clicked);",
+    "",
+    "function clicked(event, p) {",
+    "  parent.datum(p.parent || root);",
+    "  root.each(d => d.target = {",
+    "    x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,",
+    "    x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,",
+    "    y0: Math.max(0, d.y0 - p.depth),",
+    "    y1: Math.max(0, d.y1 - p.depth)",
+    "  });",
+    "  const t = g.transition().duration(750);",
+    "  path.transition(t).tween('data', d => {",
+    "    const i = d3.interpolate(d.current, d.target);",
+    "    return t => d.current = i(t);",
+    "  }).attrTween('d', d => () => arc(d.current));",
+    "}"
+  ]
   },
   {
     "id": "sortable-bar-chart",

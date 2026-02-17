@@ -59,7 +59,7 @@ Implementation rules:
 
 Before writing any code, use the AskUserQuestion tool to interview the user. This step is mandatory — never skip it, even if the initial request seems detailed.
 
-Run the interview in **two rounds** to avoid overwhelming the user.
+Run the interview in **three rounds** to avoid overwhelming the user.
 
 ### Round 1: Purpose & Data
 
@@ -188,7 +188,35 @@ const svg = d3.select("#chart")
 // 7. Transitions and interactivity
 ```
 
-### 4. Chart-Type Specific Patterns
+### 4. Loading External Data
+
+When the user provides a data file, use D3's fetch utilities inside the `<script type="module">` block:
+
+```javascript
+// CSV → array of objects (values are strings by default — coerce numbers)
+const data = await d3.csv("data.csv", d => ({
+  category: d.category,
+  value: +d.value,        // coerce to number
+  date: new Date(d.date)  // parse dates
+}));
+
+// JSON → parsed object/array
+const data = await d3.json("data.json");
+
+// TSV
+const data = await d3.tsv("data.tsv", d3.autoType);
+```
+
+**Important:** Loading external files via `d3.csv()` / `d3.json()` requires HTTP — it will fail when opening the HTML directly from the filesystem (`file://` protocol) due to CORS restrictions. Tell the user to serve the file locally:
+
+```bash
+python -m http.server 8000
+# then open http://localhost:8000/chart.html
+```
+
+For standalone HTML that must open without a server, embed data inline as a JavaScript array instead of loading from a file.
+
+### 5. Chart-Type Specific Patterns
 
 For detailed patterns organized by chart type, consult the reference files:
 - **`references/chart-patterns.md`** — Bar, line, area, scatter, pie/donut, histogram, box plot, ridgeline, heatmap
@@ -196,7 +224,7 @@ For detailed patterns organized by chart type, consult the reference files:
 - **`references/geographic-patterns.md`** — Choropleth, world/state maps, projections, GeoJSON/TopoJSON handling
 - **`references/animation-interaction.md`** — Transitions, zoom, brush, drag, tooltips, responsive resize
 
-### 5. Quality Checklist
+### 6. Quality Checklist
 
 Before delivering any visualization, verify:
 - [ ] Axes have readable labels and titles
@@ -207,6 +235,36 @@ Before delivering any visualization, verify:
 - [ ] Legend present when multiple series/categories exist
 - [ ] Sample data is realistic if user provided none
 - [ ] Code is clean, well-commented, and idiomatic D3 v7
+- [ ] SVG has `role="img"` and `aria-label` describing the visualization
+- [ ] SVG contains a `<title>` element for screen readers
+- [ ] Color palette is distinguishable for colorblind viewers (`d3.schemeTableau10` is a safe default; for maximum accessibility use Okabe-Ito or `d3.schemeObservable10`)
+
+### 7. Common Pitfalls
+
+**Null / missing data:** Always filter or coerce before binding to scales. Null values cause NaN in scale output, which renders invisible or broken elements.
+```javascript
+const clean = data.filter(d => d.value != null && !isNaN(d.value));
+```
+
+**CDN availability:** The default CDN (`cdn.jsdelivr.net`) is reliable but not infallible. If building for offline or restricted environments, note this in the output and suggest downloading D3 locally:
+```html
+<!-- Fallback: download d3.min.js and serve locally -->
+<script type="module">
+import * as d3 from "./d3.min.js";
+</script>
+```
+
+**Overflowing 100vh:** When content exceeds the viewport despite the single-screen constraint:
+1. Reduce margins (`top: 20, bottom: 30` instead of 40/50)
+2. Use smaller font sizes (10px axis labels, 0.7rem titles)
+3. For dashboards with many panels, use CSS Grid `minmax(0, 1fr)` to let panels shrink
+4. If the data truly requires more space (50+ bar categories), acknowledge the override and switch to scrollable layout with a comment explaining why
+
+**Date parsing:** D3 v7's `d3.csv()` returns all values as strings. Always parse dates explicitly:
+```javascript
+const parseDate = d3.timeParse("%Y-%m-%d");
+const data = await d3.csv("data.csv", d => ({ ...d, date: parseDate(d.date) }));
+```
 
 ---
 
@@ -283,13 +341,19 @@ Working templates for each output format in `examples/`:
 - **`examples/separate-js/index.html`** + **`examples/separate-js/chart.js`** — Modular HTML + JS approach
 - **`examples/react-component.tsx`** — React component with D3 integration
 
+> **Note:** Example files use a scrollable layout with padding for readability as teaching samples. Production output should follow the `templates/boilerplate.html` pattern (100vh, `overflow: hidden`, flex layout) per the Default Configuration above.
+
 ### Template Files
 
 - **`templates/boilerplate.html`** — Minimal HTML boilerplate with D3 v7 CDN, responsive SVG, and standard margin convention. Use as a starting point for standalone HTML visualizations.
 
+### Demo
+
+- **`../../demo.html`** — Complete multi-chart interactive dashboard (energy production) demonstrating linked brush filtering, animated transitions, interactive legend toggle, and donut arc tweens in a single 100vh viewport.
+
 ### Gallery Templates
 
-The `templates/gallery/` directory contains **173 template configurations** based on the [Observable D3 Gallery](https://observablehq.com/@d3/gallery), organized by category. Each config specifies the chart type, D3 modules, data shape, scales, key patterns, and implementation notes needed to reproduce that visualization.
+The `templates/gallery/` directory contains **174 template configurations** based on the [Observable D3 Gallery](https://observablehq.com/@d3/gallery), organized by category. Each config specifies the chart type, D3 modules, data shape, scales, key patterns, and implementation notes needed to reproduce that visualization.
 
 - **`templates/gallery/index.json`** — Master index of all categories and schema
 - **`templates/gallery/animation.json`** — 23 animated visualizations (bar chart race, animated treemap, zoomable sunburst, etc.)
@@ -301,7 +365,7 @@ The `templates/gallery/` directory contains **173 template configurations** base
 - **`templates/gallery/lines.json`** — 15 line chart types (multi-line, candlestick, parallel coordinates, slope chart, etc.)
 - **`templates/gallery/areas.json`** — 11 area chart types (stacked, streamgraph, ridgeline, horizon, difference, etc.)
 - **`templates/gallery/dots.json`** — 11 dot/scatter types (scatterplot, beeswarm, bubble map, spike map, SPLOM, etc.)
-- **`templates/gallery/radial.json`** — 5 radial charts (pie, donut, radial area, radial stacked bar)
+- **`templates/gallery/radial.json`** — 6 radial charts (pie, donut, radial area, radial stacked bar, radar/spider)
 - **`templates/gallery/annotation.json`** — 8 annotation techniques (tooltips, inline labels, Voronoi labels, styled axes, etc.)
 - **`templates/gallery/maps.json`** — 22 geographic visualizations (choropleth, projections, tiles, vector fields, star map, etc.)
 - **`templates/gallery/essays.json`** — 4 explanatory/educational visualizations

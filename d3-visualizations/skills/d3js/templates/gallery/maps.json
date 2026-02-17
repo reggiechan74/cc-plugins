@@ -39,7 +39,30 @@
       "Custom legend showing 2D color grid",
       "Colors: blend two sequential palettes"
     ],
-    "notes": "Each variable gets 3 bins. Color from a 9-cell matrix (3x3). Requires a 2D color legend (square grid). Complex to read — include clear legend."
+    "notes": "Each variable gets 3 bins. Color from a 9-cell matrix (3x3). Requires a 2D color legend (square grid). Complex to read — include clear legend.",
+    "code_skeleton": [
+      "// 3x3 bivariate color scheme (blends blue → purple → red)",
+      "const colors = [",
+      "  ['#e8e8e8','#ace4e4','#5ac8c8'],  // low var1",
+      "  ['#dfb0d6','#a5add3','#5698b9'],  // med var1",
+      "  ['#be64ac','#8c62aa','#3b4994']   // high var1",
+      "];",
+      "",
+      "const n = 3; // quantile bins",
+      "const q1 = d3.scaleQuantile().domain(data.map(d => d.value1)).range(d3.range(n));",
+      "const q2 = d3.scaleQuantile().domain(data.map(d => d.value2)).range(d3.range(n));",
+      "const bivarColor = d => colors[q1(d.value1)][q2(d.value2)];",
+      "",
+      "// Map paths",
+      "svg.selectAll('path').data(features).join('path')",
+      "  .attr('d', path).attr('fill', d => bivarColor(dataMap.get(d.id)));",
+      "",
+      "// 2D legend (3x3 grid)",
+      "const legend = svg.append('g').attr('transform', `translate(${legendX},${legendY})`);",
+      "d3.cross(d3.range(n), d3.range(n)).forEach(([i,j]) =>",
+      "  legend.append('rect').attr('x', j*size).attr('y', (n-1-i)*size)",
+      "    .attr('width', size).attr('height', size).attr('fill', colors[i][j]));"
+    ]
   },
   {
     "id": "state-choropleth",

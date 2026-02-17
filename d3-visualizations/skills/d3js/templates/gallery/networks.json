@@ -102,7 +102,27 @@
       "link.style('stroke-width', d => Math.max(1, d.width))",
       "Node labels positioned left or right of node based on column"
     ],
-    "notes": "d3-sankey is separate module. Links have width proportional to value. Nodes auto-positioned in columns. Color by source node for visual flow tracking."
+    "notes": "d3-sankey is separate module. Links have width proportional to value. Nodes auto-positioned in columns. Color by source node for visual flow tracking.",
+    "code_skeleton": [
+      "import {sankey, sankeyLinkHorizontal, sankeyCenter} from 'https://cdn.jsdelivr.net/npm/d3-sankey@0.12/+esm';",
+      "",
+      "const sk = sankey().nodeId(d => d.name).nodeWidth(15).nodePadding(10)",
+      "  .nodeAlign(sankeyCenter).extent([[1, 5], [width - 1, height - 5]]);",
+      "const {nodes, links} = sk({nodes: data.nodes.map(d => ({...d})), links: data.links.map(d => ({...d}))});",
+      "",
+      "svg.append('g').attr('fill', 'none').selectAll('path').data(links).join('path')",
+      "  .attr('d', sankeyLinkHorizontal()).attr('stroke', d => color(d.source.name))",
+      "  .attr('stroke-opacity', 0.4).attr('stroke-width', d => Math.max(1, d.width));",
+      "",
+      "svg.append('g').selectAll('rect').data(nodes).join('rect')",
+      "  .attr('x', d => d.x0).attr('y', d => d.y0)",
+      "  .attr('height', d => d.y1 - d.y0).attr('width', d => d.x1 - d.x0).attr('fill', d => color(d.name));",
+      "",
+      "svg.append('g').selectAll('text').data(nodes).join('text')",
+      "  .attr('x', d => d.x0 < width/2 ? d.x1 + 6 : d.x0 - 6)",
+      "  .attr('y', d => (d.y1 + d.y0) / 2).attr('text-anchor', d => d.x0 < width/2 ? 'start' : 'end')",
+      "  .text(d => d.name);"
+    ]
   },
   {
     "id": "hierarchical-edge-bundling",
@@ -123,7 +143,32 @@
       "Compute path through hierarchy: source -> LCA -> target",
       "Beta parameter controls bundling tightness (0=straight, 1=tight)"
     ],
-    "notes": "Leaves on circle edge via cluster layout. Links bundle through hierarchy (find path via LCA). curveBundle.beta controls tightness. Hover to highlight connections."
+    "notes": "Leaves on circle edge via cluster layout. Links bundle through hierarchy (find path via LCA). curveBundle.beta controls tightness. Hover to highlight connections.",
+    "code_skeleton": [
+      "const tree = d3.cluster().size([2 * Math.PI, radius - 100]);",
+      "const root = tree(d3.hierarchy(data).sort((a,b) => a.data.name.localeCompare(b.data.name)));",
+      "const leaves = root.leaves();",
+      "const map = new Map(leaves.map(d => [d.data.name, d]));",
+      "",
+      "// Build links from imports",
+      "const links = leaves.flatMap(leaf =>",
+      "  (leaf.data.imports || []).map(target => ({source: leaf, target: map.get(target)})))",
+      "  .filter(d => d.target);",
+      "",
+      "// Path through hierarchy: walk up from source, across to target",
+      "function pathBetween(source, target) {",
+      "  const sa = source.ancestors(), ta = target.ancestors();",
+      "  // Find LCA, build path: source...LCA...target",
+      "  return sa.reverse().concat(ta.slice(0, -sa.findIndex(a => ta.includes(a))).reverse());",
+      "}",
+      "",
+      "const line = d3.lineRadial().curve(d3.curveBundle.beta(0.85))",
+      "  .radius(d => d.y).angle(d => d.x);",
+      "",
+      "g.selectAll('path.link').data(links).join('path').attr('class', 'link')",
+      "  .attr('d', d => line(pathBetween(d.source, d.target)))",
+      "  .attr('fill', 'none').attr('stroke', '#ccc').attr('stroke-opacity', 0.5);"
+    ]
   },
   {
     "id": "chord-diagram",
