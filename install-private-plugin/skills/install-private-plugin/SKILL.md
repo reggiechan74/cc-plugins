@@ -57,8 +57,13 @@ If the user has not yet set up a PAT, walk them through every step:
 2. In the left sidebar, click **Codespaces** (under "Code, planning, and automation")
 3. Under **"Secrets"**, click **"New secret"**
 4. Fill in:
-   - **Name:** A descriptive name using UPPER_SNAKE_CASE (e.g., `MY_PRIVATE_REPO`)
+   - **Name:** A descriptive name using UPPER_SNAKE_CASE (e.g., `PLUGIN_PAT_MYREPO`)
      — this becomes the environment variable name you will pass as Arg 2
+   - **⚠️ Do NOT use `GH_TOKEN` or `GITHUB_TOKEN`** — the `gh` CLI treats
+     `GH_TOKEN` as authoritative over all other credentials, and `GITHUB_TOKEN`
+     is auto-provisioned by Codespaces. Using either name will hijack all
+     GitHub operations (issues, PRs, API calls) in the Codespace, not just
+     plugin installs. Use a descriptive name like `PLUGIN_PAT_MYREPO`.
    - **Value:** Paste the `github_pat_...` token you copied
 5. Under **"Repository access"**, click **"Selected repositories"** and add the
    repo your Codespace runs in (e.g., `myorg/my-main-project`). This grants the
@@ -78,14 +83,29 @@ Codespace secrets are only injected when the container starts. You must rebuild:
 ### Part D: Run this command
 
 ```
-/install-private-plugin https://github.com/OWNER/REPO YOUR_SECRET_NAME
+/install-private-plugin https://github.com/OWNER/REPO PLUGIN_PAT_MYREPO
 ```
 
 ---
 
 ## Workflow (when arguments are provided)
 
-### Step 1: Validate environment variable
+### Step 1: Validate environment variable name
+
+If `ENV_VAR_NAME` is `GH_TOKEN` or `GITHUB_TOKEN`, output this error and stop:
+
+```
+Error: Do not use "GH_TOKEN" or "GITHUB_TOKEN" as the secret name.
+
+The gh CLI treats GH_TOKEN as authoritative over all other credentials, and
+GITHUB_TOKEN is auto-provisioned by Codespaces. Using either name will hijack
+ALL GitHub operations (issues, PRs, API calls) — not just plugin installs.
+
+Please create a new Codespace secret with a descriptive name like
+PLUGIN_PAT_MYREPO and re-run this command.
+```
+
+### Step 2: Validate environment variable value
 
 ```bash
 echo "${!ENV_VAR_NAME}" | head -c 12
@@ -102,7 +122,7 @@ or the Codespace hasn't been rebuilt since adding it.
 
 Stop here if the variable is not set.
 
-### Step 2: Extract owner/repo from URL
+### Step 3: Extract owner/repo from URL
 
 Parse the GitHub URL to extract the `owner/repo` path. Support both formats:
 - `https://github.com/owner/repo`
@@ -110,7 +130,7 @@ Parse the GitHub URL to extract the `owner/repo` path. Support both formats:
 
 If the URL does not match a GitHub HTTPS pattern, show an error and stop.
 
-### Step 3: Configure git URL rewrite
+### Step 4: Configure git URL rewrite
 
 ```bash
 git config --global url."https://x-access-token:${!ENV_VAR_NAME}@github.com/OWNER/REPO".insteadOf "https://github.com/OWNER/REPO"
@@ -120,7 +140,7 @@ This tells git to transparently inject the PAT as an `x-access-token` credential
 whenever any git client (including Claude Code's internal library) accesses this
 specific repository over HTTPS.
 
-### Step 4: Verify access
+### Step 5: Verify access
 
 ```bash
 git ls-remote https://github.com/OWNER/REPO 2>&1 | head -3
@@ -140,7 +160,7 @@ Common causes:
 
 Stop here if verification fails.
 
-### Step 5: Confirm and instruct
+### Step 6: Confirm and instruct
 
 Output:
 
