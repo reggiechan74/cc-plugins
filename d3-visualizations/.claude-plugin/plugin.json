@@ -1,0 +1,9 @@
+{
+  "name": "d3-visualizations",
+  "version": "0.1.0",
+  "description": "D3.js visualization skill for quickly creating any kind of data visualization",
+  "author": {
+    "name": "Claude Plugins"
+  },
+  "keywords": ["d3", "d3js", "visualization", "charts", "graphs", "data-visualization"]
+}

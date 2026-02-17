@@ -1,0 +1,230 @@
+[
+  {
+    "id": "force-directed-graph",
+    "name": "Force-Directed Graph",
+    "description": "Physics-simulated network layout where nodes repel and links attract, finding organic equilibrium.",
+    "observable_url": "https://observablehq.com/@d3/force-directed-graph",
+    "complexity": "basic",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-force", "d3-scale", "d3-drag"],
+    "data_shape": "Graph with nodes array and links array.",
+    "data_fields": { "nodes": "array of {id, group}", "links": "array of {source, target, value}" },
+    "scales": { "color": "d3.scaleOrdinal(d3.schemeCategory10)" },
+    "layout": { "type": "force" },
+    "key_patterns": [
+      "d3.forceSimulation(nodes).force('link', d3.forceLink(links).id(d => d.id))",
+      "force('charge', d3.forceManyBody())",
+      "force('center', d3.forceCenter(w/2, h/2))",
+      "simulation.on('tick', ticked) to update positions each frame",
+      "d3.drag() for interactive node repositioning"
+    ],
+    "notes": "Classic network visualization. Drag nodes to explore structure. Color by group. Link strength/distance can encode relationship weight."
+  },
+  {
+    "id": "disjoint-force-directed-graph",
+    "name": "Disjoint Force-Directed Graph",
+    "description": "Force-directed layout handling multiple disconnected components that don't fly apart.",
+    "observable_url": "https://observablehq.com/@d3/disjoint-force-directed-graph",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-force", "d3-scale", "d3-drag"],
+    "data_shape": "Graph with disconnected components.",
+    "data_fields": { "nodes": "array of {id, group}", "links": "array of {source, target}" },
+    "scales": { "color": "d3.scaleOrdinal(d3.schemeCategory10)" },
+    "layout": { "type": "force" },
+    "key_patterns": [
+      "force('x', d3.forceX()) and force('y', d3.forceY()) to keep components centered",
+      "Without x/y forces, disconnected components drift to infinity",
+      "Alternative: use d3.forceCenter() plus weak gravity"
+    ],
+    "notes": "Standard force-directed plus forceX() and forceY() centered at viewport center to prevent disconnected components from drifting away."
+  },
+  {
+    "id": "mobile-patent-suits",
+    "name": "Mobile Patent Suits",
+    "description": "Network diagram showing patent lawsuit relationships with directed and labeled edges.",
+    "observable_url": "https://observablehq.com/@d3/mobile-patent-suits",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-force", "d3-scale"],
+    "data_shape": "Directed graph with labeled edges.",
+    "data_fields": { "nodes": "array of {id}", "links": "array of {source, target, type}" },
+    "scales": { "color": "d3.scaleOrdinal (by link type)" },
+    "layout": { "type": "force" },
+    "key_patterns": [
+      "SVG marker-end for arrowheads on directed edges",
+      "defs > marker#arrow > path for arrow marker definition",
+      "link.attr('marker-end', 'url(#arrow)')",
+      "Edge labels positioned at link midpoint"
+    ],
+    "notes": "Directed graph with arrows. Define SVG markers for arrowheads. Edge labels need careful positioning at midpoint of each link. Differentiate edge types with color/dash."
+  },
+  {
+    "id": "arc-diagram",
+    "name": "Arc Diagram",
+    "description": "Network layout with all nodes on a horizontal line and curved arcs connecting linked nodes.",
+    "observable_url": "https://observablehq.com/@d3/arc-diagram",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "Graph with nodes and links. Nodes ordered along one axis.",
+    "data_fields": { "nodes": "array of {id, group, order}", "links": "array of {source, target, value}" },
+    "scales": { "y": "d3.scalePoint", "color": "d3.scaleOrdinal" },
+    "layout": { "type": "arc" },
+    "key_patterns": [
+      "Nodes positioned along y-axis using d3.scalePoint()",
+      "Links as semicircular arcs: svg path with arc command or d3.linkHorizontal()",
+      "Arc radius = |source.y - target.y| / 2",
+      "Sort nodes by group or connectivity for better layout"
+    ],
+    "notes": "Place nodes vertically (or horizontally). Draw semicircular arcs between linked nodes. Node ordering significantly affects readability — sort by group or connectivity."
+  },
+  {
+    "id": "sankey-diagram",
+    "name": "Sankey Diagram",
+    "description": "Flow diagram showing quantities flowing between nodes through weighted links.",
+    "observable_url": "https://observablehq.com/@d3/sankey-diagram",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-sankey", "d3-scale", "d3-shape"],
+    "data_shape": "Directed graph with weighted links. Nodes arranged in columns.",
+    "data_fields": { "nodes": "array of {name}", "links": "array of {source, target, value}" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "sankey", "nodeWidth": 15, "nodePadding": 10 },
+    "key_patterns": [
+      "d3.sankey().nodeWidth(15).nodePadding(10).extent([[1,1],[w-1,h-6]])",
+      "d3.sankeyLinkHorizontal() for curved link paths",
+      "link.style('stroke-width', d => Math.max(1, d.width))",
+      "Node labels positioned left or right of node based on column"
+    ],
+    "notes": "d3-sankey is separate module. Links have width proportional to value. Nodes auto-positioned in columns. Color by source node for visual flow tracking."
+  },
+  {
+    "id": "hierarchical-edge-bundling",
+    "name": "Hierarchical Edge Bundling",
+    "description": "Circular layout with bundled curved edges showing relationships between leaf nodes of a hierarchy.",
+    "observable_url": "https://observablehq.com/@d3/hierarchical-edge-bundling",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-shape", "d3-scale"],
+    "data_shape": "Hierarchy of nodes plus cross-links between leaves.",
+    "data_fields": { "name": "string", "children": "array", "imports": "array of leaf names" },
+    "scales": { "color": "d3.scaleOrdinal or d3.interpolateRdBu" },
+    "layout": { "type": "cluster", "size": [6.28318, "radius"] },
+    "key_patterns": [
+      "d3.cluster().size([2*PI, radius]) for circular leaf placement",
+      "d3.lineRadial().curve(d3.curveBundle.beta(0.85)) for bundled curves",
+      "Compute path through hierarchy: source -> LCA -> target",
+      "Beta parameter controls bundling tightness (0=straight, 1=tight)"
+    ],
+    "notes": "Leaves on circle edge via cluster layout. Links bundle through hierarchy (find path via LCA). curveBundle.beta controls tightness. Hover to highlight connections."
+  },
+  {
+    "id": "chord-diagram",
+    "name": "Chord Diagram",
+    "description": "Circular visualization showing bidirectional flows between groups using arcs and chords.",
+    "observable_url": "https://observablehq.com/@d3/chord-diagram",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-chord", "d3-shape", "d3-scale"],
+    "data_shape": "Square matrix where matrix[i][j] = flow from group i to group j.",
+    "data_fields": { "matrix": "number[][]", "names": "string[]" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "chord", "padAngle": 0.05, "sortSubgroups": "descending" },
+    "key_patterns": [
+      "d3.chord().padAngle(0.05).sortSubgroups(d3.descending)(matrix)",
+      "d3.arc() for outer group arcs",
+      "d3.ribbon() for inner chord ribbons",
+      "Hover: highlight chords connected to hovered group"
+    ],
+    "notes": "Input is NxN matrix. chord() computes angles for groups and ribbons. arc() draws outer ring segments. ribbon() draws inner connecting ribbons. Color by source group."
+  },
+  {
+    "id": "directed-chord-diagram",
+    "name": "Directed Chord Diagram",
+    "description": "Chord diagram distinguishing direction of flow between groups with asymmetric ribbons.",
+    "observable_url": "https://observablehq.com/@d3/directed-chord-diagram",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-chord", "d3-shape", "d3-scale"],
+    "data_shape": "Asymmetric square matrix where matrix[i][j] != matrix[j][i].",
+    "data_fields": { "matrix": "number[][]", "names": "string[]" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "chord", "padAngle": 0.05 },
+    "key_patterns": [
+      "d3.chordDirected().padAngle(0.05)(matrix)",
+      "d3.ribbonArrow().headRadius(10) for directional arrows",
+      "Arrow points toward target group on outer ring"
+    ],
+    "notes": "Use d3.chordDirected() (D3 v7) instead of d3.chord(). Renders with d3.ribbonArrow() which adds arrowheads pointing to the target group."
+  },
+  {
+    "id": "chord-dependency-diagram",
+    "name": "Chord Dependency Diagram",
+    "description": "Chord diagram showing package/module dependency relationships.",
+    "observable_url": "https://observablehq.com/@d3/chord-dependency-diagram",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-chord", "d3-shape", "d3-scale"],
+    "data_shape": "Dependency list: array of {name, imports: [name1, name2, ...]}.",
+    "data_fields": { "name": "string", "imports": "string[]" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "chord" },
+    "key_patterns": [
+      "Convert dependency list to adjacency matrix",
+      "d3.chord()(matrix) for layout",
+      "d3.ribbon() for rendering",
+      "Binary matrix (0/1) rather than weighted"
+    ],
+    "notes": "First convert imports list to NxN matrix. Each cell is 0 or 1 (depends or not). Then standard chord diagram workflow. Good for visualizing module dependencies."
+  },
+  {
+    "id": "hierarchical-edge-bundling-2",
+    "name": "Hierarchical Edge Bundling (variant)",
+    "description": "Alternative hierarchical edge bundling with different coloring and interaction patterns.",
+    "observable_url": "https://observablehq.com/@d3/hierarchical-edge-bundling/2",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-shape", "d3-scale"],
+    "data_shape": "Hierarchy with cross-links between leaves.",
+    "data_fields": { "name": "string", "children": "array", "imports": "array" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "cluster", "size": [6.28318, "radius"] },
+    "key_patterns": [
+      "Same base layout as hierarchical-edge-bundling",
+      "Different coloring: gradient along link from source to target color",
+      "Hover highlights: incoming vs outgoing links in different colors"
+    ],
+    "notes": "Variant with directional coloring — gradient from source to target color shows flow direction. Hover shows incoming (blue) vs outgoing (red) connections."
+  },
+  {
+    "id": "chord-diagram-2",
+    "name": "Chord Diagram (variant)",
+    "description": "Alternative chord diagram with different styling and interaction patterns.",
+    "observable_url": "https://observablehq.com/@d3/chord-diagram/2",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-chord", "d3-shape", "d3-scale"],
+    "data_shape": "Square matrix of flows.",
+    "data_fields": { "matrix": "number[][]", "names": "string[]" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "chord" },
+    "key_patterns": [
+      "Same base as chord-diagram",
+      "Different hover behavior and tooltip styling",
+      "Tick marks on outer arcs showing scale"
+    ],
+    "notes": "Variant with tick marks on outer arcs showing flow quantities. Different interaction style from base chord diagram."
+  }
+]

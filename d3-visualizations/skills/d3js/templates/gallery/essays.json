@@ -1,0 +1,87 @@
+[
+  {
+    "id": "pack-enclose",
+    "name": "d3.packEnclose",
+    "description": "Visual explanation of the circle packing enclosure algorithm — how d3 finds the smallest circle containing a set of circles.",
+    "observable_url": "https://observablehq.com/@d3/d3-packenclose",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy"],
+    "data_shape": "Array of circles with x, y, r.",
+    "data_fields": { "x": "number", "y": "number", "r": "number" },
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "d3.packEnclose(circles) returns enclosing circle {x, y, r}",
+      "Step-by-step algorithm visualization",
+      "Animated: show algorithm iterations adding circles one by one",
+      "Enclosing circle updates with each addition"
+    ],
+    "notes": "Educational visualization of d3.packEnclose algorithm. Shows iterative computation of minimum enclosing circle. Good for algorithm explanation articles."
+  },
+  {
+    "id": "centerline-labeling",
+    "name": "Centerline Labeling",
+    "description": "Technique for placing text labels along the centerline of irregular shapes (like US states).",
+    "observable_url": "https://observablehq.com/@d3/centerline-labeling",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-delaunay"],
+    "data_shape": "Polygon shapes requiring internal labels.",
+    "data_fields": { "polygon": "GeoJSON Polygon", "label": "string" },
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "Compute medial axis / centerline of polygon",
+      "Use Voronoi of boundary points to approximate medial axis",
+      "Place text along longest internal line segment",
+      "Rotate text to follow centerline direction"
+    ],
+    "notes": "Finding optimal label placement inside irregular polygons. More sophisticated than centroid placement — follows shape's medial axis for better fit."
+  },
+  {
+    "id": "methods-of-comparison",
+    "name": "Methods of Comparison, Compared",
+    "description": "Analysis of different visualization methods for comparing datasets — superposition, juxtaposition, explicit encoding.",
+    "observable_url": "https://observablehq.com/@d3/methods-of-comparison-compared",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "Same dataset shown in multiple chart types.",
+    "data_fields": { "category": "string", "valueA": "number", "valueB": "number" },
+    "scales": {},
+    "layout": { "type": "small-multiples" },
+    "key_patterns": [
+      "Superposition: overlay two series on same axes",
+      "Juxtaposition: side-by-side charts",
+      "Explicit encoding: show the difference directly",
+      "Compare effectiveness of each approach"
+    ],
+    "notes": "Essay showing the same data visualized three ways. Educational — demonstrates trade-offs between comparison methods."
+  },
+  {
+    "id": "predator-and-prey",
+    "name": "Predator and Prey",
+    "description": "Lotka-Volterra population dynamics simulation showing predator-prey oscillations.",
+    "observable_url": "https://observablehq.com/@d3/predator-and-prey",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Computed from Lotka-Volterra differential equations.",
+    "data_fields": { "time": "number", "prey": "number", "predator": "number" },
+    "scales": { "x": "d3.scaleLinear (time)", "y": "d3.scaleLinear (population)" },
+    "layout": { "margin": { "top": 20, "right": 60, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Euler or RK4 integration of Lotka-Volterra ODEs",
+      "dx/dt = ax - bxy, dy/dt = cxy - dy",
+      "Two lines: prey (grows, eaten) and predator (eats, dies)",
+      "Phase portrait: predator vs prey (no time axis)",
+      "Sliders for parameters a, b, c, d"
+    ],
+    "notes": "Numerical ODE simulation. Two views: time series (x=time) and phase portrait (x=prey, y=predator showing limit cycles). Interactive parameter sliders."
+  }
+]

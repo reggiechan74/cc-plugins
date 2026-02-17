@@ -1,0 +1,287 @@
+[
+  {
+    "id": "bar-chart",
+    "name": "Bar Chart",
+    "description": "Classic vertical bar chart with categorical x-axis and numeric y-axis.",
+    "observable_url": "https://observablehq.com/@d3/bar-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-array"],
+    "data_shape": "Array of {category, value} pairs.",
+    "data_fields": { "category": "string", "value": "number" },
+    "scales": { "x": "d3.scaleBand", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 0, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.scaleBand().domain(categories).range([0, width]).padding(0.1)",
+      "d3.scaleLinear().domain([0, max]).range([height, 0]).nice()",
+      "rect: x=x(d.category), y=y(d.value), width=x.bandwidth(), height=height-y(d.value)"
+    ],
+    "notes": "Foundation chart type. Band scale for categories, linear scale for values. Start y-axis at 0. Consider sorting bars by value for easier comparison."
+  },
+  {
+    "id": "horizontal-bar-chart",
+    "name": "Horizontal Bar Chart",
+    "description": "Bars extending horizontally, ideal for long category names.",
+    "observable_url": "https://observablehq.com/@d3/horizontal-bar-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of {category, value} pairs.",
+    "data_fields": { "category": "string", "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleBand" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 100 } },
+    "key_patterns": [
+      "d3.scaleBand().domain(categories).range([0, height]).padding(0.1)",
+      "d3.scaleLinear().domain([0, max]).range([0, width])",
+      "rect: x=0, y=y(d.category), width=x(d.value), height=y.bandwidth()"
+    ],
+    "notes": "Swap x/y from vertical bar chart. Wide left margin for long labels. Sort top-to-bottom by value. Good when category names are long."
+  },
+  {
+    "id": "diverging-bar-chart",
+    "name": "Diverging Bar Chart",
+    "description": "Bars extending both left and right from a center axis, showing positive and negative values.",
+    "observable_url": "https://observablehq.com/@d3/diverging-bar-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of {category, value} where value can be positive or negative.",
+    "data_fields": { "category": "string", "value": "number" },
+    "scales": { "x": "d3.scaleLinear (symmetric domain)", "y": "d3.scaleBand", "color": "conditional (pos/neg)" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 100 } },
+    "key_patterns": [
+      "x.domain([d3.min(values), d3.max(values)]) — symmetric or asymmetric",
+      "rect: x=Math.min(x(0), x(d.value)), width=Math.abs(x(d.value) - x(0))",
+      "Color: green/blue for positive, red/orange for negative",
+      "Vertical reference line at x(0)"
+    ],
+    "notes": "Key: bars grow from x(0) line in both directions. Use different colors for positive vs negative. Draw zero line explicitly."
+  },
+  {
+    "id": "stacked-bar-chart",
+    "name": "Stacked Bar Chart",
+    "description": "Vertical bars divided into colored segments showing composition of each category.",
+    "observable_url": "https://observablehq.com/@d3/stacked-bar-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Array of objects with category and multiple numeric series fields.",
+    "data_fields": { "category": "string", "series1": "number", "series2": "number" },
+    "scales": { "x": "d3.scaleBand", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.stack().keys(seriesNames)(data) — returns layered array",
+      "Each layer: [[y0, y1, data], ...] for each category",
+      "rect per segment: y=y(d[1]), height=y(d[0])-y(d[1])"
+    ],
+    "notes": "d3.stack() computes y0 (baseline) and y1 (top) for each segment. Keys are series names. Add legend for series colors."
+  },
+  {
+    "id": "stacked-horizontal-bar-chart",
+    "name": "Stacked Horizontal Bar Chart",
+    "description": "Horizontal stacked bars showing composition per category.",
+    "observable_url": "https://observablehq.com/@d3/stacked-horizontal-bar-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Array of objects with category and multiple numeric series.",
+    "data_fields": { "category": "string", "series1": "number", "series2": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleBand", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 100 } },
+    "key_patterns": [
+      "d3.stack().keys(seriesNames)(data)",
+      "rect: x=x(d[0]), width=x(d[1])-x(d[0]), y=y(d.data.category), height=y.bandwidth()"
+    ],
+    "notes": "Horizontal version of stacked bar chart. Better for many categories with long names."
+  },
+  {
+    "id": "stacked-normalized-horizontal-bar",
+    "name": "Stacked Normalized Horizontal Bar",
+    "description": "100% stacked horizontal bars showing proportion/percentage composition.",
+    "observable_url": "https://observablehq.com/@d3/stacked-normalized-horizontal-bar",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Array of objects with category and multiple numeric series.",
+    "data_fields": { "category": "string", "series1": "number", "series2": "number" },
+    "scales": { "x": "d3.scaleLinear (0 to 1)", "y": "d3.scaleBand", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 100 } },
+    "key_patterns": [
+      "d3.stack().offset(d3.stackOffsetExpand)(data) — normalizes to 0-1",
+      "x.domain([0, 1]) with percentage format axis",
+      "d3.format('.0%') for axis tick format"
+    ],
+    "notes": "Use stackOffsetExpand to normalize all bars to 100%. X-axis shows 0% to 100%. Good for comparing proportions across categories."
+  },
+  {
+    "id": "grouped-bar-chart",
+    "name": "Grouped Bar Chart",
+    "description": "Multiple bars side by side within each category for direct value comparison.",
+    "observable_url": "https://observablehq.com/@d3/grouped-bar-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of objects with category and multiple numeric series.",
+    "data_fields": { "category": "string", "series1": "number", "series2": "number" },
+    "scales": { "x0": "d3.scaleBand (categories)", "x1": "d3.scaleBand (series within)", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "x0 = d3.scaleBand().domain(categories).range([0,w]).paddingInner(0.1)",
+      "x1 = d3.scaleBand().domain(seriesNames).range([0, x0.bandwidth()]).padding(0.05)",
+      "rect per series: x=x0(category)+x1(series), width=x1.bandwidth()"
+    ],
+    "notes": "Two-level band scale: outer for categories, inner for series. Good when comparing individual values matters more than composition."
+  },
+  {
+    "id": "diverging-stacked-bar-chart",
+    "name": "Diverging Stacked Bar Chart",
+    "description": "Stacked bars extending both directions from center, showing Likert-scale or sentiment data.",
+    "observable_url": "https://observablehq.com/@d3/diverging-stacked-bar-chart",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Survey-style data with negative/neutral/positive categories per question.",
+    "data_fields": { "question": "string", "strongly_disagree": "number", "disagree": "number", "neutral": "number", "agree": "number", "strongly_agree": "number" },
+    "scales": { "x": "d3.scaleLinear (centered at 0)", "y": "d3.scaleBand", "color": "d3.scaleOrdinal (diverging)" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 150 } },
+    "key_patterns": [
+      "d3.stack().offset(d3.stackOffsetDiverging)(data)",
+      "Or: manually compute offsets centering at neutral point",
+      "Diverging color scale: red shades left, blue shades right",
+      "Center line at x(0)"
+    ],
+    "notes": "Use stackOffsetDiverging or manually center by shifting baselines. Negative categories go left, positive go right. Ideal for Likert-scale survey results."
+  },
+  {
+    "id": "marimekko-chart",
+    "name": "Marimekko Chart",
+    "description": "Mosaic/Marimekko chart where both width and height of rectangles encode data values.",
+    "observable_url": "https://observablehq.com/@d3/marimekko-chart",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "Matrix of values: categories x segments. Both row totals (width) and cell values (height) matter.",
+    "data_fields": { "category": "string", "segment": "string", "value": "number" },
+    "scales": { "x": "cumulative widths", "y": "d3.scaleLinear (0 to 1)", "color": "d3.scaleOrdinal" },
+    "layout": {},
+    "key_patterns": [
+      "Compute cumulative widths for x positions (proportional to category total)",
+      "Within each column, stack segments proportionally",
+      "rect: x=cumX[i], width=colWidth[i], y=cumY within column, height=segmentProportion"
+    ],
+    "notes": "Both dimensions are meaningful: column width = category total, segment height = proportion within category. Essentially a 2D treemap-like display."
+  },
+  {
+    "id": "world-history-timeline",
+    "name": "World History Timeline",
+    "description": "Horizontal timeline bars showing duration of empires, civilizations, or events.",
+    "observable_url": "https://observablehq.com/@d3/world-history-timeline",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of events with start and end dates and category.",
+    "data_fields": { "name": "string", "start": "number|date", "end": "number|date", "category": "string" },
+    "scales": { "x": "d3.scaleLinear or d3.scaleTime", "y": "d3.scaleBand", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 150 } },
+    "key_patterns": [
+      "rect: x=x(d.start), width=x(d.end)-x(d.start), y=y(d.name), height=y.bandwidth()",
+      "Sort by start date or category grouping",
+      "Labels inside or beside bars"
+    ],
+    "notes": "Gantt-chart style. Horizontal bars from start to end date. Group/color by category. Sort meaningfully (by start, end, or category)."
+  },
+  {
+    "id": "calendar",
+    "name": "Calendar",
+    "description": "Year calendar heatmap showing daily values in a grid of weeks and days.",
+    "observable_url": "https://observablehq.com/@d3/calendar",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-time", "d3-time-format"],
+    "data_shape": "Array of {date, value} for each day.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "color": "d3.scaleSequential or d3.scaleQuantize" },
+    "layout": { "cellSize": 17, "type": "calendar" },
+    "key_patterns": [
+      "Group data by year",
+      "d3.timeWeek.count(d3.timeYear(date), date) for x (week number)",
+      "date.getDay() for y (day of week, 0=Sun)",
+      "rect: x=weekNum*cellSize, y=dayOfWeek*cellSize, width/height=cellSize-1",
+      "Month boundary paths for visual separation"
+    ],
+    "notes": "Each year is a row of 53 columns (weeks) x 7 rows (days). Color cells by value. Draw month boundaries as path outlines. GitHub contribution graph style."
+  },
+  {
+    "id": "impact-of-vaccines",
+    "name": "The Impact of Vaccines",
+    "description": "Heatmap showing disease incidence by state and year, with vaccine introduction marked.",
+    "observable_url": "https://observablehq.com/@d3/the-impact-of-vaccines",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Matrix: states x years, values = incidence rate. Plus vaccine year marker.",
+    "data_fields": { "state": "string", "year": "number", "incidence": "number", "vaccineYear": "number" },
+    "scales": { "x": "d3.scaleBand (years)", "y": "d3.scaleBand (states)", "color": "d3.scaleSequential" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 60 } },
+    "key_patterns": [
+      "rect per cell: x=x(year), y=y(state), width=x.bandwidth(), height=y.bandwidth()",
+      "d3.scaleSequential(d3.interpolateReds or PuBu)",
+      "Vertical line at vaccine introduction year",
+      "Missing data cells in gray"
+    ],
+    "notes": "Classic heatmap with vertical annotation line showing vaccine introduction. Dramatic before/after pattern visible. Use sequential color scale (e.g., PuBu)."
+  },
+  {
+    "id": "electricity-usage-2019",
+    "name": "Electricity Usage, 2019",
+    "description": "Stacked or grouped bars showing electricity consumption breakdown by source/sector.",
+    "observable_url": "https://observablehq.com/@d3/electricity-usage-2019",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Array of regions/states with multiple energy source values.",
+    "data_fields": { "region": "string", "coal": "number", "gas": "number", "nuclear": "number", "renewable": "number" },
+    "scales": { "x": "d3.scaleBand", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.stack().keys(['coal','gas','nuclear','renewable'])(data)",
+      "Standard stacked bar pattern",
+      "Legend showing energy sources"
+    ],
+    "notes": "Standard stacked bar chart applied to energy data. Good example of real-world stacked bar application."
+  },
+  {
+    "id": "revenue-by-music-format",
+    "name": "Revenue by Music Format, 1973-2018",
+    "description": "Stacked area or bar chart showing how music revenue shifted between formats over time.",
+    "observable_url": "https://observablehq.com/@d3/revenue-by-music-format-1973-2018",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with revenue broken down by format (vinyl, CD, streaming, etc.).",
+    "data_fields": { "year": "number", "format": "string", "revenue": "number" },
+    "scales": { "x": "d3.scaleLinear (years)", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.stack() with format categories",
+      "d3.area() for stacked area rendering",
+      "Color palette: distinct colors per format era",
+      "Labels directly on areas where space permits"
+    ],
+    "notes": "Shows technology disruption cycles. Can render as stacked area (continuous) or stacked bar (discrete years). Direct labels preferred over legend for many series."
+  }
+]

@@ -1,0 +1,458 @@
+[
+  {
+    "id": "choropleth",
+    "name": "Choropleth",
+    "description": "Map with regions colored by data value (e.g., unemployment rate by county).",
+    "observable_url": "https://observablehq.com/@d3/choropleth",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale", "d3-scale-chromatic"],
+    "data_shape": "Geographic features (TopoJSON/GeoJSON) joined with a data table by region ID.",
+    "data_fields": { "id": "string (FIPS code etc.)", "value": "number" },
+    "scales": { "color": "d3.scaleQuantize or d3.scaleThreshold", "projection": "d3.geoAlbersUsa" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "topojson.feature(us, us.objects.counties) for GeoJSON features",
+      "d3.scaleQuantize().domain([min, max]).range(d3.schemeBlues[9])",
+      "path.attr('d', d3.geoPath()).attr('fill', d => color(dataMap.get(d.id)))",
+      "Color legend for value interpretation"
+    ],
+    "notes": "Join geographic features with data by ID (FIPS, ISO, etc.). Choose scale type: quantize (equal intervals), quantile (equal counts), or threshold (custom breaks). Always include a color legend."
+  },
+  {
+    "id": "bivariate-choropleth",
+    "name": "Bivariate Choropleth",
+    "description": "Map encoding two variables simultaneously using a 2D color matrix.",
+    "observable_url": "https://observablehq.com/@d3/bivariate-choropleth",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale"],
+    "data_shape": "Geographic features with two data values per region.",
+    "data_fields": { "id": "string", "value1": "number", "value2": "number" },
+    "scales": { "color": "3x3 or 4x4 bivariate color matrix" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Quantize each variable into 3 bins (low/med/high)",
+      "3x3 color matrix: rows = var1, cols = var2",
+      "Custom legend showing 2D color grid",
+      "Colors: blend two sequential palettes"
+    ],
+    "notes": "Each variable gets 3 bins. Color from a 9-cell matrix (3x3). Requires a 2D color legend (square grid). Complex to read — include clear legend."
+  },
+  {
+    "id": "state-choropleth",
+    "name": "State Choropleth",
+    "description": "US state-level choropleth map.",
+    "observable_url": "https://observablehq.com/@d3/state-choropleth",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale"],
+    "data_shape": "State-level data with FIPS codes.",
+    "data_fields": { "state_fips": "string", "value": "number" },
+    "scales": { "color": "d3.scaleQuantize", "projection": "d3.geoAlbersUsa" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "topojson.feature(us, us.objects.states)",
+      "topojson.mesh(us, us.objects.states, (a,b) => a !== b) for state borders",
+      "d3.geoAlbersUsa() includes Alaska and Hawaii insets"
+    ],
+    "notes": "Simpler than county choropleth. 50 regions vs 3000+. Use geoAlbersUsa for automatic Alaska/Hawaii positioning. Draw borders with topojson.mesh."
+  },
+  {
+    "id": "world-choropleth",
+    "name": "World Choropleth",
+    "description": "World map with countries colored by data value.",
+    "observable_url": "https://observablehq.com/@d3/world-choropleth",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale"],
+    "data_shape": "Country-level data with ISO codes.",
+    "data_fields": { "country_iso": "string", "value": "number" },
+    "scales": { "color": "d3.scaleSequential", "projection": "d3.geoEqualEarth or geoNaturalEarth1" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "topojson.feature(world, world.objects.countries)",
+      "d3.geoEqualEarth() or d3.geoNaturalEarth1() projection",
+      "Join by ISO 3166-1 numeric code",
+      "Graticule for geographic context"
+    ],
+    "notes": "Use equal-area projection for fair comparison. Join by ISO numeric codes. Handle missing data with gray fill. Add graticule for context."
+  },
+  {
+    "id": "world-map",
+    "name": "World Map",
+    "description": "Basic world map outline with land, borders, and graticule.",
+    "observable_url": "https://observablehq.com/@d3/world-map",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo"],
+    "data_shape": "World TopoJSON.",
+    "data_fields": {},
+    "scales": { "projection": "d3.geoEqualEarth" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "topojson.feature(world, world.objects.land) for land mass",
+      "topojson.mesh(world, world.objects.countries, (a,b) => a !== b) for borders",
+      "d3.geoGraticule10() for grid lines",
+      "d3.geoPath(projection) for rendering"
+    ],
+    "notes": "Foundation world map. Land fill, country borders, and graticule. Starting point for any world data visualization."
+  },
+  {
+    "id": "projection-transitions",
+    "name": "Projection Transitions",
+    "description": "Animated transitions between different map projections.",
+    "observable_url": "https://observablehq.com/@d3/projection-transitions",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-interpolate", "d3-transition"],
+    "data_shape": "World GeoJSON.",
+    "data_fields": {},
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Array of projections to cycle through",
+      "Custom interpolation between projection raw functions",
+      "Redraw all paths each frame during transition",
+      "d3.timer() for frame-by-frame rendering"
+    ],
+    "notes": "Interpolate between projection functions. Performance-intensive. Consider canvas for many features."
+  },
+  {
+    "id": "projection-comparison",
+    "name": "Projection Comparison",
+    "description": "Side-by-side display of multiple map projections for comparison.",
+    "observable_url": "https://observablehq.com/@d3/projection-comparison",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-geo"],
+    "data_shape": "World GeoJSON.",
+    "data_fields": {},
+    "scales": {},
+    "layout": { "type": "geographic", "grid": true },
+    "key_patterns": [
+      "Multiple projections: geoMercator, geoEqualEarth, geoOrthographic, geoStereographic, etc.",
+      "Small multiples grid or interactive selector",
+      "Each projection fitted to same viewport size",
+      "projection.fitSize([w, h], feature)"
+    ],
+    "notes": "Show same geographic data in different projections. Demonstrates distortion trade-offs. Interactive selector or grid layout."
+  },
+  {
+    "id": "antimeridian-cutting",
+    "name": "Antimeridian Cutting",
+    "description": "Correctly rendering geographic features that cross the 180-degree meridian.",
+    "observable_url": "https://observablehq.com/@d3/antimeridian-cutting",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo"],
+    "data_shape": "GeoJSON features crossing the antimeridian.",
+    "data_fields": {},
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "d3.geoPath() handles antimeridian cutting automatically",
+      "Ensure features are properly wound (right-hand rule)",
+      "Use TopoJSON pre-processing for clean cuts"
+    ],
+    "notes": "D3 handles antimeridian cutting internally in geoPath. Ensure correct winding order. Pre-process with topojson-client for clean results."
+  },
+  {
+    "id": "tissots-indicatrix",
+    "name": "Tissot's Indicatrix",
+    "description": "Circles placed on map showing how the projection distorts area and shape at each location.",
+    "observable_url": "https://observablehq.com/@d3/tissots-indicatrix",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo"],
+    "data_shape": "Grid of geographic points for circle placement.",
+    "data_fields": {},
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "d3.geoCircle().center([lon, lat]).radius(5) at grid points",
+      "Project circles through the map projection",
+      "Circles distort showing local projection distortion",
+      "Regular grid: every 30 degrees lat/lon"
+    ],
+    "notes": "Small circles on the globe become distorted ellipses when projected. Shows where and how the projection distorts area and shape."
+  },
+  {
+    "id": "web-mercator-tiles",
+    "name": "Web Mercator Tiles",
+    "description": "Standard web map tile layer using Mercator projection.",
+    "observable_url": "https://observablehq.com/@d3/web-mercator-tiles",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-tile", "d3-geo", "d3-zoom"],
+    "data_shape": "Tile server URL template.",
+    "data_fields": { "tileUrl": "string template" },
+    "scales": {},
+    "layout": { "type": "geographic", "projection": "mercator" },
+    "key_patterns": [
+      "d3.tile().size([w,h]).scale(k).translate([tx,ty])",
+      "d3.zoom() for pan and zoom interaction",
+      "img src = `${baseUrl}/${z}/${x}/${y}.png`"
+    ],
+    "notes": "Standard slippy map tiles. d3-tile calculates visible tiles. Zoom and pan with d3-zoom."
+  },
+  {
+    "id": "raster-tiles",
+    "name": "Raster Tiles",
+    "description": "Raster image tile layer (satellite, terrain imagery).",
+    "observable_url": "https://observablehq.com/@d3/raster-tiles",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-tile", "d3-zoom"],
+    "data_shape": "Raster tile server URL.",
+    "data_fields": { "tileUrl": "string template" },
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "d3.tile() for tile calculation",
+      "SVG image elements or canvas drawImage for rendering",
+      "Tile positioning via transform"
+    ],
+    "notes": "Same tile calculation as web Mercator but for raster imagery. Can overlay SVG vector data on top."
+  },
+  {
+    "id": "vector-tiles",
+    "name": "Vector Tiles",
+    "description": "Vector data tile layer rendered as SVG paths.",
+    "observable_url": "https://observablehq.com/@d3/vector-tiles",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-tile", "d3-geo", "d3-zoom"],
+    "data_shape": "Vector tile server (Mapbox, etc.).",
+    "data_fields": { "tileUrl": "string template" },
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Fetch protobuf/GeoJSON tiles per zoom level",
+      "Parse vector tile data into features",
+      "d3.geoPath() for rendering features as SVG paths",
+      "Style features by layer (roads, buildings, water)"
+    ],
+    "notes": "Vector tiles contain geometric data rendered client-side. More flexible than raster — can restyle dynamically."
+  },
+  {
+    "id": "clipped-map-tiles",
+    "name": "Clipped Map Tiles",
+    "description": "Map tiles clipped to geographic boundaries.",
+    "observable_url": "https://observablehq.com/@d3/clipped-map-tiles",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-tile", "d3-geo", "d3-zoom"],
+    "data_shape": "Tiles plus clipping boundary geometry.",
+    "data_fields": { "tileUrl": "string template", "boundary": "GeoJSON" },
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "SVG clipPath from geographic boundary projected path",
+      "Apply clipPath to tile container group",
+      "Tiles rendered normally, clipped to boundary shape"
+    ],
+    "notes": "Standard tile rendering with SVG clipPath applied. Useful for showing tiles only within a country or state boundary."
+  },
+  {
+    "id": "raster-and-vector",
+    "name": "Raster & Vector",
+    "description": "Combined raster tile background with vector data overlay.",
+    "observable_url": "https://observablehq.com/@d3/raster-vector",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-tile", "d3-geo", "d3-zoom"],
+    "data_shape": "Raster tiles + vector GeoJSON overlay.",
+    "data_fields": { "tileUrl": "string", "vectorData": "GeoJSON" },
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Raster tile layer as background",
+      "SVG path layer on top for vector features",
+      "Both layers transform together on zoom/pan",
+      "Vector features re-projected on zoom change"
+    ],
+    "notes": "Layer raster tiles below, SVG vector data above. Synchronize transforms on zoom/pan."
+  },
+  {
+    "id": "vector-field",
+    "name": "Vector Field",
+    "description": "Arrow-based visualization showing direction and magnitude of flow (wind, currents).",
+    "observable_url": "https://observablehq.com/@d3/vector-field",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale"],
+    "data_shape": "Grid of {x, y, u, v} values (position + vector components).",
+    "data_fields": { "x": "number", "y": "number", "u": "number (x-component)", "v": "number (y-component)" },
+    "scales": { "length": "d3.scaleLinear", "color": "d3.scaleSequential" },
+    "layout": { "type": "geographic or cartesian" },
+    "key_patterns": [
+      "Arrow at each grid point: direction = atan2(v, u), magnitude = sqrt(u*u + v*v)",
+      "SVG line or path with marker-end arrowhead",
+      "Arrow length proportional to magnitude",
+      "Color by magnitude for emphasis"
+    ],
+    "notes": "Draw small arrows at grid points. Direction and length encode the vector. Common for wind, ocean currents, magnetic fields."
+  },
+  {
+    "id": "geotiff-contours",
+    "name": "GeoTIFF Contours",
+    "description": "Contour lines extracted from GeoTIFF raster data displayed on a map.",
+    "observable_url": "https://observablehq.com/@d3/geotiff-contours",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-contour", "d3-geo"],
+    "data_shape": "GeoTIFF raster (elevation, temperature, etc.).",
+    "data_fields": { "raster": "ArrayBuffer (GeoTIFF)", "width": "number", "height": "number" },
+    "scales": { "color": "d3.scaleSequential" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Parse GeoTIFF with geotiff.js library",
+      "d3.contours().size([w, h]).thresholds(n)(values)",
+      "Project contour GeoJSON through geographic projection",
+      "Color contours by threshold value"
+    ],
+    "notes": "Parse raster with geotiff.js. Generate contours with d3.contours(). Project to map coordinates. Common for elevation, temperature, pressure maps."
+  },
+  {
+    "id": "us-airports-voronoi",
+    "name": "U.S. Airports Voronoi",
+    "description": "Voronoi tessellation of US airports showing nearest-airport regions.",
+    "observable_url": "https://observablehq.com/@d3/us-airports-voronoi",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-delaunay", "d3-geo"],
+    "data_shape": "Airport locations with coordinates.",
+    "data_fields": { "name": "string", "longitude": "number", "latitude": "number" },
+    "scales": { "projection": "d3.geoAlbersUsa" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Project airport coordinates",
+      "d3.Delaunay.from(projected).voronoi([0, 0, w, h])",
+      "Render Voronoi cells as SVG paths",
+      "Hover to highlight cell and show airport info"
+    ],
+    "notes": "Project geographic points, then compute Voronoi in screen space. Each cell = nearest airport territory. Overlay on base map."
+  },
+  {
+    "id": "world-airports-voronoi",
+    "name": "World Airports Voronoi",
+    "description": "Global Voronoi tessellation of world airports.",
+    "observable_url": "https://observablehq.com/@d3/world-airports-voronoi",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-delaunay", "d3-geo"],
+    "data_shape": "World airport locations.",
+    "data_fields": { "name": "string", "longitude": "number", "latitude": "number" },
+    "scales": { "projection": "d3.geoEqualEarth" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Same as US version but with world projection",
+      "More airports = finer Voronoi cells",
+      "Clip to land area if desired"
+    ],
+    "notes": "Global version of airport Voronoi. Many more points. Consider performance with thousands of cells."
+  },
+  {
+    "id": "solar-terminator",
+    "name": "Solar Terminator",
+    "description": "Map showing the day-night boundary (terminator line) at current time.",
+    "observable_url": "https://observablehq.com/@d3/solar-terminator",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-geo"],
+    "data_shape": "Computed from current date/time (solar position calculations).",
+    "data_fields": { "date": "Date" },
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Compute solar declination and hour angle from date",
+      "Generate night polygon as GeoJSON circle antipodal to sun",
+      "d3.geoCircle().center([sunLon, sunLat]).radius(90) for day hemisphere",
+      "Semi-transparent overlay for night side"
+    ],
+    "notes": "Compute sun position from date. Night side is a circle centered on the anti-solar point with 90-degree radius. Can animate with d3.timer() for real-time."
+  },
+  {
+    "id": "solar-path",
+    "name": "Solar Path",
+    "description": "Sun position trajectory across the sky for a given location and date.",
+    "observable_url": "https://observablehq.com/@d3/solar-path",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-geo", "d3-scale"],
+    "data_shape": "Computed solar positions throughout the day.",
+    "data_fields": { "hour": "number", "azimuth": "number", "altitude": "number" },
+    "scales": {},
+    "layout": { "type": "geographic or polar" },
+    "key_patterns": [
+      "Compute solar altitude and azimuth for each hour",
+      "Polar plot: angle = azimuth, radius = 90 - altitude",
+      "Or stereographic projection of sky hemisphere",
+      "Mark sunrise, sunset, and solar noon"
+    ],
+    "notes": "Compute solar position using astronomical formulas. Plot as polar diagram of sky hemisphere. Mark key times (sunrise, noon, sunset)."
+  },
+  {
+    "id": "star-map",
+    "name": "Star Map",
+    "description": "Celestial sphere visualization showing stars, constellations, and celestial coordinates.",
+    "observable_url": "https://observablehq.com/@d3/star-map",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-geo"],
+    "data_shape": "Star catalog with right ascension and declination.",
+    "data_fields": { "name": "string", "ra": "number (hours)", "dec": "number (degrees)", "magnitude": "number" },
+    "scales": { "r": "d3.scaleLinear (inverse magnitude)", "projection": "d3.geoStereographic" },
+    "layout": { "type": "geographic", "background": "dark" },
+    "key_patterns": [
+      "d3.geoStereographic() or d3.geoOrthographic() for sky projection",
+      "Convert RA/Dec to longitude/latitude: lon = -ra*15, lat = dec",
+      "Circle radius inversely proportional to magnitude (brighter = bigger)",
+      "Constellation lines as GeoJSON LineStrings"
+    ],
+    "notes": "Invert RA to longitude. Dark background. Brighter stars = larger circles. Draw constellation lines. Optionally add Milky Way path."
+  },
+  {
+    "id": "non-contiguous-cartogram",
+    "name": "Non-Contiguous Cartogram",
+    "description": "Map where regions are scaled (shrunk/enlarged) proportional to a data value while maintaining shape.",
+    "observable_url": "https://observablehq.com/@d3/non-contiguous-cartogram",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale"],
+    "data_shape": "Geographic features with associated values.",
+    "data_fields": { "id": "string", "value": "number" },
+    "scales": { "area": "d3.scaleSqrt" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Compute centroid of each region: d3.geoPath().centroid(feature)",
+      "Scale each region around its centroid by sqrt(value/average)",
+      "transform: translate to centroid, scale, translate back",
+      "Gaps appear between regions (non-contiguous)"
+    ],
+    "notes": "Scale each region independently around its centroid. Regions no longer touch (non-contiguous). Area proportional to data value. Shape preserved."
+  }
+]

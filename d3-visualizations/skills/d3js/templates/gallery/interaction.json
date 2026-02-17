@@ -1,0 +1,192 @@
+[
+  {
+    "id": "versor-dragging",
+    "name": "Versor Dragging",
+    "description": "3D globe that can be intuitively rotated by dragging, using versor math for natural rotation.",
+    "observable_url": "https://observablehq.com/@d3/versor-dragging",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-geo", "d3-drag", "d3-selection"],
+    "data_shape": "World GeoJSON/TopoJSON for land, borders, etc.",
+    "data_fields": { "land": "GeoJSON", "borders": "GeoJSON" },
+    "scales": {},
+    "layout": { "type": "geographic", "projection": "orthographic" },
+    "key_patterns": [
+      "d3.geoOrthographic().rotate([lambda, phi, gamma])",
+      "d3.drag().on('start', dragstarted).on('drag', dragged)",
+      "Versor rotation math: quaternion-based rotation from mouse delta",
+      "Invert mouse position to geographic coordinates for rotation anchor"
+    ],
+    "notes": "Use versor library for quaternion rotation. Invert drag start/current to geographic coords, compute rotation delta. Feels like grabbing and spinning a physical globe."
+  },
+  {
+    "id": "index-chart",
+    "name": "Index Chart",
+    "description": "Multi-line chart where hovering changes the baseline index point, rebasing all lines to that date.",
+    "observable_url": "https://observablehq.com/@d3/index-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape", "d3-selection", "d3-bisect"],
+    "data_shape": "Time-series data for multiple entities. Values will be rebased relative to selected date.",
+    "data_fields": { "date": "date", "name": "string", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLog or scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 60, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "mousemove: bisect to find nearest date, recompute index values",
+      "index = value / baseValue * 100 for each series",
+      "d3.bisector(d => d.date).left for nearest date lookup",
+      "Redraw lines and y-axis on each mouse movement",
+      "Vertical rule line following cursor"
+    ],
+    "notes": "On mousemove, find the date under cursor, divide all values by their value at that date, update y-scale and lines. Shows relative performance from any starting point."
+  },
+  {
+    "id": "sequences-sunburst",
+    "name": "Sequences Sunburst",
+    "description": "Sunburst with breadcrumb trail showing the path from root to hovered arc. Shows hierarchy navigation.",
+    "observable_url": "https://observablehq.com/@d3/sequences-sunburst",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-shape", "d3-scale"],
+    "data_shape": "Hierarchical data from sequences (e.g., navigation paths). Each path is root→leaf with a count.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "partition", "size": [6.28318, "radius"] },
+    "key_patterns": [
+      "d3.partition().size([2*PI, radius])",
+      "d3.arc() for sunburst arcs",
+      "mouseover: highlight ancestry path from root to hovered node",
+      "Breadcrumb SVG trail showing path segments",
+      "Opacity: dim non-ancestry arcs, highlight path"
+    ],
+    "notes": "On hover, compute ancestors of hovered node, highlight those arcs, dim others. Draw breadcrumb trail as SVG polygons above the sunburst."
+  },
+  {
+    "id": "brushable-scatterplot",
+    "name": "Brushable Scatterplot",
+    "description": "Scatterplot with rectangular brush selection. Selected points are highlighted.",
+    "observable_url": "https://observablehq.com/@d3/brushable-scatterplot",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-brush", "d3-scale", "d3-axis"],
+    "data_shape": "Array of objects with x and y numeric fields.",
+    "data_fields": { "x": "number", "y": "number", "category": "string" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.brush().extent([[0,0],[width,height]]).on('start brush end', brushed)",
+      "brushed: get selection bounds, test each point if inside",
+      "circle.classed('selected', d => isInBrush(d, selection))",
+      "event.selection gives [[x0,y0],[x1,y1]] in pixel coordinates"
+    ],
+    "notes": "Use d3.brush() for 2D selection. In brush handler, invert pixel selection to data coordinates and filter points. Style selected vs unselected differently."
+  },
+  {
+    "id": "brushable-scatterplot-matrix",
+    "name": "Brushable Scatterplot Matrix",
+    "description": "Grid of scatterplots showing all pairwise dimensions. Brush in one cell highlights across all cells.",
+    "observable_url": "https://observablehq.com/@d3/brushable-scatterplot-matrix",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-brush", "d3-scale", "d3-axis", "d3-selection"],
+    "data_shape": "Tabular dataset with multiple numeric columns. Each pair of columns gets a scatterplot cell.",
+    "data_fields": { "columns": "string[]", "values": "number[][] (per column)" },
+    "scales": { "x": "d3.scaleLinear per column", "y": "d3.scaleLinear per column" },
+    "layout": { "type": "matrix", "cellSize": 150, "padding": 20 },
+    "key_patterns": [
+      "Create n*n grid of cells for n dimensions",
+      "d3.brush() attached to each cell",
+      "On brush in any cell, determine selected points, highlight across ALL cells",
+      "Cross-cell linking via shared selection state"
+    ],
+    "notes": "One brush at a time (clear others when new brush starts). The key challenge is propagating selection across all cells. Use a shared Set of selected indices."
+  },
+  {
+    "id": "pannable-chart",
+    "name": "Pannable Chart",
+    "description": "Time series chart that can be panned horizontally by dragging, revealing more data outside the viewport.",
+    "observable_url": "https://observablehq.com/@d3/pannable-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-zoom", "d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with more data than fits in viewport.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 30 } },
+    "key_patterns": [
+      "d3.zoom().scaleExtent([1,1]).on('zoom', zoomed) — scale locked to 1, pan only",
+      "zoomed: rescale x domain based on transform, redraw line and axis",
+      "event.transform.rescaleX(x) for panned x-scale",
+      "clipPath to hide content outside viewport"
+    ],
+    "notes": "Use d3.zoom with scaleExtent([1,1]) to allow panning only. Clip the chart area. Rescale x-axis and redraw content on each zoom event."
+  },
+  {
+    "id": "zoomable-area-chart",
+    "name": "Zoomable Area Chart",
+    "description": "Area chart with zoom and pan. Zooming in reveals more detail, zooming out shows full range.",
+    "observable_url": "https://observablehq.com/@d3/zoomable-area-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-zoom", "d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series data.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 30 } },
+    "key_patterns": [
+      "d3.zoom().scaleExtent([1, 32]).on('zoom', zoomed)",
+      "zoomed: xz = event.transform.rescaleX(x); redraw area and x-axis",
+      "d3.area().x(d => xz(d.date)).y0(y(0)).y1(d => y(d.value))",
+      "clipPath on chart area"
+    ],
+    "notes": "Zoom rescales x-axis only (idiomatic for time series). Y-axis can optionally rescale to fit visible data range."
+  },
+  {
+    "id": "zoomable-bar-chart",
+    "name": "Zoomable Bar Chart",
+    "description": "Bar chart that can be zoomed to see more bars or drill into specific range.",
+    "observable_url": "https://observablehq.com/@d3/zoomable-bar-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-zoom", "d3-scale", "d3-axis"],
+    "data_shape": "Categorical data with many categories.",
+    "data_fields": { "name": "string", "value": "number" },
+    "scales": { "x": "d3.scaleBand", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 0, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.zoom().scaleExtent([1, 8]).on('zoom', zoomed)",
+      "zoomed: rescale band positions, filter visible bars, update axis",
+      "Handle band scale with zoom: recompute band positions from transform"
+    ],
+    "notes": "Band scales with zoom require special handling — can't use rescaleX directly. Instead, apply transform to bar x positions and filter out-of-view bars."
+  },
+  {
+    "id": "seamless-zoomable-map-tiles",
+    "name": "Seamless Zoomable Map Tiles",
+    "description": "Continuous zoom into web map tiles with smooth tile loading transitions.",
+    "observable_url": "https://observablehq.com/@d3/seamless-zoomable-map-tiles",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-zoom", "d3-tile", "d3-geo"],
+    "data_shape": "Tile server URL template (e.g., OpenStreetMap).",
+    "data_fields": { "tileUrl": "string template with {z}/{x}/{y}" },
+    "scales": {},
+    "layout": { "type": "geographic", "projection": "mercator" },
+    "key_patterns": [
+      "d3.tile().size([w,h]).scale(transform.k).translate([transform.x, transform.y])",
+      "d3.zoom().scaleExtent([1<<8, 1<<22]).on('zoom', zoomed)",
+      "Image elements for each tile: `${url}/${z}/${x}/${y}.png`",
+      "Tile stacking for seamless zoom between levels"
+    ],
+    "notes": "Use d3-tile to calculate visible tiles at current zoom level. Load tile images as SVG image elements or HTML img elements. Handle tile transitions between zoom levels."
+  }
+]

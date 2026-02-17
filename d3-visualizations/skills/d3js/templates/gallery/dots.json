@@ -1,0 +1,230 @@
+[
+  {
+    "id": "scatterplot",
+    "name": "Scatterplot",
+    "description": "Basic x-y point cloud showing relationship between two numeric variables.",
+    "observable_url": "https://observablehq.com/@d3/scatterplot",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of objects with x and y numeric fields.",
+    "data_fields": { "x": "number", "y": "number", "category": "string" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "circle: cx=x(d.x), cy=y(d.y), r=3",
+      "d3.scaleLinear().domain(d3.extent(data, d => d.x)).nice()",
+      "Optional: color by category, size by third variable"
+    ],
+    "notes": "Foundation chart. Linear scales for both axes. Adjust radius and opacity for dense data to reduce overplotting."
+  },
+  {
+    "id": "scatterplot-with-shapes",
+    "name": "Scatterplot with Shapes",
+    "description": "Scatterplot using different symbols (circle, cross, diamond, etc.) to encode categories.",
+    "observable_url": "https://observablehq.com/@d3/scatterplot-with-shapes",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Array with x, y, and category fields.",
+    "data_fields": { "x": "number", "y": "number", "category": "string" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "shape": "d3.scaleOrdinal with d3.symbols" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.symbol().type(symbolScale(d.category)).size(64)",
+      "path.attr('d', d3.symbol().type(...)()).attr('transform', `translate(${x},${y})`)",
+      "d3.symbols: symbolCircle, symbolCross, symbolDiamond, symbolSquare, symbolStar, symbolTriangle, symbolWye"
+    ],
+    "notes": "Use d3.symbol() for different point shapes. Good for accessibility (not relying only on color)."
+  },
+  {
+    "id": "scatterplot-matrix",
+    "name": "Scatterplot Matrix (SPLOM)",
+    "description": "Grid of scatterplots showing all pairwise relationships between multiple dimensions.",
+    "observable_url": "https://observablehq.com/@d3/scatterplot-matrix",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Tabular data with multiple numeric columns.",
+    "data_fields": { "columns": "string[]", "rows": "object[]" },
+    "scales": { "x": "d3.scaleLinear per column", "y": "d3.scaleLinear per column", "color": "d3.scaleOrdinal" },
+    "layout": { "type": "matrix", "cellSize": 130, "padding": 20 },
+    "key_patterns": [
+      "N columns create N x N grid of cells",
+      "Each cell[i][j] plots column[i] vs column[j]",
+      "Diagonal cells show variable name or histogram",
+      "Shared scales per row (y) and per column (x)"
+    ],
+    "notes": "N x N grid for N dimensions. Diagonal shows variable names. Below diagonal = scatterplots."
+  },
+  {
+    "id": "dot-plot",
+    "name": "Dot Plot",
+    "description": "Single-axis dot plot showing individual values along one dimension.",
+    "observable_url": "https://observablehq.com/@d3/dot-plot",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of objects with category and value.",
+    "data_fields": { "category": "string", "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleBand or scalePoint" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 100 } },
+    "key_patterns": [
+      "Horizontal: x=value, y=category",
+      "Small circles (r=3-4) with semi-transparency for overlapping values",
+      "Optional: connect dots across categories with lines (Cleveland dot plot)"
+    ],
+    "notes": "Simpler alternative to bar chart — especially good when comparing across categories."
+  },
+  {
+    "id": "global-temperature-trends",
+    "name": "Global Temperature Trends",
+    "description": "Temperature anomaly scatter showing warming trend over decades.",
+    "observable_url": "https://observablehq.com/@d3/global-temperature-trends",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Time series of temperature anomalies.",
+    "data_fields": { "year": "number", "anomaly": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "color": "d3.scaleSequential" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Dots colored by value (blue=cold, red=warm)",
+      "d3.scaleSequential(d3.interpolateRdBu).domain([max, min]) — reversed",
+      "Optional: trend line overlay",
+      "Reference line at 0 (baseline)"
+    ],
+    "notes": "Color-encoded scatter showing warming trend. Reference line at zero anomaly."
+  },
+  {
+    "id": "bubble-map",
+    "name": "Bubble Map",
+    "description": "Geographic map with sized circles at locations encoding a quantitative value.",
+    "observable_url": "https://observablehq.com/@d3/bubble-map",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale"],
+    "data_shape": "Geographic point data with associated values.",
+    "data_fields": { "longitude": "number", "latitude": "number", "value": "number", "name": "string" },
+    "scales": { "r": "d3.scaleSqrt", "projection": "d3.geoAlbersUsa or d3.geoMercator" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Base map: path.datum(land).attr('d', geoPath)",
+      "Circles: cx/cy from projection([lon, lat]), r from scaleSqrt(value)",
+      "d3.scaleSqrt() so circle area is proportional to value",
+      "Semi-transparent fills for overlapping bubbles"
+    ],
+    "notes": "Use scaleSqrt for perceptually accurate area encoding. Sort largest bubbles first (draw small on top)."
+  },
+  {
+    "id": "spike-map",
+    "name": "Spike Map",
+    "description": "Geographic map with vertical spikes at locations, height encoding a value.",
+    "observable_url": "https://observablehq.com/@d3/spike-map",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale"],
+    "data_shape": "Geographic point data with associated values.",
+    "data_fields": { "longitude": "number", "latitude": "number", "value": "number" },
+    "scales": { "height": "d3.scaleLinear", "projection": "d3.geoAlbersUsa" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Base map underneath",
+      "Narrow triangles (spikes) at each point",
+      "path: `M${x-0.5},${y} L${x},${y-h} L${x+0.5},${y}`",
+      "Height proportional to value"
+    ],
+    "notes": "Alternative to bubble map. Spikes don't overlap as much. Draw south-to-north so front spikes occlude back ones."
+  },
+  {
+    "id": "bubble-chart",
+    "name": "Bubble Chart",
+    "description": "Packed circles where each bubble's area represents a value, optionally colored by category.",
+    "observable_url": "https://observablehq.com/@d3/bubble-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-scale"],
+    "data_shape": "Flat array of {name, value, category} — no hierarchy, just packed circles.",
+    "data_fields": { "name": "string", "value": "number", "category": "string" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "pack" },
+    "key_patterns": [
+      "Create flat hierarchy: {children: data}",
+      "d3.pack().size([w, h]).padding(1.5)",
+      "d3.hierarchy({children: data}).sum(d => d.value)",
+      "Labels inside circles (clip or hide if too small)"
+    ],
+    "notes": "Use d3.pack() on a flat hierarchy. Position determined by packing algorithm, not x/y data."
+  },
+  {
+    "id": "beeswarm",
+    "name": "Beeswarm",
+    "description": "Dots arranged along one axis with collision resolution to avoid overlap.",
+    "observable_url": "https://observablehq.com/@d3/beeswarm",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-force", "d3-scale", "d3-axis"],
+    "data_shape": "Array of values with one primary dimension.",
+    "data_fields": { "value": "number", "category": "string" },
+    "scales": { "x": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.forceSimulation(data).force('x', d3.forceX(d => x(d.value)).strength(1))",
+      "force('y', d3.forceY(height/2))",
+      "force('collide', d3.forceCollide(radius + 0.5))",
+      "Dots settle into beeswarm pattern along x-axis"
+    ],
+    "notes": "Force simulation with strong x-force and collision detection. Like a histogram showing individual points."
+  },
+  {
+    "id": "mirrored-beeswarm",
+    "name": "Mirrored Beeswarm",
+    "description": "Two beeswarm distributions shown on opposite sides of a shared axis for comparison.",
+    "observable_url": "https://observablehq.com/@d3/mirrored-beeswarm",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-force", "d3-scale", "d3-axis"],
+    "data_shape": "Two groups of values to compare distributions.",
+    "data_fields": { "value": "number", "group": "string" },
+    "scales": { "x": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Two force simulations or one with y-force per group",
+      "Group A dots displaced above axis, Group B below",
+      "force('y', d3.forceY(d => d.group === 'A' ? -offset : offset))",
+      "Shared x-axis for comparison"
+    ],
+    "notes": "Each group beeswarms on opposite sides of the shared axis."
+  },
+  {
+    "id": "hertzsprung-russell-diagram",
+    "name": "Hertzsprung-Russell Diagram",
+    "description": "Classic astronomy scatter plot showing star luminosity vs temperature.",
+    "observable_url": "https://observablehq.com/@d3/hertzsprung-russell-diagram",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Star catalog with temperature and luminosity.",
+    "data_fields": { "temperature": "number", "luminosity": "number", "spectral_type": "string" },
+    "scales": { "x": "d3.scaleLog (reversed)", "y": "d3.scaleLog", "color": "by spectral type" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 50 }, "background": "dark" },
+    "key_patterns": [
+      "x: d3.scaleLog().domain([40000, 2000]) — reversed (hot on left)",
+      "y: d3.scaleLog().domain([0.001, 1000000])",
+      "Color by spectral type: O=blue, B=blue-white, G=yellow, K=orange, M=red",
+      "Small dots with dark background"
+    ],
+    "notes": "Reversed x-axis (convention). Log scales both axes. Dark background with colored dots. Main sequence, giants, white dwarfs visible as clusters."
+  }
+]

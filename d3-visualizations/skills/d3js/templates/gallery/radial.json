@@ -1,0 +1,105 @@
+[
+  {
+    "id": "pie-chart",
+    "name": "Pie Chart",
+    "description": "Classic circular chart divided into angular slices proportional to values.",
+    "observable_url": "https://observablehq.com/@d3/pie-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-shape", "d3-scale"],
+    "data_shape": "Array of {name, value} pairs.",
+    "data_fields": { "name": "string", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "pie", "innerRadius": 0 },
+    "key_patterns": [
+      "d3.pie().value(d => d.value).sort(null)(data)",
+      "d3.arc().innerRadius(0).outerRadius(radius)",
+      "path.attr('d', arc) for each slice",
+      "Labels: centroid = arc.centroid(d) for positioning"
+    ],
+    "notes": "Sort(null) preserves data order. Limit to 5-7 slices for readability. Consider donut variant."
+  },
+  {
+    "id": "donut-chart",
+    "name": "Donut Chart",
+    "description": "Pie chart with hollow center, often used to show composition with a center label.",
+    "observable_url": "https://observablehq.com/@d3/donut-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-shape", "d3-scale"],
+    "data_shape": "Array of {name, value} pairs.",
+    "data_fields": { "name": "string", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "pie", "innerRadius": "radius * 0.6", "outerRadius": "radius" },
+    "key_patterns": [
+      "d3.pie().value(d => d.value).sort(null)(data)",
+      "d3.arc().innerRadius(r * 0.6).outerRadius(r)",
+      "Center text: total or title",
+      "Optional: polyline leaders from arcs to external labels"
+    ],
+    "notes": "innerRadius > 0 creates donut hole. Place summary in center. Generally preferred over pie for modern designs."
+  },
+  {
+    "id": "radial-area-chart",
+    "name": "Radial Area Chart",
+    "description": "Area chart wrapped around a circle, ideal for cyclic data (monthly, hourly patterns).",
+    "observable_url": "https://observablehq.com/@d3/radial-area-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "Cyclic time series (e.g., 12 months, 24 hours).",
+    "data_fields": { "period": "number|string", "value": "number" },
+    "scales": { "angle": "d3.scaleLinear (0 to 2*PI)", "radius": "d3.scaleLinear" },
+    "layout": { "type": "radial", "innerRadius": 20, "outerRadius": "radius" },
+    "key_patterns": [
+      "d3.areaRadial().angle(d => angleScale(d.period)).innerRadius(innerR).outerRadius(d => rScale(d.value))",
+      "d3.lineRadial() for the outer edge",
+      "Radial gridlines at value intervals",
+      "Angular labels for periods"
+    ],
+    "notes": "Best for cyclic/periodic data where start connects to end. Use d3.areaRadial() and d3.lineRadial()."
+  },
+  {
+    "id": "radial-stacked-bar-chart",
+    "name": "Radial Stacked Bar Chart",
+    "description": "Bar chart wrapped in a circle with stacked segments.",
+    "observable_url": "https://observablehq.com/@d3/radial-stacked-bar-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "Categories with multiple series values, arranged around a circle.",
+    "data_fields": { "category": "string", "series1": "number", "series2": "number" },
+    "scales": { "angle": "d3.scaleBand", "radius": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "type": "radial", "innerRadius": 100, "outerRadius": "radius" },
+    "key_patterns": [
+      "d3.arc() with computed inner/outer radius from stack and start/end angle from band scale",
+      "d3.stack() for computing baselines",
+      "Radial gridlines as concentric circles"
+    ],
+    "notes": "Bars extend outward from center. Warning: outer bars appear larger due to radial distortion."
+  },
+  {
+    "id": "radial-stacked-bar-chart-2",
+    "name": "Radial Stacked Bar Chart (variant)",
+    "description": "Alternative radial stacked bar with different styling and label placement.",
+    "observable_url": "https://observablehq.com/@d3/radial-stacked-bar-chart/2",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "Categories with multiple series values.",
+    "data_fields": { "category": "string", "series1": "number", "series2": "number" },
+    "scales": { "angle": "d3.scaleBand", "radius": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "type": "radial", "innerRadius": 80, "outerRadius": "radius" },
+    "key_patterns": [
+      "Same base as radial stacked bar",
+      "Labels rotated tangentially along outer edge",
+      "Different color scheme or grouping"
+    ],
+    "notes": "Variant with alternative label placement and styling."
+  }
+]

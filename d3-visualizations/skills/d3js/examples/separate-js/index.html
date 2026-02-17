@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3.js Line Chart — HTML + JS Example</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8f9fa; padding: 2rem; }
+    h1 { font-size: 1.25rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 0.85rem; color: #6b7280; margin-bottom: 1.5rem; }
+    #chart { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1rem; }
+    .tooltip { position: absolute; background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+    .line { fill: none; stroke-width: 2; }
+    .dot { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Monthly Temperature Trends</h1>
+  <p class="subtitle">Average temperatures for two cities over 12 months</p>
+  <div id="chart"></div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <!-- Note: requires a local server (python -m http.server) due to ES module imports -->
+  <script type="module" src="chart.js"></script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+[
+  {
+    "id": "area-chart",
+    "name": "Area Chart",
+    "description": "Filled region between the data line and the baseline showing volume over time.",
+    "observable_url": "https://observablehq.com/@d3/area-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.area().x(d => x(d.date)).y0(y(0)).y1(d => y(d.value))",
+      "Fill with semi-transparent color or gradient",
+      "Optional overlay line on top edge for clarity"
+    ],
+    "notes": "Area chart = line chart with fill to baseline. y0 is baseline (usually 0), y1 is data value. Consider adding the line on top for crisp edge."
+  },
+  {
+    "id": "area-with-missing-data",
+    "name": "Area with Missing Data",
+    "description": "Area chart handling gaps where data is missing, with visual indication of gaps.",
+    "observable_url": "https://observablehq.com/@d3/area-with-missing-data",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with null/NaN values.",
+    "data_fields": { "date": "date", "value": "number|null" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.area().defined(d => !isNaN(d.value))",
+      "Solid area for valid segments, gap where data is missing",
+      "Optional dashed outline across gaps"
+    ],
+    "notes": "Same as area-with-missing-data for lines — use .defined() to skip nulls. Area splits into separate filled regions at each gap."
+  },
+  {
+    "id": "stacked-area-chart",
+    "name": "Stacked Area Chart",
+    "description": "Multiple area layers stacked on top of each other showing cumulative total and composition.",
+    "observable_url": "https://observablehq.com/@d3/stacked-area-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with multiple categories. Each time point has values for all categories.",
+    "data_fields": { "date": "date", "category1": "number", "category2": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.stack().keys(categoryNames).order(d3.stackOrderNone).offset(d3.stackOffsetNone)(data)",
+      "d3.area().x(d => x(d.data.date)).y0(d => y(d[0])).y1(d => y(d[1]))",
+      "One area path per category/layer"
+    ],
+    "notes": "d3.stack() computes baselines. Each layer's y0 = previous layer's y1. Order affects readability — largest at bottom is common. Legend required."
+  },
+  {
+    "id": "normalized-stacked-area-chart",
+    "name": "Normalized Stacked Area Chart",
+    "description": "100% stacked area showing proportion changes over time.",
+    "observable_url": "https://observablehq.com/@d3/normalized-stacked-area-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with multiple categories.",
+    "data_fields": { "date": "date", "category1": "number", "category2": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear (0 to 1)", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.stack().offset(d3.stackOffsetExpand)(data)",
+      "y.domain([0, 1]) with d3.format('.0%') on axis",
+      "Same area rendering as stacked area"
+    ],
+    "notes": "stackOffsetExpand normalizes each time point to sum to 1. Shows proportion changes without being influenced by total volume changes."
+  },
+  {
+    "id": "us-population-by-state",
+    "name": "U.S. Population by State, 1790-1990",
+    "description": "Stacked area chart showing US state population growth over two centuries.",
+    "observable_url": "https://observablehq.com/@d3/us-population-by-state-1790-1990",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Population by state and census year.",
+    "data_fields": { "year": "number", "state": "string", "population": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 60 } },
+    "key_patterns": [
+      "d3.stack().keys(stateNames)(data)",
+      "Hover to highlight individual state layer",
+      "Many series: direct labels where space permits"
+    ],
+    "notes": "Many-series stacked area. Hover highlights individual state. Color grouping by region helps readability. Tooltip shows state name and population on hover."
+  },
+  {
+    "id": "streamgraph",
+    "name": "Streamgraph",
+    "description": "Flowing organic area chart with layers centered around a baseline for aesthetic appeal.",
+    "observable_url": "https://observablehq.com/@d3/streamgraph",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with multiple categories.",
+    "data_fields": { "date": "date", "category": "string", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 0, "right": 0, "bottom": 30, "left": 0 } },
+    "key_patterns": [
+      "d3.stack().offset(d3.stackOffsetWiggle).order(d3.stackOrderInsideOut)(data)",
+      "d3.area().curve(d3.curveBasis) for smooth organic shapes",
+      "stackOffsetWiggle minimizes weighted wiggle"
+    ],
+    "notes": "Streamgraph = stacked area with wiggle offset. Layers centered around axis. curveBasis for smooth shapes. Good for showing broad trends, poor for precise values."
+  },
+  {
+    "id": "difference-chart",
+    "name": "Difference Chart",
+    "description": "Area between two lines colored differently where one exceeds the other.",
+    "observable_url": "https://observablehq.com/@d3/difference-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Two time series to compare.",
+    "data_fields": { "date": "date", "value1": "number", "value2": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.area().y0(d => y(d.value1)).y1(d => y(d.value2))",
+      "clipPath above and below intersection line",
+      "Green fill where series1 > series2, red where series2 > series1",
+      "Two overlapping areas with different clip paths"
+    ],
+    "notes": "Draw the difference area twice: once clipped above intersection (green) and once below (red). Finding exact intersection points can be complex."
+  },
+  {
+    "id": "band-chart",
+    "name": "Band Chart",
+    "description": "Area chart showing a range/band between upper and lower bounds.",
+    "observable_url": "https://observablehq.com/@d3/band-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with upper and lower bound values.",
+    "data_fields": { "date": "date", "low": "number", "high": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.area().x(d => x(d.date)).y0(d => y(d.low)).y1(d => y(d.high))",
+      "Light fill for the band, optional center line for mean/median"
+    ],
+    "notes": "Simple confidence interval or range visualization. Fill between y0(low) and y1(high). Add center line for mean if available."
+  },
+  {
+    "id": "ridgeline-plot",
+    "name": "Ridgeline (Joy) Plot",
+    "description": "Overlapping area charts per category creating a mountain-ridge effect showing distribution changes.",
+    "observable_url": "https://observablehq.com/@d3/ridgeline-plot",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Multiple distributions, one per category (e.g., months, years).",
+    "data_fields": { "category": "string", "x": "number", "density": "number" },
+    "scales": { "x": "d3.scaleLinear (shared)", "y": "d3.scaleLinear (per row)", "color": "d3.scaleSequential" },
+    "layout": { "type": "ridgeline", "overlap": 0.8, "rowHeight": 30 },
+    "key_patterns": [
+      "One row per category, vertically stacked with overlap",
+      "d3.area().x(d => x(d.x)).y0(rowBaseline).y1(d => rowBaseline - areaScale(d.density))",
+      "Overlap parameter controls how much rows overlap",
+      "Light fill with stroke for clarity"
+    ],
+    "notes": "Each row is an area chart at a different vertical offset. Rows overlap for compact display. Named after Joy Division album cover. Good for showing distribution changes across categories."
+  },
+  {
+    "id": "horizon-chart",
+    "name": "Horizon Chart",
+    "description": "Compressed area chart using color bands to show values in minimal vertical space.",
+    "observable_url": "https://observablehq.com/@d3/horizon-chart",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "type": "horizon", "bands": 4, "rowHeight": 30 },
+    "key_patterns": [
+      "Divide y-range into N bands",
+      "For each band: clip area to band range, overlay with increasing opacity/color",
+      "Fold negative values: mirror below zero and use different color hue",
+      "Multiple overlapping clipped areas create the horizon effect"
+    ],
+    "notes": "Horizon charts fold the area chart into bands, using color intensity for higher values. Extremely space-efficient for many series. Complex to implement but very compact."
+  },
+  {
+    "id": "realtime-horizon-chart",
+    "name": "Realtime Horizon Chart",
+    "description": "Streaming/updating horizon chart that scrolls as new data arrives.",
+    "observable_url": "https://observablehq.com/@d3/realtime-horizon-chart",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape", "d3-timer"],
+    "data_shape": "Streaming time series data arriving in real time.",
+    "data_fields": { "timestamp": "number", "value": "number" },
+    "scales": { "x": "d3.scaleLinear (sliding window)", "y": "d3.scaleLinear" },
+    "layout": { "type": "horizon", "bands": 4 },
+    "key_patterns": [
+      "Same horizon chart technique as static version",
+      "d3.timer() or setInterval to append new data and shift window",
+      "translate x to create scrolling effect",
+      "Remove old data points outside window"
+    ],
+    "notes": "Streaming horizon chart. Append new data points and shift the x-domain window. Use requestAnimationFrame or d3.timer() for smooth updates."
+  }
+]

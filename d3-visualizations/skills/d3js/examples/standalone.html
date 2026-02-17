@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3.js Bar Chart — Standalone Example</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8f9fa; padding: 2rem; }
+    h1 { font-size: 1.25rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 0.85rem; color: #6b7280; margin-bottom: 1.5rem; }
+    #chart { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1rem; }
+    .tooltip { position: absolute; background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+    .bar { transition: opacity 0.2s; }
+    .bar:hover { opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <h1>Monthly Revenue by Product</h1>
+  <p class="subtitle">Sample bar chart showing revenue data for Q1 2024</p>
+  <div id="chart"></div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script type="module">
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+    // --- Sample Data ---
+    const data = [
+      { product: "Widgets", revenue: 42500 },
+      { product: "Gadgets", revenue: 31200 },
+      { product: "Sprockets", revenue: 28900 },
+      { product: "Flanges", revenue: 22100 },
+      { product: "Couplers", revenue: 19800 },
+      { product: "Bearings", revenue: 17500 },
+      { product: "Valves", revenue: 14200 },
+      { product: "Seals", revenue: 11800 },
+    ];
+
+    // --- Dimensions ---
+    const margin = { top: 30, right: 20, bottom: 50, left: 70 };
+    const width = 700 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+
+    // --- SVG ---
+    const svg = d3.select("#chart")
+      .append("svg")
+      .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
+      .style("max-width", "100%")
+      .style("height", "auto")
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // --- Scales ---
+    const x = d3.scaleBand()
+      .domain(data.map(d => d.product))
+      .range([0, width])
+      .padding(0.25);
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.revenue)])
+      .nice()
+      .range([height, 0]);
+
+    // --- Axes ---
+    svg.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x))
+      .selectAll("text")
+      .style("font-size", "12px");
+
+    svg.append("g")
+      .call(d3.axisLeft(y).tickFormat(d => `$${d3.format(",.0f")(d)}`))
+      .selectAll("text")
+      .style("font-size", "11px");
+
+    // Y-axis label
+    svg.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", -margin.left + 18)
+      .attr("x", -height / 2)
+      .attr("text-anchor", "middle")
+      .style("font-size", "13px")
+      .style("fill", "#6b7280")
+      .text("Revenue ($)");
+
+    // --- Bars with animation ---
+    const tooltip = d3.select("#tooltip");
+
+    svg.selectAll(".bar")
+      .data(data)
+      .join("rect")
+      .attr("class", "bar")
+      .attr("x", d => x(d.product))
+      .attr("width", x.bandwidth())
+      .attr("y", height)
+      .attr("height", 0)
+      .attr("fill", "#4f6d8e")
+      .attr("rx", 3)
+      .on("mouseover", (event, d) => {
+        tooltip.style("opacity", 1)
+          .html(`<strong>${d.product}</strong><br/>Revenue: $${d3.format(",.0f")(d.revenue)}`);
+      })
+      .on("mousemove", (event) => {
+        tooltip
+          .style("left", (event.pageX + 12) + "px")
+          .style("top", (event.pageY - 30) + "px");
+      })
+      .on("mouseout", () => {
+        tooltip.style("opacity", 0);
+      })
+      .transition()
+      .duration(600)
+      .delay((d, i) => i * 60)
+      .ease(d3.easeCubicOut)
+      .attr("y", d => y(d.revenue))
+      .attr("height", d => height - y(d.revenue));
+  </script>
+</body>
+</html>

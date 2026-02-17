@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Energy Dashboard — D3.js Interactive Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      height: 100vh;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      padding: 0.75rem 1rem;
+      gap: 0.5rem;
+    }
+    h1 { font-size: 1.15rem; font-weight: 700; color: #1a1a2e; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .subtitle { font-size: 0.75rem; color: #6b7280; }
+    .date-range { font-size: 0.75rem; color: #4f6d8e; font-weight: 600; }
+
+    /* Stats row */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .stat-label { font-size: 0.65rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 1.2rem; font-weight: 700; margin-top: 0.1rem; }
+    .stat-change { font-size: 0.65rem; margin-top: 0.05rem; }
+    .stat-change.up { color: #16a34a; }
+    .stat-change.down { color: #dc2626; }
+
+    /* Chart grid */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1.2fr 1fr;
+      gap: 0.5rem;
+      flex: 1;
+      min-height: 0;
+    }
+    .chart-panel {
+      background: white;
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .chart-panel.full-width {
+      grid-column: 1 / -1;
+    }
+    .chart-panel > div:last-child {
+      flex: 1;
+      min-height: 0;
+    }
+    .chart-panel svg {
+      width: 100%;
+      height: 100%;
+    }
+    .chart-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.25rem;
+      flex-shrink: 0;
+    }
+    .chart-hint {
+      font-size: 0.65rem;
+      color: #9ca3af;
+      font-weight: 400;
+      margin-left: 0.4rem;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: absolute;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 100;
+    }
+    .tooltip strong { color: #1a1a2e; }
+
+    /* Brush */
+    .selection { fill: #4f6d8e; fill-opacity: 0.15; stroke: #4f6d8e; stroke-width: 1; }
+
+    /* Legend */
+    .legend-item { cursor: pointer; }
+    .legend-item:hover text { font-weight: 600; }
+    .legend-item.muted rect, .legend-item.muted line { opacity: 0.2; }
+    .legend-item.muted text { opacity: 0.4; }
+
+    /* Donut center text */
+    .donut-center { font-size: 1.3rem; font-weight: 700; fill: #1a1a2e; }
+    .donut-sublabel { font-size: 0.7rem; fill: #6b7280; }
+
+    /* Axis styling */
+    .axis text { font-size: 11px; fill: #6b7280; }
+    .axis path, .axis line { stroke: #e5e7eb; }
+    .grid line { stroke: #f3f4f6; }
+    .grid path { stroke: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Global Energy Production Dashboard</h1>
+    <span class="date-range" id="date-range">2015 – 2024</span>
+  </div>
+  <p class="subtitle">Interactive linked charts — brush the timeline to filter all views</p>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="chart-grid">
+    <div class="chart-panel full-width" id="timeline-panel">
+      <div class="chart-title">Energy Production Over Time <span class="chart-hint">drag to select a time range</span></div>
+      <div id="timeline-chart"></div>
+    </div>
+    <div class="chart-panel" id="bar-panel">
+      <div class="chart-title">Production by Source</div>
+      <div id="bar-chart"></div>
+    </div>
+    <div class="chart-panel" id="donut-panel">
+      <div class="chart-title">Energy Mix</div>
+      <div id="donut-chart"></div>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script type="module">
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+    // ═══════════════════════════════════════════
+    //  DATA GENERATION
+    // ═══════════════════════════════════════════
+
+    const sources = ["Solar", "Wind", "Hydro", "Nuclear", "Natural Gas", "Coal"];
+    const sourceColors = {
+      "Solar":       "#f59e0b",
+      "Wind":        "#3b82f6",
+      "Hydro":       "#06b6d4",
+      "Nuclear":     "#8b5cf6",
+      "Natural Gas": "#6b7280",
+      "Coal":        "#374151"
+    };
+
+    // Generate 10 years of monthly data with realistic trends
+    const data = [];
+    const startYear = 2015;
+    const months = 10 * 12; // 120 months
+
+    for (let m = 0; m < months; m++) {
+      const date = new Date(startYear, m);
+      const year = date.getFullYear();
+      const monthIdx = date.getMonth();
+      const t = m / months; // 0 to 1 over the full range
+
+      // Seasonal factor (higher in summer for solar, winter for heating)
+      const seasonal = Math.sin((monthIdx - 3) * Math.PI / 6);
+
+      const row = { date, month: monthIdx, year };
+
+      // Renewables grow, fossil fuels decline
+      row["Solar"]       = Math.max(5, 20 + 80 * t * t + seasonal * 12 + (Math.random() - 0.5) * 8);
+      row["Wind"]        = Math.max(8, 35 + 50 * t + Math.sin(monthIdx * 0.8) * 10 + (Math.random() - 0.5) * 10);
+      row["Hydro"]       = Math.max(20, 60 + 5 * t + seasonal * 8 + (Math.random() - 0.5) * 6);
+      row["Nuclear"]     = Math.max(30, 55 + 2 * t + (Math.random() - 0.5) * 4);
+      row["Natural Gas"] = Math.max(20, 80 - 15 * t - seasonal * 5 + (Math.random() - 0.5) * 8);
+      row["Coal"]        = Math.max(5, 70 - 45 * t + (Math.random() - 0.5) * 6);
+
+      data.push(row);
+    }
+
+    // ═══════════════════════════════════════════
+    //  SHARED STATE
+    // ═══════════════════════════════════════════
+
+    let filteredData = data;
+    let mutedSources = new Set();
+    const tooltip = d3.select("#tooltip");
+
+    function activeSources() {
+      return sources.filter(s => !mutedSources.has(s));
+    }
+
+    // ═══════════════════════════════════════════
+    //  STAT CARDS
+    // ═══════════════════════════════════════════
+
+    function updateStats() {
+      const active = activeSources();
+      const total = d3.sum(filteredData, d => d3.sum(active, s => d[s]));
+      const avg = total / (filteredData.length || 1);
+      const renewables = d3.sum(filteredData, d => d3.sum(["Solar", "Wind", "Hydro"].filter(s => !mutedSources.has(s)), s => d[s]));
+      const renewablePct = total > 0 ? (renewables / total * 100) : 0;
+
+      // Compare first half vs second half of selection for trend
+      const mid = Math.floor(filteredData.length / 2);
+      const firstHalf = filteredData.slice(0, mid);
+      const secondHalf = filteredData.slice(mid);
+      const avgFirst = d3.mean(firstHalf, d => d3.sum(active, s => d[s])) || 0;
+      const avgSecond = d3.mean(secondHalf, d => d3.sum(active, s => d[s])) || 0;
+      const trendPct = avgFirst > 0 ? ((avgSecond - avgFirst) / avgFirst * 100) : 0;
+
+      const peak = d3.max(filteredData, d => d3.sum(active, s => d[s]));
+
+      const stats = [
+        { label: "Total Production", value: d3.format(",.0f")(total) + " TWh", change: null },
+        { label: "Monthly Average", value: d3.format(",.1f")(avg) + " TWh", change: trendPct, suffix: "% trend" },
+        { label: "Renewable Share", value: d3.format(".1f")(renewablePct) + "%", change: null },
+        { label: "Peak Month", value: d3.format(",.0f")(peak) + " TWh", change: null },
+      ];
+
+      const container = d3.select("#stats");
+      container.selectAll(".stat-card").data(stats)
+        .join("div")
+        .attr("class", "stat-card")
+        .html(d => `
+          <div class="stat-label">${d.label}</div>
+          <div class="stat-value">${d.value}</div>
+          ${d.change != null ? `<div class="stat-change ${d.change >= 0 ? "up" : "down"}">${d.change >= 0 ? "▲" : "▼"} ${Math.abs(d.change).toFixed(1)}${d.suffix}</div>` : ""}
+        `);
+    }
+
+    // ═══════════════════════════════════════════
+    //  STACKED AREA TIMELINE (with brush)
+    // ═══════════════════════════════════════════
+
+    function drawTimeline() {
+      const container = d3.select("#timeline-chart");
+      container.selectAll("*").remove();
+
+      const margin = { top: 15, right: 150, bottom: 30, left: 60 };
+      const width = 900 - margin.left - margin.right;
+      const height = 200 - margin.top - margin.bottom;
+
+      const svg = container.append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`);
+
+      const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+      // Stack
+      const stack = d3.stack()
+        .keys(sources)
+        .order(d3.stackOrderReverse)
+        .offset(d3.stackOffsetNone);
+
+      const stacked = stack(data);
+
+      // Scales
+      const x = d3.scaleTime()
+        .domain(d3.extent(data, d => d.date))
+        .range([0, width]);
+
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(stacked[0], d => d3.max(stacked, s => d3.max(s, v => v[1])))])
+        .nice()
+        .range([height, 0]);
+
+      // Grid
+      g.append("g").attr("class", "grid")
+        .call(d3.axisLeft(y).ticks(5).tickSize(-width).tickFormat(""));
+
+      // Areas
+      const area = d3.area()
+        .x(d => x(d.data.date))
+        .y0(d => y(d[0]))
+        .y1(d => y(d[1]))
+        .curve(d3.curveMonotoneX);
+
+      const layers = g.selectAll("path.layer")
+        .data(stacked)
+        .join("path")
+        .attr("class", "layer")
+        .attr("d", area)
+        .attr("fill", d => sourceColors[d.key])
+        .attr("opacity", d => mutedSources.has(d.key) ? 0.08 : 0.75)
+        .on("mouseover", (event, d) => {
+          if (mutedSources.has(d.key)) return;
+          const [mx] = d3.pointer(event, g.node());
+          const date = x.invert(mx);
+          const bisect = d3.bisector(v => v.data.date).center;
+          const i = bisect(d, date);
+          const val = d[i].data[d.key];
+          tooltip.style("opacity", 1).html(`<strong>${d.key}</strong><br/>${d3.timeFormat("%b %Y")(d[i].data.date)}: ${d3.format(",.1f")(val)} TWh`);
+        })
+        .on("mousemove", (event) => {
+          tooltip.style("left", (event.pageX + 14) + "px").style("top", (event.pageY - 30) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
+
+      // Axes
+      g.append("g").attr("class", "axis")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x).ticks(d3.timeYear.every(1)).tickFormat(d3.timeFormat("%Y")));
+
+      g.append("g").attr("class", "axis")
+        .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + " TWh"));
+
+      // Brush
+      const brush = d3.brushX()
+        .extent([[0, 0], [width, height]])
+        .on("end", (event) => {
+          if (!event.selection) {
+            filteredData = data;
+          } else {
+            const [x0, x1] = event.selection.map(x.invert);
+            filteredData = data.filter(d => d.date >= x0 && d.date <= x1);
+          }
+          const dateRange = d3.select("#date-range");
+          if (filteredData.length > 0) {
+            const first = filteredData[0].date;
+            const last = filteredData[filteredData.length - 1].date;
+            dateRange.text(`${d3.timeFormat("%b %Y")(first)} – ${d3.timeFormat("%b %Y")(last)}`);
+          }
+          updateStats();
+          updateBar();
+          updateDonut();
+        });
+
+      g.append("g").attr("class", "brush").call(brush);
+
+      // Legend (interactive)
+      const legend = svg.append("g")
+        .attr("transform", `translate(${width + margin.left + 20}, ${margin.top + 5})`);
+
+      sources.forEach((s, i) => {
+        const item = legend.append("g")
+          .attr("class", `legend-item ${mutedSources.has(s) ? "muted" : ""}`)
+          .attr("transform", `translate(0, ${i * 22})`)
+          .style("cursor", "pointer")
+          .on("click", () => {
+            if (mutedSources.has(s)) mutedSources.delete(s);
+            else mutedSources.add(s);
+            drawTimeline();
+            updateStats();
+            updateBar();
+            updateDonut();
+          });
+
+        item.append("rect").attr("width", 12).attr("height", 12).attr("rx", 2)
+          .attr("fill", sourceColors[s]);
+        item.append("text").attr("x", 18).attr("y", 10)
+          .style("font-size", "11.5px").style("fill", "#374151").text(s);
+      });
+    }
+
+    // ═══════════════════════════════════════════
+    //  BAR CHART (updates on brush)
+    // ═══════════════════════════════════════════
+
+    const barMargin = { top: 8, right: 50, bottom: 20, left: 80 };
+    const barWidth = 440 - barMargin.left - barMargin.right;
+    const barHeight = 220 - barMargin.top - barMargin.bottom;
+
+    let barSvg, barG, barX, barY;
+
+    function initBar() {
+      barSvg = d3.select("#bar-chart").append("svg")
+        .attr("viewBox", `0 0 ${barWidth + barMargin.left + barMargin.right} ${barHeight + barMargin.top + barMargin.bottom}`);
+
+      barG = barSvg.append("g").attr("transform", `translate(${barMargin.left},${barMargin.top})`);
+
+      barY = d3.scaleBand().domain(sources).range([0, barHeight]).padding(0.2);
+      barX = d3.scaleLinear().range([0, barWidth]);
+
+      barG.append("g").attr("class", "axis y-axis").call(d3.axisLeft(barY));
+      barG.append("g").attr("class", "axis x-axis").attr("transform", `translate(0,${barHeight})`);
+      barG.append("g").attr("class", "grid");
+    }
+
+    function updateBar() {
+      const active = activeSources();
+      const totals = sources.map(s => ({
+        source: s,
+        total: mutedSources.has(s) ? 0 : d3.sum(filteredData, d => d[s]),
+        muted: mutedSources.has(s)
+      }));
+
+      barX.domain([0, d3.max(totals, d => d.total) || 1]).nice();
+
+      // Grid
+      barG.select(".grid").call(
+        d3.axisBottom(barX).ticks(5).tickSize(barHeight).tickFormat("")
+      ).select(".domain").remove();
+      barG.select(".grid").selectAll("line").attr("stroke", "#f3f4f6");
+
+      // X axis
+      barG.select(".x-axis").transition().duration(500)
+        .call(d3.axisBottom(barX).ticks(5).tickFormat(d => d >= 1000 ? d3.format(",.0f")(d) : d));
+
+      // Bars
+      barG.selectAll("rect.bar")
+        .data(totals, d => d.source)
+        .join(
+          enter => enter.append("rect").attr("class", "bar")
+            .attr("y", d => barY(d.source))
+            .attr("height", barY.bandwidth())
+            .attr("x", 0).attr("width", 0)
+            .attr("rx", 3)
+            .attr("fill", d => sourceColors[d.source]),
+          update => update,
+          exit => exit.transition().duration(300).attr("width", 0).remove()
+        )
+        .on("mouseover", (event, d) => {
+          if (d.muted) return;
+          tooltip.style("opacity", 1).html(`<strong>${d.source}</strong><br/>Total: ${d3.format(",.0f")(d.total)} TWh`);
+        })
+        .on("mousemove", (event) => {
+          tooltip.style("left", (event.pageX + 14) + "px").style("top", (event.pageY - 30) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0))
+        .transition().duration(600).ease(d3.easeCubicOut)
+        .attr("width", d => barX(d.total))
+        .attr("opacity", d => d.muted ? 0.1 : 1);
+
+      // Value labels
+      barG.selectAll("text.bar-label")
+        .data(totals, d => d.source)
+        .join("text")
+        .attr("class", "bar-label")
+        .attr("y", d => barY(d.source) + barY.bandwidth() / 2)
+        .attr("dy", "0.35em")
+        .style("font-size", "11px")
+        .style("fill", "#6b7280")
+        .transition().duration(600)
+        .attr("x", d => barX(d.total) + 6)
+        .attr("opacity", d => d.muted ? 0.2 : 1)
+        .tween("text", function(d) {
+          const prev = +this.textContent.replace(/,/g, "") || 0;
+          const interp = d3.interpolateNumber(prev, d.total);
+          return t => { this.textContent = d3.format(",.0f")(interp(t)); };
+        });
+    }
+
+    // ═══════════════════════════════════════════
+    //  DONUT CHART (updates on brush)
+    // ═══════════════════════════════════════════
+
+    const donutSize = 230;
+    const donutRadius = donutSize / 2 - 20;
+    let donutSvg, donutG;
+
+    function initDonut() {
+      donutSvg = d3.select("#donut-chart").append("svg")
+        .attr("viewBox", `0 0 ${donutSize} ${donutSize}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+      donutG = donutSvg.append("g")
+        .attr("transform", `translate(${donutSize / 2},${donutSize / 2})`);
+
+      // Center label
+      donutG.append("text").attr("class", "donut-center").attr("text-anchor", "middle").attr("dy", "-0.1em");
+      donutG.append("text").attr("class", "donut-sublabel").attr("text-anchor", "middle").attr("dy", "1.2em");
+    }
+
+    function updateDonut() {
+      const active = activeSources();
+      const totals = sources.map(s => ({
+        source: s,
+        total: mutedSources.has(s) ? 0 : d3.sum(filteredData, d => d[s]),
+        muted: mutedSources.has(s)
+      })).filter(d => !d.muted && d.total > 0);
+
+      const grandTotal = d3.sum(totals, d => d.total);
+
+      const pie = d3.pie().value(d => d.total).sort(null).padAngle(0.02);
+      const arc = d3.arc().innerRadius(donutRadius * 0.55).outerRadius(donutRadius);
+      const arcHover = d3.arc().innerRadius(donutRadius * 0.53).outerRadius(donutRadius + 6);
+      const labelArc = d3.arc().innerRadius(donutRadius * 0.78).outerRadius(donutRadius * 0.78);
+
+      const arcs = pie(totals);
+
+      // Slices
+      donutG.selectAll("path.slice")
+        .data(arcs, d => d.data.source)
+        .join(
+          enter => enter.append("path").attr("class", "slice")
+            .each(function(d) { this._current = { startAngle: d.startAngle, endAngle: d.startAngle }; }),
+          update => update,
+          exit => exit.transition().duration(300).attrTween("d", function(d) {
+            const i = d3.interpolate(this._current, { startAngle: d.startAngle, endAngle: d.startAngle });
+            return t => arc(i(t));
+          }).remove()
+        )
+        .attr("fill", d => sourceColors[d.data.source])
+        .attr("stroke", "white")
+        .attr("stroke-width", 2)
+        .on("mouseover", function(event, d) {
+          d3.select(this).transition().duration(150).attr("d", arcHover);
+          const pct = (d.data.total / grandTotal * 100).toFixed(1);
+          tooltip.style("opacity", 1)
+            .html(`<strong>${d.data.source}</strong><br/>${d3.format(",.0f")(d.data.total)} TWh (${pct}%)`);
+        })
+        .on("mousemove", (event) => {
+          tooltip.style("left", (event.pageX + 14) + "px").style("top", (event.pageY - 30) + "px");
+        })
+        .on("mouseout", function() {
+          d3.select(this).transition().duration(150).attr("d", arc);
+          tooltip.style("opacity", 0);
+        })
+        .transition().duration(600)
+        .attrTween("d", function(d) {
+          const i = d3.interpolate(this._current, d);
+          this._current = i(1);
+          return t => arc(i(t));
+        });
+
+      // Percentage labels
+      donutG.selectAll("text.slice-label")
+        .data(arcs.filter(d => (d.endAngle - d.startAngle) > 0.3), d => d.data.source)
+        .join("text")
+        .attr("class", "slice-label")
+        .transition().duration(600)
+        .attr("transform", d => `translate(${labelArc.centroid(d)})`)
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .style("font-size", "11px")
+        .style("fill", "white")
+        .style("font-weight", "600")
+        .text(d => `${(d.data.total / grandTotal * 100).toFixed(0)}%`);
+
+      // Center text
+      const renewableTotal = d3.sum(totals.filter(d => ["Solar", "Wind", "Hydro"].includes(d.source)), d => d.total);
+      const renewablePct = grandTotal > 0 ? (renewableTotal / grandTotal * 100) : 0;
+
+      donutG.select(".donut-center")
+        .transition().duration(400)
+        .tween("text", function() {
+          const prev = parseFloat(this.textContent) || 0;
+          const interp = d3.interpolateNumber(prev, renewablePct);
+          return t => { this.textContent = interp(t).toFixed(1) + "%"; };
+        });
+      donutG.select(".donut-sublabel").text("Renewable");
+    }
+
+    // ═══════════════════════════════════════════
+    //  INITIALIZE
+    // ═══════════════════════════════════════════
+
+    drawTimeline();
+    initBar();
+    initDonut();
+    updateStats();
+    updateBar();
+    updateDonut();
+  </script>
+</body>
+</html>

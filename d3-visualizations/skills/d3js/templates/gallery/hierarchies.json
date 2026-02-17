@@ -1,0 +1,293 @@
+[
+  {
+    "id": "treemap",
+    "name": "Treemap",
+    "description": "Rectangles nested within rectangles showing hierarchical data with area proportional to value.",
+    "observable_url": "https://observablehq.com/@d3/treemap",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-scale"],
+    "data_shape": "Nested hierarchy with values at leaf nodes.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal (by top-level category)" },
+    "layout": { "type": "treemap", "tile": "d3.treemapSquarify", "padding": 1 },
+    "key_patterns": [
+      "d3.treemap().tile(d3.treemapSquarify).size([w,h]).padding(1).round(true)",
+      "d3.hierarchy(data).sum(d => d.value).sort((a,b) => b.value - a.value)",
+      "rect: x=d.x0, y=d.y0, width=d.x1-d.x0, height=d.y1-d.y0",
+      "Labels: clip text to cell size, show only when cell is large enough"
+    ],
+    "notes": "Tiling algorithms: treemapSquarify (default, best aspect ratios), treemapBinary, treemapSlice, treemapDice, treemapSliceDice. Color by top-level ancestor."
+  },
+  {
+    "id": "cascaded-treemap",
+    "name": "Cascaded Treemap",
+    "description": "Treemap with nested headers showing the hierarchy structure with cascading labels.",
+    "observable_url": "https://observablehq.com/@d3/cascaded-treemap",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-scale"],
+    "data_shape": "Nested hierarchy with values.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "treemap", "tile": "d3.treemapSquarify", "paddingTop": 20, "paddingInner": 1 },
+    "key_patterns": [
+      "d3.treemap().paddingTop(20).paddingInner(1) for header space",
+      "Parent labels in the padded top area",
+      "Leaf labels inside cells",
+      "Different fill for parent vs leaf nodes"
+    ],
+    "notes": "paddingTop creates space for parent labels above children. Each level gets a header showing the category name. Nested visual structure is clearer than flat treemap."
+  },
+  {
+    "id": "nested-treemap",
+    "name": "Nested Treemap",
+    "description": "Treemap showing multiple hierarchy levels with distinct borders between nesting levels.",
+    "observable_url": "https://observablehq.com/@d3/nested-treemap",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-scale"],
+    "data_shape": "Nested hierarchy with values.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "treemap", "tile": "d3.treemapBinary", "padding": 3, "paddingTop": 19 },
+    "key_patterns": [
+      "d3.treemap().paddingOuter(3).paddingTop(19).paddingInner(1)",
+      "Draw parent rects with borders, child rects filled",
+      "foreignObject for text wrapping in cells"
+    ],
+    "notes": "Similar to cascaded but with thicker borders between nesting levels. Use different padding at each depth for clear visual hierarchy."
+  },
+  {
+    "id": "circle-packing",
+    "name": "Circle Packing",
+    "description": "Nested circles showing hierarchical containment with leaf size proportional to value.",
+    "observable_url": "https://observablehq.com/@d3/circle-packing",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy"],
+    "data_shape": "Nested hierarchy with values at leaf nodes.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleLinear or d3.scaleOrdinal (by depth)" },
+    "layout": { "type": "pack", "padding": 3 },
+    "key_patterns": [
+      "d3.pack().size([w, h]).padding(3)",
+      "d3.hierarchy(data).sum(d => d.value).sort((a,b) => b.value - a.value)",
+      "circle: cx=d.x, cy=d.y, r=d.r",
+      "Labels only on leaf nodes or nodes above certain radius"
+    ],
+    "notes": "Pack layout computes x, y, r for each node. Parent circles contain their children. Fill parents lightly, leaves with category color. Label only if r > threshold."
+  },
+  {
+    "id": "indented-tree",
+    "name": "Indented Tree",
+    "description": "Hierarchical list with indentation showing tree structure, like a file explorer.",
+    "observable_url": "https://observablehq.com/@d3/indented-tree",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy"],
+    "data_shape": "Nested hierarchy.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": {},
+    "layout": { "type": "indented", "nodeHeight": 20, "indent": 20 },
+    "key_patterns": [
+      "d3.hierarchy(data)",
+      "node.eachBefore(assign sequential index for y position)",
+      "x = depth * indent, y = index * nodeHeight",
+      "Horizontal lines connecting parent to children",
+      "expand/collapse toggle icons"
+    ],
+    "notes": "Not a typical D3 layout — manually position based on depth (x) and sequential order (y). Draw connector lines from parent to first/last child. Ideal for file trees."
+  },
+  {
+    "id": "tidy-tree",
+    "name": "Tidy Tree",
+    "description": "Classic tree diagram with nodes and links arranged in Reingold-Tilford layout.",
+    "observable_url": "https://observablehq.com/@d3/tidy-tree",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-shape"],
+    "data_shape": "Nested hierarchy.",
+    "data_fields": { "name": "string", "children": "array" },
+    "scales": {},
+    "layout": { "type": "tree", "nodeSize": [20, 200] },
+    "key_patterns": [
+      "d3.tree().nodeSize([dx, dy])(root)",
+      "d3.linkHorizontal().x(d => d.y).y(d => d.x)",
+      "Circles at nodes, text labels next to each node",
+      "Auto-size SVG to fit tree bounds"
+    ],
+    "notes": "d3.tree() assigns x,y coordinates. Note: tree x maps to visual y (top-down). Use linkHorizontal for left-to-right trees. nodeSize controls spacing."
+  },
+  {
+    "id": "radial-tidy-tree",
+    "name": "Radial Tidy Tree",
+    "description": "Tree diagram arranged in a circular/radial layout radiating from center.",
+    "observable_url": "https://observablehq.com/@d3/radial-tidy-tree",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-shape"],
+    "data_shape": "Nested hierarchy.",
+    "data_fields": { "name": "string", "children": "array" },
+    "scales": {},
+    "layout": { "type": "tree", "size": [6.28318, "radius"], "separation": "custom" },
+    "key_patterns": [
+      "d3.tree().size([2 * Math.PI, radius]).separation((a,b) => (a.parent == b.parent ? 1 : 2) / a.depth)",
+      "Convert polar (angle, radius) to cartesian: x = r*cos(a-PI/2), y = r*sin(a-PI/2)",
+      "d3.linkRadial().angle(d => d.x).radius(d => d.y)",
+      "Rotate text labels based on angle to avoid upside-down text"
+    ],
+    "notes": "Tree layout in polar coordinates. Use d3.linkRadial() for curved links. Rotate labels to be readable (flip if angle > PI). Separation function prevents overlap."
+  },
+  {
+    "id": "cluster-dendrogram",
+    "name": "Cluster Dendrogram",
+    "description": "Hierarchical clustering tree with all leaf nodes aligned at the same depth.",
+    "observable_url": "https://observablehq.com/@d3/cluster-dendrogram",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-shape"],
+    "data_shape": "Nested hierarchy.",
+    "data_fields": { "name": "string", "children": "array" },
+    "scales": {},
+    "layout": { "type": "cluster" },
+    "key_patterns": [
+      "d3.cluster().size([height, width])",
+      "Like d3.tree() but leaves are aligned at same depth",
+      "d3.linkHorizontal().x(d => d.y).y(d => d.x)"
+    ],
+    "notes": "d3.cluster() is like d3.tree() but forces all leaves to same x-position. Better for showing distances between groups in biological/statistical clustering."
+  },
+  {
+    "id": "radial-dendrogram",
+    "name": "Radial Dendrogram",
+    "description": "Cluster dendrogram arranged in a circular/radial layout.",
+    "observable_url": "https://observablehq.com/@d3/radial-dendrogram",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-shape"],
+    "data_shape": "Nested hierarchy.",
+    "data_fields": { "name": "string", "children": "array" },
+    "scales": {},
+    "layout": { "type": "cluster", "size": [6.28318, "radius"] },
+    "key_patterns": [
+      "d3.cluster().size([2 * Math.PI, radius])",
+      "d3.linkRadial().angle(d => d.x).radius(d => d.y)",
+      "Polar to cartesian conversion for node and label placement"
+    ],
+    "notes": "Radial version of cluster dendrogram. All leaves on outer ring. Same label rotation considerations as radial tidy tree."
+  },
+  {
+    "id": "sunburst",
+    "name": "Sunburst",
+    "description": "Radial partition layout showing hierarchy as concentric rings of arcs.",
+    "observable_url": "https://observablehq.com/@d3/sunburst",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-shape", "d3-scale"],
+    "data_shape": "Nested hierarchy with values.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "partition", "size": [6.28318, "radius"] },
+    "key_patterns": [
+      "d3.partition().size([2 * Math.PI, radius])",
+      "d3.arc().startAngle(d => d.x0).endAngle(d => d.x1).innerRadius(d => d.y0).outerRadius(d => d.y1)",
+      "Labels rotated and centered within arcs",
+      "Color by root-level ancestor category"
+    ],
+    "notes": "Partition layout gives each node angular extent proportional to value. Rings represent depth. Root is center circle. Label placement requires rotation to match arc angle."
+  },
+  {
+    "id": "icicle",
+    "name": "Icicle",
+    "description": "Rectangular partition layout (flat sunburst) showing hierarchy as nested horizontal strips.",
+    "observable_url": "https://observablehq.com/@d3/icicle",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-scale"],
+    "data_shape": "Nested hierarchy with values.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "partition" },
+    "key_patterns": [
+      "d3.partition().size([height, width]) — note swapped for horizontal layout",
+      "rect: x=d.y0, y=d.x0, width=d.y1-d.y0, height=d.x1-d.x0",
+      "Labels clipped to cell width"
+    ],
+    "notes": "Partition layout in Cartesian coordinates. Root on left, leaves on right. Width = value proportion. Height = depth."
+  },
+  {
+    "id": "tangled-tree",
+    "name": "Tangled Tree Visualization",
+    "description": "Tree with cross-links showing network-like relationships between tree nodes.",
+    "observable_url": "https://observablehq.com/@d3/tangled-tree-visualization",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-shape"],
+    "data_shape": "Tree structure plus additional cross-links between non-parent-child nodes.",
+    "data_fields": { "name": "string", "children": "array", "links": "array of {source, target}" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "custom" },
+    "key_patterns": [
+      "Base tree layout (d3.tree or d3.cluster) for primary structure",
+      "Additional curved links for cross-connections",
+      "Bundle links using edge bundling or custom curve routing",
+      "Color links by source category"
+    ],
+    "notes": "Combine tree layout with additional cross-links. Route cross-links as curves to avoid overlap with tree links. More complex than standard tree."
+  },
+  {
+    "id": "phylogenetic-tree",
+    "name": "Phylogenetic Tree",
+    "description": "Biological evolution tree with branch lengths representing evolutionary distance.",
+    "observable_url": "https://observablehq.com/@d3/phylogenetic-tree",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hierarchy", "d3-shape"],
+    "data_shape": "Newick format tree or nested hierarchy with branch lengths.",
+    "data_fields": { "name": "string", "children": "array", "length": "number" },
+    "scales": {},
+    "layout": { "type": "cluster", "radial": true },
+    "key_patterns": [
+      "d3.cluster() with custom size accounting for branch lengths",
+      "Branch lengths mapped to radial distance (not uniform depth)",
+      "d3.linkRadial() with modified radius based on cumulative length",
+      "Leaf labels on outer edge, rotated for readability"
+    ],
+    "notes": "Key difference from regular tree: branch lengths are meaningful (evolutionary distance). Use cluster layout but map y to cumulative distance, not depth count."
+  },
+  {
+    "id": "force-directed-tree",
+    "name": "Force-Directed Tree",
+    "description": "Tree structure laid out using force simulation instead of deterministic tree algorithm.",
+    "observable_url": "https://observablehq.com/@d3/force-directed-tree",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-force"],
+    "data_shape": "Nested hierarchy.",
+    "data_fields": { "name": "string", "children": "array" },
+    "scales": {},
+    "layout": { "type": "force" },
+    "key_patterns": [
+      "d3.hierarchy(data) then root.links() and root.descendants()",
+      "d3.forceSimulation(nodes).force('link', d3.forceLink(links))",
+      "force('charge', d3.forceManyBody().strength(-50))",
+      "Drag behavior for interactive node repositioning"
+    ],
+    "notes": "Extract nodes and links from hierarchy, then use force simulation. Gives organic layout that responds to drag. Good for exploratory view of tree data."
+  }
+]

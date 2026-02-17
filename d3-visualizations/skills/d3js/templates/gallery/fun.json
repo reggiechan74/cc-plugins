@@ -1,0 +1,259 @@
+[
+  {
+    "id": "polar-clock",
+    "name": "Polar Clock",
+    "description": "Circular clock with concentric arcs showing seconds, minutes, hours, days, months.",
+    "observable_url": "https://observablehq.com/@d3/polar-clock",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-shape", "d3-scale", "d3-timer", "d3-interpolate"],
+    "data_shape": "Current time (computed live).",
+    "data_fields": { "seconds": "number", "minutes": "number", "hours": "number", "dayOfYear": "number", "month": "number" },
+    "scales": { "color": "d3.scaleSequential(d3.interpolateRainbow)" },
+    "layout": { "type": "radial" },
+    "key_patterns": [
+      "Concentric arcs: each ring = one time unit",
+      "d3.arc().startAngle(0).endAngle(fraction * 2 * Math.PI).innerRadius(r0).outerRadius(r1)",
+      "d3.timer() updating every second",
+      "Smooth transitions with d3.interpolate for arc angles",
+      "Rainbow coloring by time fraction"
+    ],
+    "notes": "Beautiful time visualization. Each ring represents a time unit (second, minute, hour, day, month). Arcs grow clockwise as time progresses. Smooth interpolation between seconds."
+  },
+  {
+    "id": "stern-brocot-tree",
+    "name": "Stern-Brocot Tree",
+    "description": "Mathematical tree of all positive rational numbers in lowest terms.",
+    "observable_url": "https://observablehq.com/@d3/stern-brocot-tree",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-shape"],
+    "data_shape": "Recursively generated from mediant fractions.",
+    "data_fields": { "numerator": "number", "denominator": "number" },
+    "scales": {},
+    "layout": { "type": "tree" },
+    "key_patterns": [
+      "Generate tree: mediant(a/b, c/d) = (a+c)/(b+d)",
+      "Start with 0/1 and 1/0, recursively insert mediants",
+      "d3.tree() or d3.cluster() for layout",
+      "Label nodes with fraction p/q"
+    ],
+    "notes": "Mathematical visualization. Each node is a fraction. Children are mediants of parent and neighbor. Contains every positive rational exactly once."
+  },
+  {
+    "id": "voronoi-stippling",
+    "name": "Voronoi Stippling",
+    "description": "Artistic image reproduction using stipple dots positioned by Voronoi relaxation.",
+    "observable_url": "https://observablehq.com/@d3/voronoi-stippling",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-delaunay"],
+    "data_shape": "Source image (loaded to canvas for pixel sampling).",
+    "data_fields": { "image": "Image/Canvas" },
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "Sample initial points weighted by image darkness",
+      "d3.Delaunay.from(points).voronoi([0, 0, w, h])",
+      "Lloyd's relaxation: move each point to its Voronoi cell centroid",
+      "Iterate relaxation for convergence",
+      "Render as small circles"
+    ],
+    "notes": "Weighted Lloyd's relaxation. Dense dots in dark areas, sparse in light. Iterate 50-100 times. Points converge to stipple pattern reproducing image. Very artistic output."
+  },
+  {
+    "id": "watercolor",
+    "name": "Watercolor",
+    "description": "Generative watercolor paint effect using polygon subdivision and randomization.",
+    "observable_url": "https://observablehq.com/@d3/watercolor",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-polygon", "d3-color"],
+    "data_shape": "Base polygons to render with watercolor effect.",
+    "data_fields": { "polygon": "array of [x,y] points" },
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "Start with base polygon",
+      "Subdivide edges: insert midpoint + random displacement",
+      "Repeat subdivision for roughness",
+      "Draw many semi-transparent layers with slight variation",
+      "d3.polygon for area and centroid calculations"
+    ],
+    "notes": "Generative art technique. Many transparent layers of slightly different polygons create watercolor effect. Tyler Hobbs-inspired technique."
+  },
+  {
+    "id": "psr-b1919-21",
+    "name": "PSR B1919+21",
+    "description": "Recreation of the famous Joy Division Unknown Pleasures pulsar visualization.",
+    "observable_url": "https://observablehq.com/@d3/psr-b1919-21",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "80 rows of radio intensity values (pulsar signal profiles).",
+    "data_fields": { "rows": "number[][]" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "background": "black" },
+    "key_patterns": [
+      "Stack rows vertically with overlap",
+      "d3.area().y0(baseline) for each row",
+      "Black fill to occlude rows behind",
+      "White stroke on top edge",
+      "Black background, white lines"
+    ],
+    "notes": "Iconic visualization. Black background, white lines. Each row is an area chart with black fill to occlude rows behind. Overlap creates depth effect."
+  },
+  {
+    "id": "epicyclic-gearing",
+    "name": "Epicyclic Gearing",
+    "description": "Animated mechanical gear system with meshing teeth and orbital motion.",
+    "observable_url": "https://observablehq.com/@d3/epicyclic-gearing",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-timer", "d3-shape"],
+    "data_shape": "Gear parameters (teeth count, radius, speed ratios).",
+    "data_fields": { "teeth": "number", "radius": "number", "annulus": "number" },
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "Generate gear tooth profile as SVG path",
+      "Compute rotation speeds from gear ratios",
+      "d3.timer() for continuous animation",
+      "Nested transforms: orbital + rotational motion"
+    ],
+    "notes": "Mechanical simulation. Gear tooth profiles generated mathematically. Rotation speeds computed from tooth count ratios. Beautiful meshing animation."
+  },
+  {
+    "id": "owls-to-the-max",
+    "name": "Owls to the Max",
+    "description": "Recursive image subdivision — click to reveal more detail in quadrants.",
+    "observable_url": "https://observablehq.com/@d3/owls-to-the-max",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-selection", "d3-transition"],
+    "data_shape": "Source image for pixel sampling.",
+    "data_fields": { "image": "Image/Canvas" },
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "Start with single rectangle colored by average pixel color",
+      "On click: subdivide into 4 quadrants, each with its average color",
+      "Recursive: each quadrant can be further subdivided",
+      "Transition: smooth color/size changes on subdivision"
+    ],
+    "notes": "Interactive recursive subdivision. Click any region to split into 4. Average color of each quadrant from source image. Progressively reveals image detail."
+  },
+  {
+    "id": "tadpoles",
+    "name": "Tadpoles",
+    "description": "Particle simulation of swimming tadpole-like creatures following cursor.",
+    "observable_url": "https://observablehq.com/@d3/tadpoles",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-timer", "d3-selection"],
+    "data_shape": "Array of particle objects with position and velocity.",
+    "data_fields": { "x": "number", "y": "number", "vx": "number", "vy": "number" },
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "Each tadpole: head circle + trailing body path",
+      "Store trail of previous positions for body curve",
+      "d3.timer() for continuous animation",
+      "Steering behavior: turn toward cursor or random direction",
+      "d3.line().curve(d3.curveBasis) for smooth body"
+    ],
+    "notes": "Particle system with trail rendering. Each entity has position, velocity, and heading. Steering behaviors for natural movement. Trails as curved paths."
+  },
+  {
+    "id": "word-cloud",
+    "name": "Word Cloud",
+    "description": "Text visualization with word size proportional to frequency.",
+    "observable_url": "https://observablehq.com/@d3/word-cloud",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-cloud"],
+    "data_shape": "Array of {text, frequency} pairs.",
+    "data_fields": { "text": "string", "size": "number" },
+    "scales": { "fontSize": "d3.scaleLinear or scaleSqrt", "color": "d3.scaleOrdinal" },
+    "layout": { "type": "cloud" },
+    "key_patterns": [
+      "d3.layout.cloud() (d3-cloud library)",
+      "cloud.size([w, h]).words(data).fontSize(d => sizeScale(d.size)).rotate(() => ~~(Math.random()*2)*90)",
+      "cloud.on('end', draw) — render after layout computation",
+      "text elements positioned by layout: translate(x,y) rotate(r)"
+    ],
+    "notes": "d3-cloud is a separate library. Computes non-overlapping text layout. Font size proportional to frequency. Random rotation (0 or 90 degrees common)."
+  },
+  {
+    "id": "spilhaus-shoreline-map",
+    "name": "Spilhaus Shoreline Map",
+    "description": "Ocean-centric world map showing all oceans as one connected body of water.",
+    "observable_url": "https://observablehq.com/@d3/spilhaus-shoreline-map",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo"],
+    "data_shape": "World coastline GeoJSON.",
+    "data_fields": {},
+    "scales": { "projection": "custom Spilhaus projection" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Custom projection composing Adams World in a Square II with affine transforms",
+      "Rotation to center on ocean rather than land",
+      "Clip to square boundary",
+      "Fill ocean, outline coastlines"
+    ],
+    "notes": "Unusual projection showing oceans as connected. Requires custom projection composition. Beautiful result — oceans fill the frame with land at edges."
+  },
+  {
+    "id": "phases-of-the-moon",
+    "name": "Phases of the Moon",
+    "description": "Calendar showing moon phases throughout the year with illumination visualization.",
+    "observable_url": "https://observablehq.com/@d3/phases-of-the-moon",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-shape", "d3-time"],
+    "data_shape": "Computed lunar phase for each day of the year.",
+    "data_fields": { "date": "date", "phase": "number (0-1)", "illumination": "number" },
+    "scales": {},
+    "layout": { "type": "calendar grid" },
+    "key_patterns": [
+      "Compute lunar phase from date using astronomical formula",
+      "Draw moon: circle with half-moon clip or arc for terminator",
+      "d3.arc() for illuminated portion",
+      "Calendar grid layout (weeks x days)"
+    ],
+    "notes": "Compute lunar phase angle from date. Draw each moon as circle with shadow arc. Grid layout by month/day. Beautiful astronomical calendar."
+  },
+  {
+    "id": "color-schemes",
+    "name": "Color Schemes",
+    "description": "Showcase of all D3 built-in color palettes — categorical, sequential, and diverging.",
+    "observable_url": "https://observablehq.com/@d3/color-schemes",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale-chromatic"],
+    "data_shape": "D3 built-in color schemes.",
+    "data_fields": {},
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "Categorical: d3.schemeCategory10, schemeAccent, schemeDark2, etc.",
+      "Sequential: d3.interpolateBlues, interpolateViridis, interpolatePlasma, etc.",
+      "Diverging: d3.interpolateRdBu, interpolatePiYG, etc.",
+      "Draw color ramps as horizontal bars of colored rects"
+    ],
+    "notes": "Reference visualization of all d3-scale-chromatic palettes. Useful for choosing color schemes. Draw as continuous gradients or discrete swatches."
+  }
+]

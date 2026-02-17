@@ -1,0 +1,481 @@
+[
+  {
+    "id": "animated-treemap",
+    "name": "Animated Treemap",
+    "description": "Treemap with smooth transitions showing hierarchical data changes over time. Rectangles resize and reposition as data updates.",
+    "observable_url": "https://observablehq.com/@d3/animated-treemap",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-transition", "d3-scale", "d3-interpolate"],
+    "data_shape": "Nested hierarchy with time-varying values. Array of snapshots or a hierarchy with temporal value arrays.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal", "area": "d3.treemap" },
+    "layout": { "type": "treemap", "tile": "d3.treemapSquarify", "padding": 1 },
+    "key_patterns": [
+      "d3.treemap().tile(d3.treemapSquarify).size([w,h]).padding(1)",
+      "d3.hierarchy(data).sum(d => d.value).sort((a,b) => b.value - a.value)",
+      "selection.transition().duration(750).attr('x', ...).attr('width', ...)",
+      "d3.interpolate(oldLayout, newLayout) for custom tween"
+    ],
+    "notes": "Use d3.treemap() layout, recompute on each time step, and transition rect positions/sizes. Key is maintaining object constancy via data key functions."
+  },
+  {
+    "id": "temporal-force-directed-graph",
+    "name": "Temporal Force-Directed Graph",
+    "description": "Network visualization that evolves over time, with nodes and links appearing/disappearing with animated transitions.",
+    "observable_url": "https://observablehq.com/@d3/temporal-force-directed-graph",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-force", "d3-transition", "d3-selection", "d3-timer"],
+    "data_shape": "Time-indexed arrays of nodes and links. Each time step adds/removes elements.",
+    "data_fields": { "nodes": "array of {id, group}", "links": "array of {source, target}", "time": "number" },
+    "scales": { "color": "d3.scaleOrdinal(d3.schemeCategory10)" },
+    "layout": { "type": "force", "center": true, "charge": -30, "linkDistance": 30 },
+    "key_patterns": [
+      "d3.forceSimulation(nodes).force('link', d3.forceLink(links).id(d => d.id))",
+      "simulation.force('charge', d3.forceManyBody()).force('center', d3.forceCenter(w/2, h/2))",
+      "Enter/exit transitions for nodes and links as time progresses",
+      "simulation.alpha(1).restart() on data update"
+    ],
+    "notes": "Restart simulation with new alpha on each time step. Use enter/exit/update pattern for nodes and links. Keep simulation warm between updates."
+  },
+  {
+    "id": "connected-scatterplot",
+    "name": "Connected Scatterplot",
+    "description": "Scatterplot where points are connected by lines showing progression over time, with animated drawing.",
+    "observable_url": "https://observablehq.com/@d3/connected-scatterplot",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-shape", "d3-scale", "d3-axis", "d3-transition"],
+    "data_shape": "Array of objects with x, y, and time/label fields, ordered chronologically.",
+    "data_fields": { "x": "number", "y": "number", "year": "number|string" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 30, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.line().x(d => x(d.x)).y(d => y(d.y)).curve(d3.curveCatmullRom)",
+      "path.attr('stroke-dasharray', totalLength).attr('stroke-dashoffset', totalLength).transition().attr('stroke-dashoffset', 0)",
+      "Text labels at each point showing year"
+    ],
+    "notes": "Animate with stroke-dasharray/dashoffset trick for line drawing effect. Label key points along the path. Use curveCatmullRom for smooth connections."
+  },
+  {
+    "id": "wealth-health-nations",
+    "name": "The Wealth & Health of Nations",
+    "description": "Animated bubble chart tracking countries' income vs life expectancy over decades (Gapminder-style).",
+    "observable_url": "https://observablehq.com/@d3/the-wealth-health-of-nations",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-transition", "d3-timer", "d3-interpolate"],
+    "data_shape": "Array of countries, each with time-series arrays for income, life expectancy, and population.",
+    "data_fields": { "name": "string", "region": "string", "income": "number[]", "lifeExpectancy": "number[]", "population": "number[]" },
+    "scales": { "x": "d3.scaleLog", "y": "d3.scaleLinear", "r": "d3.scaleSqrt", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 35, "left": 40 } },
+    "key_patterns": [
+      "d3.scaleLog().domain([min, max]) for income axis",
+      "d3.scaleSqrt().domain([0, maxPop]).range([2, 40]) for bubble size",
+      "d3.bisect to interpolate values between time steps",
+      "d3.timer() or requestAnimationFrame for smooth playback"
+    ],
+    "notes": "Log scale for x-axis (income). Sqrt scale for bubble radius (area encoding). Interpolate between years for smooth animation. Include year label overlay."
+  },
+  {
+    "id": "scatterplot-tour",
+    "name": "Scatterplot Tour",
+    "description": "Guided animated transitions between different scatterplot views of the same dataset.",
+    "observable_url": "https://observablehq.com/@d3/scatterplot-tour",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-transition", "d3-ease"],
+    "data_shape": "Dataset with multiple numeric dimensions. Tour defines sequence of x/y field pairs to display.",
+    "data_fields": { "values": "array of multi-field objects", "tour": "array of {x: field, y: field}" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 35, "left": 40 } },
+    "key_patterns": [
+      "Rescale x and y domains per tour step",
+      "transition().duration(1500).ease(d3.easeCubicInOut)",
+      "Transition circles, axes, and labels simultaneously",
+      "async/await or chained transitions for tour sequencing"
+    ],
+    "notes": "Key challenge is smoothly transitioning axes and point positions together. Use key functions to maintain object constancy."
+  },
+  {
+    "id": "bar-chart-race",
+    "name": "Bar Chart Race",
+    "description": "Animated horizontal bars that compete and reorder over time, showing rankings change.",
+    "observable_url": "https://observablehq.com/@d3/bar-chart-race",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-transition", "d3-timer", "d3-interpolate"],
+    "data_shape": "Wide or long format with entities, time periods, and values. Entities compete for ranking.",
+    "data_fields": { "name": "string", "value": "number", "date": "date|number", "category": "string" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleBand", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 16, "right": 6, "bottom": 6, "left": 0 }, "barSize": 48, "n": 12 },
+    "key_patterns": [
+      "d3.scaleBand().domain(d3.range(n)).range([margin.top, margin.top + barSize * n])",
+      "Keyframes: interpolate between time periods for smooth rank changes",
+      "Enter from bottom, exit to bottom for appearing/disappearing bars",
+      "Axis ticker showing value labels that count up",
+      "Date label overlay updating with each frame"
+    ],
+    "notes": "Pre-compute keyframes by interpolating between time periods. Show top N bars. Bars enter/exit with y transitions. Value labels and axis animate simultaneously."
+  },
+  {
+    "id": "stacked-to-grouped-bars",
+    "name": "Stacked-to-Grouped Bars",
+    "description": "Bars smoothly transition between stacked and grouped layout configurations.",
+    "observable_url": "https://observablehq.com/@d3/stacked-to-grouped-bars",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-shape", "d3-transition", "d3-ease"],
+    "data_shape": "Matrix of values: categories x series. Each category has values for each series.",
+    "data_fields": { "category": "string", "series": "string", "value": "number" },
+    "scales": { "x": "d3.scaleBand", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 0, "right": 0, "bottom": 30, "left": 0 } },
+    "key_patterns": [
+      "d3.stack() to compute stacked layout positions",
+      "Toggle: recalculate y positions and widths for grouped layout",
+      "transition().duration(500).delay((d, i) => i * 20) for stagger",
+      "d3.scaleBand with inner padding for grouped; full width for stacked"
+    ],
+    "notes": "Two layout modes sharing same data. Stacked uses d3.stack() offsets; grouped uses subdivided band scale. Animate rect y, height, x, and width."
+  },
+  {
+    "id": "streamgraph-transitions",
+    "name": "Streamgraph Transitions",
+    "description": "Streamgraph that morphs between different offset methods (wiggle, expand, silhouette).",
+    "observable_url": "https://observablehq.com/@d3/streamgraph-transitions",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-shape", "d3-scale", "d3-transition"],
+    "data_shape": "Time-series matrix: dates x categories, each cell is a value.",
+    "data_fields": { "date": "date", "category": "string", "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "type": "stack" },
+    "key_patterns": [
+      "d3.stack().offset(d3.stackOffsetWiggle).order(d3.stackOrderInsideOut)",
+      "d3.area().x(d => x(d.data.date)).y0(d => y(d[0])).y1(d => y(d[1]))",
+      "Recompute stack with different offset, transition area paths",
+      "d3.stackOffsetNone, d3.stackOffsetExpand, d3.stackOffsetSilhouette, d3.stackOffsetWiggle"
+    ],
+    "notes": "Recompute d3.stack() with new offset method, then transition each area path. Use curve(d3.curveBasis) for smooth shapes."
+  },
+  {
+    "id": "smooth-zooming",
+    "name": "Smooth Zooming",
+    "description": "Animated smooth zoom transitions between random points using d3.interpolateZoom.",
+    "observable_url": "https://observablehq.com/@d3/smooth-zooming",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-zoom", "d3-transition", "d3-interpolate"],
+    "data_shape": "Array of focal points with x, y coordinates and zoom level.",
+    "data_fields": { "x": "number", "y": "number", "k": "number" },
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "d3.zoom().on('zoom', (event) => g.attr('transform', event.transform))",
+      "d3.interpolateZoom([x0, y0, w0], [x1, y1, w1])",
+      "svg.transition().duration(2000).call(zoom.transform, d3.zoomIdentity.translate(...).scale(...))"
+    ],
+    "notes": "Use d3.interpolateZoom for smooth Cartesian zoom transitions. The interpolator handles both pan and scale simultaneously."
+  },
+  {
+    "id": "zoom-to-bounding-box",
+    "name": "Zoom to Bounding Box",
+    "description": "Click on a region to zoom into its bounding box with smooth animated transition.",
+    "observable_url": "https://observablehq.com/@d3/zoom-to-bounding-box",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-zoom", "d3-geo", "d3-transition"],
+    "data_shape": "GeoJSON features with bounding boxes.",
+    "data_fields": { "features": "GeoJSON Feature[]" },
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "d3.geoBounds(feature) or path.bounds(feature) for bbox",
+      "Calculate translate and scale from bbox to viewport",
+      "svg.transition().duration(750).call(zoom.transform, newTransform)"
+    ],
+    "notes": "Compute zoom transform from geographic bounds. Use d3.geoPath().bounds() for projected coordinates. Double-click to reset view."
+  },
+  {
+    "id": "orthographic-to-equirectangular",
+    "name": "Orthographic to Equirectangular",
+    "description": "Smooth animated transition between globe (orthographic) and flat (equirectangular) map projections.",
+    "observable_url": "https://observablehq.com/@d3/orthographic-to-equirectangular",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-interpolate", "d3-transition", "d3-timer"],
+    "data_shape": "World GeoJSON/TopoJSON.",
+    "data_fields": { "features": "GeoJSON Feature[]" },
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "Custom projection interpolation between d3.geoOrthographic() and d3.geoEquirectangular()",
+      "d3.geoProjection() with custom interpolated project function",
+      "d3.timer() for frame-by-frame projection update",
+      "Redraw all paths on each frame"
+    ],
+    "notes": "Interpolate between projection raw functions. Performance-intensive — redraw all paths each frame. Use canvas for better performance with many features."
+  },
+  {
+    "id": "world-tour",
+    "name": "World Tour",
+    "description": "Animated globe that rotates to center on each country in sequence.",
+    "observable_url": "https://observablehq.com/@d3/world-tour",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-interpolate", "d3-transition", "d3-timer"],
+    "data_shape": "World TopoJSON with country features.",
+    "data_fields": { "countries": "TopoJSON", "names": "country name mapping" },
+    "scales": {},
+    "layout": { "type": "geographic", "projection": "orthographic" },
+    "key_patterns": [
+      "d3.geoOrthographic().rotate([-lon, -lat])",
+      "d3.interpolate([lon1, lat1], [lon2, lat2]) for rotation",
+      "d3.geoPath(projection) redrawn each frame",
+      "d3.geoCentroid(feature) to find country center"
+    ],
+    "notes": "Use d3.geoCentroid() to find each country's center. Interpolate rotation. Highlight current country. Show country name label."
+  },
+  {
+    "id": "walmarts-growth",
+    "name": "Walmart's Growth",
+    "description": "Animated timeline showing Walmart store openings expanding across the US map over decades.",
+    "observable_url": "https://observablehq.com/@d3/walmarts-growth",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-geo", "d3-scale", "d3-timer", "d3-transition"],
+    "data_shape": "Array of store locations with opening dates and coordinates.",
+    "data_fields": { "longitude": "number", "latitude": "number", "date": "date" },
+    "scales": { "projection": "d3.geoAlbersUsa" },
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "d3.geoAlbersUsa() for US projection",
+      "Sort stores by date, progressively reveal",
+      "Circles appear with radius transition on entry",
+      "Year counter overlay"
+    ],
+    "notes": "Sort data by date. Use d3.timer() or transition delay to progressively add points. Small circles (~2px) work best for density. Show year label."
+  },
+  {
+    "id": "hierarchical-bar-chart",
+    "name": "Hierarchical Bar Chart",
+    "description": "Click a bar to drill down into its children categories with animated transitions.",
+    "observable_url": "https://observablehq.com/@d3/hierarchical-bar-chart",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-scale", "d3-axis", "d3-transition"],
+    "data_shape": "Nested hierarchy where each node has children with values.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleBand" },
+    "layout": { "margin": { "top": 30, "right": 30, "bottom": 0, "left": 100 } },
+    "key_patterns": [
+      "d3.hierarchy(data).sum(d => d.value)",
+      "Click handler: filter to clicked node's children, re-binddata",
+      "Bars transition: exiting bars slide out, entering bars slide in",
+      "Breadcrumb trail for navigation back up"
+    ],
+    "notes": "Maintain navigation stack to allow drilling back up. Transition bars horizontally (slide in from right, slide out to left). Update y-scale domain for new children."
+  },
+  {
+    "id": "zoomable-treemap",
+    "name": "Zoomable Treemap",
+    "description": "Click on a rectangle to zoom into its children with smooth animated transition.",
+    "observable_url": "https://observablehq.com/@d3/zoomable-treemap",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-transition", "d3-scale"],
+    "data_shape": "Nested hierarchy with values at leaf nodes.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "type": "treemap", "tile": "d3.treemapBinary" },
+    "key_patterns": [
+      "d3.treemap().tile(d3.treemapBinary).size([w, h])",
+      "Click: rescale x and y to clicked node's x0,y0,x1,y1",
+      "transition().duration(750) for rect positions",
+      "Clip path to prevent overflow during transitions"
+    ],
+    "notes": "On click, map the clicked node's treemap coordinates to fill the viewport. Use linear scales that remap [node.x0, node.x1] to [0, width]. Breadcrumb for navigation."
+  },
+  {
+    "id": "zoomable-circle-packing",
+    "name": "Zoomable Circle Packing",
+    "description": "Click on a circle to zoom into its children with smooth animated transition.",
+    "observable_url": "https://observablehq.com/@d3/zoomable-circle-packing",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-transition", "d3-interpolate"],
+    "data_shape": "Nested hierarchy with values at leaf nodes.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleLinear (depth-based)" },
+    "layout": { "type": "pack" },
+    "key_patterns": [
+      "d3.pack().size([w, h]).padding(3)",
+      "d3.hierarchy(data).sum(d => d.value)",
+      "Custom zoom: interpolate view [x, y, r] to fill viewport",
+      "d3.interpolateZoom([x0,y0,w0], [x1,y1,w1])"
+    ],
+    "notes": "Use d3.pack() layout. On click, zoom by interpolating the view transform to center on clicked circle. Color by depth. Show labels for visible nodes."
+  },
+  {
+    "id": "collapsible-tree",
+    "name": "Collapsible Tree",
+    "description": "Tree diagram where clicking a node expands or collapses its children with animated transitions.",
+    "observable_url": "https://observablehq.com/@d3/collapsible-tree",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-transition", "d3-shape"],
+    "data_shape": "Nested hierarchy (JSON tree structure).",
+    "data_fields": { "name": "string", "children": "array" },
+    "scales": {},
+    "layout": { "type": "tree", "nodeSize": [20, 200] },
+    "key_patterns": [
+      "d3.tree().nodeSize([dx, dy])",
+      "Toggle: node._children = node.children; node.children = null",
+      "d3.linkHorizontal().x(d => d.y).y(d => d.x)",
+      "Enter from parent, exit to parent position for smooth transitions"
+    ],
+    "notes": "Store collapsed children in _children. On click, swap children/_children and re-run layout. New nodes enter from parent's previous position and transition to new position."
+  },
+  {
+    "id": "zoomable-icicle",
+    "name": "Zoomable Icicle",
+    "description": "Partition/icicle layout where clicking zooms into children with smooth animated transition.",
+    "observable_url": "https://observablehq.com/@d3/zoomable-icicle",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-transition", "d3-scale"],
+    "data_shape": "Nested hierarchy with values.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "type": "partition" },
+    "key_patterns": [
+      "d3.partition().size([w, h])",
+      "Click: rescale x to [node.x0, node.x1] -> [0, width]",
+      "transition().duration(750) for rect repositioning",
+      "rectHeight based on depth difference"
+    ],
+    "notes": "Similar to zoomable treemap but uses partition layout. Rescale x range on click to zoom into subtree. Y can remain fixed or rescale."
+  },
+  {
+    "id": "zoomable-sunburst",
+    "name": "Zoomable Sunburst",
+    "description": "Sunburst/radial partition where clicking an arc zooms into that subtree with smooth animation.",
+    "observable_url": "https://observablehq.com/@d3/zoomable-sunburst",
+    "complexity": "advanced",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-hierarchy", "d3-transition", "d3-shape", "d3-interpolate"],
+    "data_shape": "Nested hierarchy with values.",
+    "data_fields": { "name": "string", "children": "array", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "partition", "size": [6.28318, "radius"] },
+    "key_patterns": [
+      "d3.partition().size([2 * Math.PI, radius])",
+      "d3.arc().startAngle(d => d.x0).endAngle(d => d.x1).innerRadius(d => d.y0).outerRadius(d => d.y1)",
+      "arcTween: interpolate between old and new arc parameters",
+      "d3.interpolate({x0, x1, y0, y1}, target) for zoom tween"
+    ],
+    "notes": "On click, rescale angles [x0,x1] and radii [y0,y1] so clicked node fills the ring. Use attrTween with custom arc interpolator. Center hole is the 'back' button."
+  },
+  {
+    "id": "sortable-bar-chart",
+    "name": "Sortable Bar Chart",
+    "description": "Bar chart that smoothly re-sorts bars alphabetically or by value with staggered transitions.",
+    "observable_url": "https://observablehq.com/@d3/sortable-bar-chart",
+    "complexity": "basic",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-transition"],
+    "data_shape": "Array of {name, value} pairs.",
+    "data_fields": { "name": "string", "value": "number" },
+    "scales": { "x": "d3.scaleBand", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 0, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Resort: update x.domain(sorted names)",
+      "transition().delay((d,i) => i * 20) for stagger",
+      "Transition bar x positions and axis simultaneously"
+    ],
+    "notes": "Re-sort x.domain(), then transition bar positions and the x-axis. Stagger delays create a wave effect."
+  },
+  {
+    "id": "icelandic-population",
+    "name": "Icelandic Population by Age, 1841-2019",
+    "description": "Animated population pyramid showing age distribution changes over time.",
+    "observable_url": "https://observablehq.com/@d3/icelandic-population-by-age-1841-2019",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-transition"],
+    "data_shape": "Population counts by age group and year, split by gender.",
+    "data_fields": { "year": "number", "age": "number", "male": "number", "female": "number" },
+    "scales": { "x": "d3.scaleLinear (mirrored)", "y": "d3.scaleBand" },
+    "layout": { "margin": { "top": 20, "right": 40, "bottom": 30, "left": 40 }, "type": "diverging" },
+    "key_patterns": [
+      "Mirrored x-axis: males left, females right",
+      "d3.scaleBand for age groups on y-axis",
+      "Transition bar widths on year change",
+      "Year scrubber/slider or animation timer"
+    ],
+    "notes": "Population pyramid: two horizontal bar charts mirrored at center. Animate between years. Add year label overlay."
+  },
+  {
+    "id": "pie-chart-update",
+    "name": "Pie Chart Update",
+    "description": "Pie chart with smooth arc transitions when data values change.",
+    "observable_url": "https://observablehq.com/@d3/pie-chart-update",
+    "complexity": "intermediate",
+    "animated": true,
+    "interactive": true,
+    "d3_modules": ["d3-shape", "d3-transition", "d3-interpolate"],
+    "data_shape": "Array of named values. Values update over time.",
+    "data_fields": { "name": "string", "value": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "pie", "innerRadius": 0, "outerRadius": "radius" },
+    "key_patterns": [
+      "d3.pie().value(d => d.value).sort(null)",
+      "d3.arc().innerRadius(0).outerRadius(r)",
+      "arcTween: function(d) { var i = d3.interpolate(this._current, d); this._current = i(1); return t => arc(i(t)); }",
+      "Store previous arc data in this._current for interpolation"
+    ],
+    "notes": "Key pattern: store previous arc state on the element, interpolate between old and new arc parameters. Use sort(null) to maintain consistent ordering."
+  },
+  {
+    "id": "arc-tween",
+    "name": "Arc Tween",
+    "description": "Demonstrates smooth arc angle animations using custom interpolation tweens.",
+    "observable_url": "https://observablehq.com/@d3/arc-tween",
+    "complexity": "basic",
+    "animated": true,
+    "interactive": false,
+    "d3_modules": ["d3-shape", "d3-transition", "d3-interpolate", "d3-timer"],
+    "data_shape": "Single arc with changing start/end angles.",
+    "data_fields": { "startAngle": "number", "endAngle": "number" },
+    "scales": {},
+    "layout": { "type": "radial" },
+    "key_patterns": [
+      "d3.arc().innerRadius(ir).outerRadius(or)",
+      "attrTween('d', function() { var i = d3.interpolate(startAngle, endAngle); return t => arc({startAngle: 0, endAngle: i(t)}); })",
+      "d3.timer for continuous animation"
+    ],
+    "notes": "Demonstrates the attrTween pattern for arc animations. Foundation for pie/donut transitions."
+  }
+]

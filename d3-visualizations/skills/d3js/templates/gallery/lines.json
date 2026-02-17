@@ -1,0 +1,308 @@
+[
+  {
+    "id": "line-chart",
+    "name": "Line Chart",
+    "description": "Basic continuous line plot connecting data points over time.",
+    "observable_url": "https://observablehq.com/@d3/line-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Array of {date, value} pairs sorted by date.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.line().x(d => x(d.date)).y(d => y(d.value))",
+      "path.datum(data).attr('d', line).attr('fill', 'none').attr('stroke', color)",
+      "d3.scaleUtc() for time axis"
+    ],
+    "notes": "Foundation line chart. Use scaleUtc for dates. No fill on path, just stroke. Consider adding area fill below for visual weight."
+  },
+  {
+    "id": "line-with-missing-data",
+    "name": "Line with Missing Data",
+    "description": "Line chart that gracefully handles gaps in the data with dashed segments.",
+    "observable_url": "https://observablehq.com/@d3/line-with-missing-data",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with some null/NaN values.",
+    "data_fields": { "date": "date", "value": "number|null" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.line().defined(d => !isNaN(d.value)) — skips undefined points",
+      "Two passes: solid line with .defined(), dashed line without .defined()",
+      "Dashed line connects across gaps; solid shows valid segments"
+    ],
+    "notes": "Use .defined() to skip null values in main line. Optionally draw a secondary dashed line without .defined() to show interpolation across gaps."
+  },
+  {
+    "id": "multi-line-chart",
+    "name": "Multi-Line Chart",
+    "description": "Multiple overlaid lines showing different series on the same axes for comparison.",
+    "observable_url": "https://observablehq.com/@d3/multi-line-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Multiple time series: [{name, values: [{date, value}]}] or wide format.",
+    "data_fields": { "name": "string", "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 60, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.line() applied per series",
+      "One path per series, colored by series name",
+      "End labels (right side) or legend for series identification",
+      "d3.scaleOrdinal(d3.schemeCategory10) for colors"
+    ],
+    "notes": "Right margin for end-of-line labels preferred over legend. If lines overlap heavily, consider small multiples or highlight-on-hover instead."
+  },
+  {
+    "id": "change-line-chart",
+    "name": "Change Line Chart",
+    "description": "Two-point comparison showing change between two time periods with connecting lines.",
+    "observable_url": "https://observablehq.com/@d3/change-line-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of {name, value_before, value_after} or two-column comparison.",
+    "data_fields": { "name": "string", "before": "number", "after": "number" },
+    "scales": { "x": "d3.scalePoint (two points)", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 60, "bottom": 30, "left": 60 } },
+    "key_patterns": [
+      "Two x positions: before and after",
+      "Line connecting (x_before, y(before)) to (x_after, y(after))",
+      "Color by direction of change (up=green, down=red)"
+    ],
+    "notes": "Simple slope lines between two points. Color indicates improvement/decline. Labels at each endpoint. Good for before/after comparisons."
+  },
+  {
+    "id": "slope-chart",
+    "name": "Slope Chart",
+    "description": "Connected dot plot showing ranking changes between two time periods.",
+    "observable_url": "https://observablehq.com/@d3/slope-chart",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of {name, value1, value2} showing before and after values.",
+    "data_fields": { "name": "string", "value1": "number", "value2": "number" },
+    "scales": { "x": "d3.scalePoint", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 80, "bottom": 30, "left": 80 } },
+    "key_patterns": [
+      "Two vertical axes (left and right) connected by sloped lines",
+      "Labels on both sides showing entity names",
+      "Line slope indicates change direction and magnitude"
+    ],
+    "notes": "Wide margins for labels on both sides. Lines crossing indicate rank changes. Highlight notable changes. Keep number of entities manageable (~20 max)."
+  },
+  {
+    "id": "slope-chart-2",
+    "name": "Slope Chart II",
+    "description": "Cancer survival rate slope chart with more sophisticated labeling and grouping.",
+    "observable_url": "https://observablehq.com/@d3/slope-chart/2",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Paired values per entity across two time periods.",
+    "data_fields": { "name": "string", "value1": "number", "value2": "number", "category": "string" },
+    "scales": { "x": "d3.scalePoint", "y": "d3.scaleLinear", "color": "d3.scaleOrdinal" },
+    "layout": { "margin": { "top": 20, "right": 100, "bottom": 30, "left": 100 } },
+    "key_patterns": [
+      "Same base as slope chart",
+      "Color-coded by category/group",
+      "Anti-overlap label positioning",
+      "Highlighted lines for key entities"
+    ],
+    "notes": "Enhanced slope chart with group coloring and smart label placement to avoid overlap."
+  },
+  {
+    "id": "mareys-trains",
+    "name": "Marey's Trains",
+    "description": "Time-space diagram showing train positions over time, classic Edward Tufte visualization.",
+    "observable_url": "https://observablehq.com/@d3/mareys-trains",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape", "d3-time"],
+    "data_shape": "Train schedule: each train has array of {station, time} stops.",
+    "data_fields": { "train": "string", "station": "string", "time": "time", "direction": "string" },
+    "scales": { "x": "d3.scaleLinear (time of day)", "y": "d3.scalePoint (stations)" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 100 } },
+    "key_patterns": [
+      "x = time of day, y = station (distance along route)",
+      "Each train is a polyline connecting (time, station) stops",
+      "Slope = speed (steeper = faster)",
+      "Crossing lines indicate trains passing each other"
+    ],
+    "notes": "Classic time-space diagram. Each line is one train's journey. Slope shows speed. Intersections show where trains meet. Filter by time of day or direction."
+  },
+  {
+    "id": "candlestick-chart",
+    "name": "Candlestick Chart",
+    "description": "Financial OHLC chart showing open, high, low, close prices per time period.",
+    "observable_url": "https://observablehq.com/@d3/candlestick-chart",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis"],
+    "data_shape": "Array of {date, open, high, low, close} per trading period.",
+    "data_fields": { "date": "date", "open": "number", "high": "number", "low": "number", "close": "number" },
+    "scales": { "x": "d3.scaleBand", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 30, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "rect (candle body): x=x(date), y=y(max(open,close)), height=|y(open)-y(close)|, width=x.bandwidth()",
+      "line (wick): x=x(date)+bandwidth/2, y1=y(high), y2=y(low)",
+      "Green fill: close > open (price went up). Red fill: close < open (price went down)"
+    ],
+    "notes": "Body = open-to-close range. Wick = high-to-low range. Color green (bullish) or red (bearish). Band scale for uniform spacing, skip weekends."
+  },
+  {
+    "id": "variable-color-line",
+    "name": "Variable-Color Line",
+    "description": "Line chart where the line color changes based on the y-value (e.g., temperature).",
+    "observable_url": "https://observablehq.com/@d3/variable-color-line",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with value determining line color.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear", "color": "d3.scaleSequential" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "SVG linearGradient along x-axis with color stops at each data point",
+      "gradient stop offset = x(d.date)/width, stop-color = colorScale(d.value)",
+      "Single path using the gradient as stroke"
+    ],
+    "notes": "Create an SVG linearGradient with many stops (one per data point). Apply as stroke on the line path. Color interpolates between points naturally."
+  },
+  {
+    "id": "gradient-encoding",
+    "name": "Gradient Encoding",
+    "description": "Line chart with gradient fill below the line encoding the y-value as color.",
+    "observable_url": "https://observablehq.com/@d3/gradient-encoding",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear", "color": "d3.scaleSequential" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.area() filled with vertical linearGradient",
+      "Gradient stops at y-coordinate percentages mapped to color",
+      "clipPath to area shape for clean gradient application"
+    ],
+    "notes": "Vertical gradient on the area fill, clipped to the area shape. High values get one color, low values another. Creates a topographic-feel area chart."
+  },
+  {
+    "id": "threshold-encoding",
+    "name": "Threshold Encoding",
+    "description": "Line chart where segments above a threshold are one color and below are another.",
+    "observable_url": "https://observablehq.com/@d3/threshold-encoding",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series with a threshold value.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Two area generators: one for above-threshold, one for below",
+      "clipPath to split at threshold y-coordinate",
+      "Or: SVG gradient with sharp color transition at threshold y"
+    ],
+    "notes": "Use clip paths or sharp gradient transitions at the threshold y-coordinate. Red below threshold, green above (or similar scheme)."
+  },
+  {
+    "id": "parallel-coordinates",
+    "name": "Parallel Coordinates",
+    "description": "Multi-dimensional plot with parallel vertical axes connected by polylines per record.",
+    "observable_url": "https://observablehq.com/@d3/parallel-coordinates",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-brush"],
+    "data_shape": "Tabular data with multiple numeric dimensions.",
+    "data_fields": { "columns": "string[] (dimension names)", "values": "number[] per record" },
+    "scales": { "x": "d3.scalePoint (dimensions)", "y": "d3.scaleLinear per dimension" },
+    "layout": { "margin": { "top": 30, "right": 10, "bottom": 10, "left": 10 } },
+    "key_patterns": [
+      "One vertical y-scale per dimension",
+      "d3.scalePoint().domain(dimensions).range([0, width]) for horizontal spacing",
+      "path per record: d3.line()(dims.map(p => [x(p), y[p](d[p])]))",
+      "Brush on each axis for filtering (d3.brushY)"
+    ],
+    "notes": "Each vertical axis has its own y-scale. Lines crossing show correlations. Brush axes to filter subsets. Semi-transparent lines for overlapping records."
+  },
+  {
+    "id": "inequality-in-american-cities",
+    "name": "Inequality in American Cities",
+    "description": "Multi-line chart showing income inequality metrics across US cities over time.",
+    "observable_url": "https://observablehq.com/@d3/inequality-in-american-cities",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Time series per city.",
+    "data_fields": { "city": "string", "year": "number", "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 60, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Standard multi-line chart",
+      "Voronoi overlay for nearest-line hover detection",
+      "Highlight line on hover, dim others",
+      "End-of-line labels"
+    ],
+    "notes": "Multi-line with Voronoi-based hover. Highlights nearest line and dims others for focus. End-of-line labels for identification."
+  },
+  {
+    "id": "new-zealand-tourists",
+    "name": "New Zealand Tourists, 1921-2018",
+    "description": "Long time series showing tourism trends with annotations for key events.",
+    "observable_url": "https://observablehq.com/@d3/new-zealand-tourists-1921-2018",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Long time series with annotation events.",
+    "data_fields": { "year": "number", "tourists": "number", "annotations": "array of {year, text}" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 50 } },
+    "key_patterns": [
+      "Standard line chart with area fill",
+      "Annotation lines/labels at key years",
+      "text annotations with connector lines"
+    ],
+    "notes": "Simple area line chart with annotation callouts for key events that explain trend changes."
+  },
+  {
+    "id": "sea-ice-extent",
+    "name": "Sea Ice Extent, 1978-2017",
+    "description": "Overlaid annual curves showing sea ice extent over the year, with years as different lines.",
+    "observable_url": "https://observablehq.com/@d3/sea-ice-extent-1978-2017",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape"],
+    "data_shape": "Daily sea ice measurements over many years.",
+    "data_fields": { "date": "date", "extent": "number" },
+    "scales": { "x": "d3.scaleTime (day of year)", "y": "d3.scaleLinear", "color": "d3.scaleSequential (by year)" },
+    "layout": { "margin": { "top": 20, "right": 40, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Normalize all dates to same year for x-axis (day of year)",
+      "One line per year, colored from light (old) to dark (recent)",
+      "Hover to highlight specific year",
+      "d3.scaleSequential(d3.interpolateBlues).domain([firstYear, lastYear])"
+    ],
+    "notes": "Overlay annual cycles to show trend. Old years light, recent years dark. Seasonal pattern visible with long-term decline trend. Highlight on hover."
+  }
+]

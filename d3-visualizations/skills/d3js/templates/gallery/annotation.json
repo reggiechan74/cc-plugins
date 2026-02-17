@@ -1,0 +1,170 @@
+[
+  {
+    "id": "inline-labels",
+    "name": "Inline Labels",
+    "description": "Text labels placed directly within or on visualization elements instead of a separate legend.",
+    "observable_url": "https://observablehq.com/@d3/inline-labels",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "Any chart data where series/categories need labeling.",
+    "data_fields": {},
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "Place text at end of line/area series",
+      "Position labels at widest point of area for stacked charts",
+      "text.attr('x', lastPoint.x).attr('y', lastPoint.y)",
+      "Background rect or text-shadow for readability"
+    ],
+    "notes": "Technique pattern. Place labels on data elements instead of legend. Reduces cognitive load."
+  },
+  {
+    "id": "directly-labelling-lines",
+    "name": "Directly Labelling Lines",
+    "description": "Line labels placed at the end of each line series, eliminating need for legend.",
+    "observable_url": "https://observablehq.com/@d3/directly-labelling-lines",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-shape"],
+    "data_shape": "Multi-line chart data.",
+    "data_fields": { "date": "date", "value": "number", "series": "string" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 80, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "text at last data point of each series",
+      "Wide right margin for labels",
+      "Anti-collision: nudge overlapping labels apart",
+      "Match label color to line color"
+    ],
+    "notes": "Wide right margin needed. If labels overlap, nudge apart vertically."
+  },
+  {
+    "id": "line-chart-with-tooltip",
+    "name": "Line Chart with Tooltip",
+    "description": "Line chart with hover tooltip showing exact values at cursor position.",
+    "observable_url": "https://observablehq.com/@d3/line-chart-with-tooltip",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape", "d3-bisect"],
+    "data_shape": "Time series data.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Invisible rect overlay for mouse events",
+      "d3.bisector(d => d.date).left to find nearest point",
+      "Vertical rule line at cursor x",
+      "Circle dot at nearest data point",
+      "Tooltip div or SVG group with date + value"
+    ],
+    "notes": "Key: bisect to nearest date, show vertical rule + dot + label."
+  },
+  {
+    "id": "voronoi-labels",
+    "name": "Voronoi Labels",
+    "description": "Labels placed using Voronoi tessellation for optimal non-overlapping positions.",
+    "observable_url": "https://observablehq.com/@d3/voronoi-labels",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-delaunay", "d3-scale"],
+    "data_shape": "Point data requiring non-overlapping labels.",
+    "data_fields": { "x": "number", "y": "number", "label": "string" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": {},
+    "key_patterns": [
+      "d3.Delaunay.from(points).voronoi([0, 0, width, height])",
+      "Place labels at Voronoi cell centroids",
+      "Lines connecting label to data point"
+    ],
+    "notes": "Voronoi cells define territory per point. Place label at centroid where there's most space."
+  },
+  {
+    "id": "occlusion",
+    "name": "Occlusion",
+    "description": "Technique for resolving overlapping labels by hiding, dodging, or prioritizing.",
+    "observable_url": "https://observablehq.com/@d3/occlusion",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale"],
+    "data_shape": "Any chart with potentially overlapping labels.",
+    "data_fields": {},
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "getBoundingClientRect() or getBBox() to measure labels",
+      "Check pairwise overlap of bounding boxes",
+      "Priority-based: show important labels, hide minor overlapping ones",
+      "Iterative removal of lowest-priority overlapping labels"
+    ],
+    "notes": "Technique pattern for label management. Measure, detect overlap, resolve by priority."
+  },
+  {
+    "id": "graticule-labels",
+    "name": "Graticule Labels",
+    "description": "Labels for geographic grid lines on map projections.",
+    "observable_url": "https://observablehq.com/@d3/graticule-labels",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-geo"],
+    "data_shape": "Geographic graticule.",
+    "data_fields": {},
+    "scales": {},
+    "layout": { "type": "geographic" },
+    "key_patterns": [
+      "d3.geoGraticule() for grid lines",
+      "d3.geoGraticule().lines() for individual features",
+      "Project label positions along map edges",
+      "Format: 30 degrees N, 60 degrees W"
+    ],
+    "notes": "Place lat/lon labels along map edges. Project positions using map projection."
+  },
+  {
+    "id": "styled-axes",
+    "name": "Styled Axes",
+    "description": "Custom axis styling — colors, fonts, tick lengths, grid lines.",
+    "observable_url": "https://observablehq.com/@d3/styled-axes",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-axis", "d3-scale"],
+    "data_shape": "Any chart data.",
+    "data_fields": {},
+    "scales": {},
+    "layout": {},
+    "key_patterns": [
+      "g.call(d3.axisBottom(x)) then style resulting elements",
+      ".domain { display: none } to hide axis line",
+      ".tick line extended to full width for grid lines",
+      "Custom tickFormat: d3.format('$,.0f')"
+    ],
+    "notes": "Technique for axis customization. D3 axes are SVG — fully styleable via CSS and DOM."
+  },
+  {
+    "id": "color-legend",
+    "name": "Color Legend",
+    "description": "Standalone color legend for continuous, discrete, or categorical scales.",
+    "observable_url": "https://observablehq.com/@d3/color-legend",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-interpolate"],
+    "data_shape": "Color scale to visualize.",
+    "data_fields": {},
+    "scales": { "color": "any d3 color scale" },
+    "layout": { "width": 320, "height": 44 },
+    "key_patterns": [
+      "Sequential: canvas gradient or many thin rects",
+      "Categorical: colored swatches with labels",
+      "Threshold: stepped color bands",
+      "Axis below for continuous scale tick marks"
+    ],
+    "notes": "Reusable legend component. Place near chart, not far away."
+  }
+]

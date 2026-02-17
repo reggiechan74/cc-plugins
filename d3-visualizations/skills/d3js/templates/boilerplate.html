@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3.js Visualization</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      height: 100vh;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      padding: 0.75rem 1rem;
+      gap: 0.5rem;
+    }
+    h1 { font-size: 1.15rem; font-weight: 700; color: #1a1a2e; }
+    .subtitle { font-size: 0.75rem; color: #6b7280; }
+    #chart {
+      flex: 1;
+      min-height: 0;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+    }
+    #chart svg {
+      width: 100%;
+      height: 100%;
+    }
+    .tooltip {
+      position: absolute;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12.5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+    }
+    .axis text { font-size: 11px; fill: #6b7280; }
+    .axis path, .axis line { stroke: #e5e7eb; }
+  </style>
+</head>
+<body>
+  <h1><!-- Chart title --></h1>
+  <p class="subtitle"><!-- Chart subtitle / description --></p>
+  <div id="chart"></div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script type="module">
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+    // --- Data ---
+    const data = [
+      // Replace with actual data or generate sample data
+    ];
+
+    // --- Dimensions (viewBox coordinates, not pixels) ---
+    const margin = { top: 30, right: 30, bottom: 40, left: 60 };
+    const width = 800 - margin.left - margin.right;
+    const height = 450 - margin.top - margin.bottom;
+
+    // --- SVG (responsive, fills container via CSS) ---
+    const svg = d3.select("#chart")
+      .append("svg")
+      .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // --- Scales ---
+    // const x = d3.scaleLinear() / d3.scaleBand() / d3.scaleTime()
+    //   .domain(...)
+    //   .range([0, width]);
+
+    // const y = d3.scaleLinear()
+    //   .domain(...)
+    //   .nice()
+    //   .range([height, 0]);
+
+    // --- Axes ---
+    // svg.append("g").attr("class", "axis")
+    //   .attr("transform", `translate(0,${height})`)
+    //   .call(d3.axisBottom(x));
+
+    // svg.append("g").attr("class", "axis")
+    //   .call(d3.axisLeft(y));
+
+    // --- Visualization ---
+    // Bind data and render elements here
+
+    // --- Tooltip ---
+    const tooltip = d3.select("#tooltip");
+
+    // --- Interactivity ---
+    // Add mouseover/mousemove/mouseout, transitions, zoom, brush, etc.
+  </script>
+</body>
+</html>

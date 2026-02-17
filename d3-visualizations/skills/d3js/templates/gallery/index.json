@@ -1,0 +1,39 @@
+{
+  "name": "D3.js Gallery Templates",
+  "description": "Template configurations based on the Observable D3 Gallery. Each category file contains configs specifying chart type, D3 modules, data shape, scales, and key patterns needed to reproduce each visualization.",
+  "source": "https://observablehq.com/@d3/gallery",
+  "d3_version": 7,
+  "categories": [
+    { "id": "animation", "file": "animation.json", "count": 23 },
+    { "id": "interaction", "file": "interaction.json", "count": 9 },
+    { "id": "analysis", "file": "analysis.json", "count": 14 },
+    { "id": "hierarchies", "file": "hierarchies.json", "count": 14 },
+    { "id": "networks", "file": "networks.json", "count": 11 },
+    { "id": "bars", "file": "bars.json", "count": 14 },
+    { "id": "lines", "file": "lines.json", "count": 15 },
+    { "id": "areas", "file": "areas.json", "count": 11 },
+    { "id": "dots", "file": "dots.json", "count": 11 },
+    { "id": "radial", "file": "radial.json", "count": 5 },
+    { "id": "annotation", "file": "annotation.json", "count": 8 },
+    { "id": "maps", "file": "maps.json", "count": 22 },
+    { "id": "essays", "file": "essays.json", "count": 4 },
+    { "id": "fun", "file": "fun.json", "count": 12 }
+  ],
+  "total_templates": 173,
+  "config_schema": {
+    "id": "Kebab-case unique identifier",
+    "name": "Display name matching Observable gallery",
+    "description": "What the visualization shows and how",
+    "observable_url": "Link to Observable notebook",
+    "complexity": "basic | intermediate | advanced",
+    "animated": "Whether the visualization uses transitions/animation",
+    "interactive": "Whether the visualization responds to user input",
+    "d3_modules": "Array of D3 modules required",
+    "data_shape": "Description of expected input data structure",
+    "data_fields": "Object mapping field names to types",
+    "scales": "Object mapping visual channels to D3 scale types",
+    "layout": "Object with margin, dimensions, and layout hints",
+    "key_patterns": "Array of key D3 methods and patterns used",
+    "notes": "Implementation tips specific to this chart type"
+  }
+}

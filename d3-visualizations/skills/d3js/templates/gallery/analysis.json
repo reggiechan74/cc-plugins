@@ -1,0 +1,288 @@
+[
+  {
+    "id": "moving-average",
+    "name": "Moving Average",
+    "description": "Line chart with a smoothed moving average overlay showing trend through noisy data.",
+    "observable_url": "https://observablehq.com/@d3/moving-average",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape", "d3-array"],
+    "data_shape": "Time series with date and value.",
+    "data_fields": { "date": "date", "value": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 30, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Custom movingAverage(values, N) function using sliding window",
+      "Two lines: raw data (thin/light) + moving average (thick/bold)",
+      "d3.line().defined(d => !isNaN(d)) for gaps in moving average start"
+    ],
+    "notes": "Simple sliding window average. First N-1 values are undefined. Plot raw data faintly and average boldly for clear trend communication."
+  },
+  {
+    "id": "bollinger-bands",
+    "name": "Bollinger Bands",
+    "description": "Stock chart with moving average and standard deviation bands showing volatility.",
+    "observable_url": "https://observablehq.com/@d3/bollinger-bands",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape", "d3-array"],
+    "data_shape": "Time series of prices (OHLC or close prices).",
+    "data_fields": { "date": "date", "close": "number" },
+    "scales": { "x": "d3.scaleUtc", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 30, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "Compute rolling mean and rolling stddev over window N",
+      "Upper band = mean + K*stddev, Lower band = mean - K*stddev",
+      "d3.area() for the band region between upper and lower",
+      "d3.line() for the price line and middle band"
+    ],
+    "notes": "Typically N=20, K=2. Draw area between upper and lower bands with light fill. Overlay price line and middle band line."
+  },
+  {
+    "id": "box-plot",
+    "name": "Box Plot",
+    "description": "Box and whisker plots showing distribution quartiles, median, and outliers for each category.",
+    "observable_url": "https://observablehq.com/@d3/box-plot",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-array"],
+    "data_shape": "Array of values per category. Compute quartiles from raw values.",
+    "data_fields": { "category": "string", "values": "number[]" },
+    "scales": { "x": "d3.scaleBand", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.quantile(sorted, 0.25), d3.quantile(sorted, 0.5), d3.quantile(sorted, 0.75)",
+      "IQR = q3 - q1; whiskers = [q1 - 1.5*IQR, q3 + 1.5*IQR] clamped to data range",
+      "rect for IQR box, line for median, lines for whiskers, circles for outliers"
+    ],
+    "notes": "Sort values first. Draw: whisker lines (vertical), IQR rectangle, median line (horizontal, bold), outlier circles beyond whiskers."
+  },
+  {
+    "id": "histogram",
+    "name": "Histogram",
+    "description": "Frequency distribution chart with adjustable bin counts showing data shape.",
+    "observable_url": "https://observablehq.com/@d3/histogram",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-array"],
+    "data_shape": "Array of numeric values to bin.",
+    "data_fields": { "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.bin().domain(x.domain()).thresholds(x.ticks(40))(data)",
+      "Each bin has .x0, .x1 (edges) and .length (count)",
+      "rect: x=x(bin.x0), width=x(bin.x1)-x(bin.x0), y=y(bin.length), height=y(0)-y(bin.length)"
+    ],
+    "notes": "Use d3.bin() (v7) instead of d3.histogram() (deprecated). Thresholds control bin count. Add 1px gap between bars for clarity."
+  },
+  {
+    "id": "kernel-density-estimation",
+    "name": "Kernel Density Estimation",
+    "description": "Smooth probability density curve estimated from raw data points using Gaussian kernel.",
+    "observable_url": "https://observablehq.com/@d3/kernel-density-estimation",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-shape", "d3-array"],
+    "data_shape": "Array of numeric values.",
+    "data_fields": { "value": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 30, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "function kde(kernel, thresholds, data) — returns [[x, density], ...]",
+      "function epanechnikov(bandwidth) — returns kernel function",
+      "d3.area().x(d => x(d[0])).y0(y(0)).y1(d => y(d[1])).curve(d3.curveBasis)",
+      "Bandwidth slider to control smoothness"
+    ],
+    "notes": "Epanechnikov kernel is common. Bandwidth controls smoothness — too low is noisy, too high is over-smoothed. Plot as filled area curve."
+  },
+  {
+    "id": "density-contours",
+    "name": "Density Contours",
+    "description": "2D density contour plot showing concentration of points in a scatterplot.",
+    "observable_url": "https://observablehq.com/@d3/density-contours",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-contour", "d3-scale", "d3-axis"],
+    "data_shape": "Array of [x, y] points.",
+    "data_fields": { "x": "number", "y": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "color": "d3.scaleSequential" },
+    "layout": { "margin": { "top": 20, "right": 30, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.contourDensity().x(d => x(d.x)).y(d => y(d.y)).size([w,h]).bandwidth(30)",
+      "d3.geoPath() to render contour polygons",
+      "d3.scaleSequential(d3.interpolateBlues) for contour fill"
+    ],
+    "notes": "d3.contourDensity() returns GeoJSON MultiPolygon contours. Render with d3.geoPath(). Bandwidth controls smoothness. Overlay scatter points for context."
+  },
+  {
+    "id": "volcano-contours",
+    "name": "Volcano Contours",
+    "description": "Terrain-style contour lines from a grid of elevation values (classic Maunga Whau dataset).",
+    "observable_url": "https://observablehq.com/@d3/volcano-contours",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-contour", "d3-scale", "d3-geo"],
+    "data_shape": "2D grid of values (raster). Flat array with known width/height.",
+    "data_fields": { "values": "number[]", "width": "number", "height": "number" },
+    "scales": { "color": "d3.scaleSequential" },
+    "layout": {},
+    "key_patterns": [
+      "d3.contours().size([width, height]).thresholds(d3.range(min, max, step))(values)",
+      "d3.geoPath() for rendering contour polygons",
+      "d3.scaleSequential(d3.interpolateTerrain or similar)"
+    ],
+    "notes": "Use d3.contours() (not contourDensity) for gridded data. Returns GeoJSON at each threshold. Color by threshold value."
+  },
+  {
+    "id": "contours",
+    "name": "Contours",
+    "description": "General contour generation from a mathematical function evaluated on a grid.",
+    "observable_url": "https://observablehq.com/@d3/contours",
+    "complexity": "basic",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-contour", "d3-scale", "d3-geo"],
+    "data_shape": "Mathematical function f(x,y) evaluated on a grid, or pre-computed grid values.",
+    "data_fields": { "values": "number[]", "width": "number", "height": "number" },
+    "scales": { "color": "d3.scaleSequential" },
+    "layout": {},
+    "key_patterns": [
+      "Generate grid: for each pixel, evaluate f(x,y)",
+      "d3.contours().size([w,h]).thresholds(n)(values)",
+      "d3.geoPath(null) for rendering (no projection needed)"
+    ],
+    "notes": "Contour generation from arbitrary functions. Grid resolution affects quality and performance. Use d3.geoPath(null) since contours are already in pixel coordinates."
+  },
+  {
+    "id": "hexbin",
+    "name": "Hexbin",
+    "description": "Hexagonal binning of 2D points, showing density with hexagon size or color.",
+    "observable_url": "https://observablehq.com/@d3/hexbin",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hexbin", "d3-scale", "d3-axis"],
+    "data_shape": "Array of [x, y] points.",
+    "data_fields": { "x": "number", "y": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "color": "d3.scaleSequential or r: d3.scaleSqrt" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 }, "hexRadius": 10 },
+    "key_patterns": [
+      "d3.hexbin().x(d => x(d[0])).y(d => y(d[1])).radius(10).extent([[0,0],[w,h]])",
+      "hexbin(points) returns array of bins with .x, .y, .length",
+      "path.attr('d', hexbin.hexagon()) — standard hexagon path",
+      "Fill by bin.length or scale radius by bin.length"
+    ],
+    "notes": "d3-hexbin is a separate module (import from CDN). Each bin is an array of contained points with .x, .y center and .length count. Hexagon path from hexbin.hexagon()."
+  },
+  {
+    "id": "hexbin-area",
+    "name": "Hexbin (Area)",
+    "description": "Hexagonal binning where hexagon size (not color) encodes density.",
+    "observable_url": "https://observablehq.com/@d3/hexbin-area",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hexbin", "d3-scale", "d3-axis"],
+    "data_shape": "Array of [x, y] points.",
+    "data_fields": { "x": "number", "y": "number" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear", "r": "d3.scaleSqrt" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 } },
+    "key_patterns": [
+      "d3.hexbin() for binning",
+      "hexbin.hexagon(r(bin.length)) — variable-sized hexagon",
+      "d3.scaleSqrt().domain([0, maxCount]).range([0, hexbin.radius()])"
+    ],
+    "notes": "Vary hexagon radius by bin count using scaleSqrt (area proportional to count). All hexagons same color. Good for showing spatial density without color."
+  },
+  {
+    "id": "hexbin-map",
+    "name": "Hexbin Map",
+    "description": "Geographic hexagonal binning showing point density on a map with hexagon overlays.",
+    "observable_url": "https://observablehq.com/@d3/hexbin-map",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-hexbin", "d3-geo", "d3-scale"],
+    "data_shape": "Geographic point data with coordinates.",
+    "data_fields": { "longitude": "number", "latitude": "number" },
+    "scales": { "r": "d3.scaleSqrt", "color": "d3.scaleSequential" },
+    "layout": { "type": "geographic", "projection": "d3.geoAlbersUsa or d3.geoMercator" },
+    "key_patterns": [
+      "Project points: [lon, lat] -> [px, py] via projection",
+      "d3.hexbin().x(d => d[0]).y(d => d[1]).radius(r)",
+      "Overlay hexbin layer on top of base map paths"
+    ],
+    "notes": "Project geographic coordinates first, then hexbin in screen space. Draw base map first, then hexbin overlay. Use semi-transparent hexagons."
+  },
+  {
+    "id": "qq-plot",
+    "name": "Q-Q Plot",
+    "description": "Quantile-quantile plot comparing two distributions. Points on diagonal indicate similar distributions.",
+    "observable_url": "https://observablehq.com/@d3/qq-plot",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-array"],
+    "data_shape": "Two arrays of numeric values to compare distributions.",
+    "data_fields": { "x_values": "number[]", "y_values": "number[]" },
+    "scales": { "x": "d3.scaleLinear", "y": "d3.scaleLinear" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 }, "aspect": 1 },
+    "key_patterns": [
+      "Sort both arrays, pair up quantiles",
+      "If different lengths: interpolate quantiles at uniform positions",
+      "Diagonal reference line y=x",
+      "Scatter points of (quantile_x, quantile_y)"
+    ],
+    "notes": "Sort both distributions. If same length, pair directly. Otherwise, compute quantiles at n evenly spaced points. Points on y=x line mean identical distributions."
+  },
+  {
+    "id": "normal-quantile-plot",
+    "name": "Normal Quantile Plot",
+    "description": "Q-Q plot against normal distribution to test if data is normally distributed.",
+    "observable_url": "https://observablehq.com/@d3/normal-quantile-plot",
+    "complexity": "intermediate",
+    "animated": false,
+    "interactive": false,
+    "d3_modules": ["d3-scale", "d3-axis", "d3-array"],
+    "data_shape": "Single array of numeric values to test for normality.",
+    "data_fields": { "values": "number[]" },
+    "scales": { "x": "d3.scaleLinear (theoretical quantiles)", "y": "d3.scaleLinear (sample quantiles)" },
+    "layout": { "margin": { "top": 20, "right": 20, "bottom": 30, "left": 40 }, "aspect": 1 },
+    "key_patterns": [
+      "Sort sample values",
+      "Compute theoretical normal quantiles: d3.quantile(normalDist, (i+0.5)/n)",
+      "Inverse normal (probit) function for theoretical quantiles",
+      "Reference line from (min, min) to (max, max)"
+    ],
+    "notes": "X-axis: theoretical normal quantiles. Y-axis: sorted sample values. If data is normal, points follow diagonal. Deviations show skewness/kurtosis."
+  },
+  {
+    "id": "parallel-sets",
+    "name": "Parallel Sets",
+    "description": "Flow diagram showing how categorical combinations relate, like a multi-dimensional Sankey.",
+    "observable_url": "https://observablehq.com/@d3/parallel-sets",
+    "complexity": "advanced",
+    "animated": false,
+    "interactive": true,
+    "d3_modules": ["d3-sankey", "d3-scale", "d3-shape"],
+    "data_shape": "Tabular data with multiple categorical columns. Each row has a count or is an individual record.",
+    "data_fields": { "columns": "string[] (categorical fields)", "count": "number" },
+    "scales": { "color": "d3.scaleOrdinal" },
+    "layout": { "type": "parallel-sets", "padding": 10 },
+    "key_patterns": [
+      "Convert categorical combinations to node/link format",
+      "Similar to Sankey: vertical columns of nodes, curved links between them",
+      "d3.linkHorizontal() or custom ribbon paths for flows",
+      "Color by first category or by specific category value"
+    ],
+    "notes": "Each categorical dimension is a vertical axis with stacked segments. Links show the flow of records across dimensions. Hover to highlight specific paths."
+  }
+]
