@@ -106,6 +106,22 @@ async function loadCredentials() {
       "http://localhost:3000/oauth2callback"
     );
 
+    // Auto-persist refreshed tokens to disk
+    oauth2Client.on("tokens", (tokens) => {
+      try {
+        const existing = fs.existsSync(CREDENTIALS_PATH)
+          ? JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf8"))
+          : {};
+        fs.writeFileSync(
+          CREDENTIALS_PATH,
+          JSON.stringify({ ...existing, ...tokens })
+        );
+        console.error("OAuth tokens refreshed and saved.");
+      } catch (err) {
+        console.error("Failed to save refreshed tokens:", err.message);
+      }
+    });
+
     if (fs.existsSync(CREDENTIALS_PATH)) {
       const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf8"));
       oauth2Client.setCredentials(credentials);
@@ -483,6 +499,37 @@ const LookupContactSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Retry wrapper with exponential backoff
+// ---------------------------------------------------------------------------
+async function withRetry(fn, maxRetries = 2) {
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === maxRetries) throw err;
+      const isAuthError =
+        err.code === 401 || err.message?.includes("invalid_grant");
+      const isTransient = err.code === 429 || (err.code >= 500 && err.code < 600);
+      if (!isAuthError && !isTransient) throw err;
+      if (isAuthError && oauth2Client) {
+        try {
+          const { credentials } = await oauth2Client.refreshAccessToken();
+          oauth2Client.setCredentials(credentials);
+          console.error("Token refreshed via retry wrapper.");
+        } catch (_refreshErr) {
+          throw err;
+        }
+      }
+      const delay = 1000 * Math.pow(2, i);
+      console.error(
+        `Retrying after ${delay}ms (attempt ${i + 1}/${maxRetries})...`
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 async function main() {
@@ -501,11 +548,10 @@ async function main() {
   // -------------------------------------------------------------------
   // Server implementation
   // -------------------------------------------------------------------
-  const server = new Server({
-    name: "gmail",
-    version: "2.0.0",
-    capabilities: { tools: {} },
-  });
+  const server = new Server(
+    { name: "gmail", version: "2.1.0" },
+    { capabilities: { tools: {} } }
+  );
 
   // -------------------------------------------------------------------
   // Tool registration — 22 tools
@@ -527,11 +573,13 @@ async function main() {
         name: "read_email",
         description: "Retrieves the content of a specific email",
         inputSchema: zodToJsonSchema(ReadEmailSchema),
+        annotations: { readOnlyHint: true },
       },
       {
         name: "search_emails",
         description: "Searches for emails using Gmail search syntax",
         inputSchema: zodToJsonSchema(SearchEmailsSchema),
+        annotations: { readOnlyHint: true },
       },
       {
         name: "modify_email",
@@ -548,6 +596,7 @@ async function main() {
         name: "list_email_labels",
         description: "Retrieves all available Gmail labels",
         inputSchema: zodToJsonSchema(ListEmailLabelsSchema),
+        annotations: { readOnlyHint: true },
       },
       {
         name: "create_label",
@@ -592,11 +641,13 @@ async function main() {
         name: "list_filters",
         description: "Retrieves all Gmail filters",
         inputSchema: zodToJsonSchema(ListFiltersSchema),
+        annotations: { readOnlyHint: true },
       },
       {
         name: "get_filter",
         description: "Gets details of a specific Gmail filter",
         inputSchema: zodToJsonSchema(GetFilterSchema),
+        annotations: { readOnlyHint: true },
       },
       {
         name: "delete_filter",
@@ -614,6 +665,7 @@ async function main() {
         name: "download_attachment",
         description: "Downloads an email attachment to a specified location",
         inputSchema: zodToJsonSchema(DownloadAttachmentSchema),
+        annotations: { readOnlyHint: true },
       },
       // NEW enhancements (3)
       {
@@ -621,18 +673,21 @@ async function main() {
         description:
           "Lists email threads matching a search query with message counts",
         inputSchema: zodToJsonSchema(ListThreadsSchema),
+        annotations: { readOnlyHint: true },
       },
       {
         name: "get_thread",
         description:
           "Retrieves a full email thread as a conversation view with all messages",
         inputSchema: zodToJsonSchema(GetThreadSchema),
+        annotations: { readOnlyHint: true },
       },
       {
         name: "lookup_contact",
         description:
           "Looks up a contact by email address in Google Contacts",
         inputSchema: zodToJsonSchema(LookupContactSchema),
+        annotations: { readOnlyHint: true },
       },
     ],
   }));
@@ -783,9 +838,10 @@ async function main() {
     }
 
     // -----------------------------------------------------------------
-    // Route to handlers
+    // Route to handlers (wrapped with retry for transient failures)
     // -----------------------------------------------------------------
     try {
+      return await withRetry(async () => {
       switch (name) {
         // =============================================================
         // SEND / DRAFT
@@ -884,24 +940,33 @@ async function main() {
           });
 
           const messages = response.data.messages || [];
-          const results = await Promise.all(
-            messages.map(async (msg) => {
-              const detail = await gmail.users.messages.get({
-                userId: "me",
-                id: msg.id,
-                format: "metadata",
-                metadataHeaders: ["Subject", "From", "Date"],
-              });
-              const headers = detail.data.payload?.headers || [];
-              return {
-                id: msg.id,
-                subject:
-                  headers.find((h) => h.name === "Subject")?.value || "",
-                from: headers.find((h) => h.name === "From")?.value || "",
-                date: headers.find((h) => h.name === "Date")?.value || "",
-              };
-            })
-          );
+
+          // Fetch metadata in concurrency-controlled batches to avoid rate limits
+          const CONCURRENCY = 10;
+          const results = [];
+          for (let i = 0; i < messages.length; i += CONCURRENCY) {
+            const batch = messages.slice(i, i + CONCURRENCY);
+            const batchResults = await Promise.all(
+              batch.map(async (msg) => {
+                const detail = await gmail.users.messages.get({
+                  userId: "me",
+                  id: msg.id,
+                  format: "metadata",
+                  metadataHeaders: ["Subject", "From", "Date"],
+                  fields: "id,payload/headers",
+                });
+                const headers = detail.data.payload?.headers || [];
+                return {
+                  id: msg.id,
+                  subject:
+                    headers.find((h) => h.name === "Subject")?.value || "",
+                  from: headers.find((h) => h.name === "From")?.value || "",
+                  date: headers.find((h) => h.name === "Date")?.value || "",
+                };
+              })
+            );
+            results.push(...batchResults);
+          }
 
           return {
             content: [
@@ -1583,6 +1648,7 @@ async function main() {
         default:
           throw new Error(`Unknown tool: ${name}`);
       }
+      }); // end withRetry
     } catch (error) {
       return {
         content: [

@@ -1,7 +1,7 @@
 {
   "name": "google-workspace-mcp",
-  "version": "1.0.0",
-  "description": "Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code",
+  "version": "2.0.0",
+  "description": "Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code. Features OAuth auto-refresh, retry with backoff, read-only tool annotations, and optimized API batching.",
   "author": {
     "name": "Reggie Chan",
     "url": "https://github.com/reggiechan74"

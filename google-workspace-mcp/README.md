@@ -1,6 +1,6 @@
-# google-workspace-mcp
+# Google Workspace MCP for Claude Code
 
-Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code.
+Model Context Protocol servers that integrate Gmail, Google Calendar, and Google Contacts with Claude Code.
 
 ## Install
 
@@ -8,101 +8,72 @@ Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code.
 claude plugin add github:reggiechan74/cc-plugins/google-workspace-mcp
 ```
 
-## First-Time Setup
+## Features
+
+**29 tools** across Google Workspace services:
+
+### Gmail (22 tools)
+- **Email**: send, draft, read, search, modify labels, delete
+- **Batch**: bulk modify labels, bulk delete
+- **Labels**: list, create, update, delete, get-or-create
+- **Filters**: create, list, get, delete, create from template
+- **Attachments**: download
+- **Threads**: list, get full conversation view
+- **Contacts**: look up by email
+
+### Google Calendar (7 tools)
+- **Calendars**: list all accessible calendars
+- **Events**: create, get, update, delete
+- **Queries**: list events (single calendar), list events multi (parallel multi-calendar with batch API)
+
+### Reliability & Performance (v2.0.0)
+- **OAuth auto-refresh**: tokens persist to disk automatically, no manual re-auth needed
+- **Retry with backoff**: transient failures (401, 429, 5xx) auto-retry with exponential backoff
+- **Read-only annotations**: non-mutating tools marked for optimized client handling
+- **Concurrency control**: search and thread listing use batched parallel requests
+- **Response trimming**: calendar events return only essential fields
+- **In-memory caching**: calendar queries use 3-minute TTL cache with syncToken revalidation
+- **MCP SDK 1.26.0**: latest protocol support
+
+## Setup
 
 ### 1. Create GCP OAuth Credentials
 
-1. Go to [Google Cloud Console > Credentials](https://console.cloud.google.com/apis/credentials)
-2. Create an **OAuth 2.0 Client ID** (Desktop app type)
-3. Download the JSON file
-4. Save it to both locations:
-   ```bash
-   mkdir -p ~/.gmail-mcp ~/.calendar-mcp
-   cp ~/Downloads/client_secret_*.json ~/.gmail-mcp/gcp-oauth.keys.json
-   cp ~/Downloads/client_secret_*.json ~/.calendar-mcp/gcp-oauth.keys.json
-   ```
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create an OAuth 2.0 Client ID (Desktop application type)
+3. Download the JSON credentials file
 
-### 2. Enable Required APIs
+### 2. Enable APIs
 
-Enable these in your GCP project:
-- [Gmail API](https://console.developers.google.com/apis/api/gmail.googleapis.com/overview)
-- [Google Calendar API](https://console.developers.google.com/apis/api/calendar-json.googleapis.com/overview)
-- [People API](https://console.developers.google.com/apis/api/people.googleapis.com/overview) (for contact lookup)
+Enable these APIs in your GCP project:
+- [Gmail API](https://console.cloud.google.com/apis/library/gmail.googleapis.com)
+- [Google Calendar API](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com)
+- [People API](https://console.cloud.google.com/apis/library/people.googleapis.com)
 
-### 3. Authenticate
+### 3. Store Credentials
 
-Run the `/authenticate` skill in Claude Code:
-```
-/authenticate
-```
+Copy the OAuth JSON to both config directories:
 
-This runs the OAuth flow for both Gmail and Calendar servers.
-
-## Tools (28)
-
-### Gmail (22 tools)
-
-| Tool | Description |
-|------|-------------|
-| `send_email` | Send an email with optional CC, BCC, attachments |
-| `draft_email` | Create a draft email |
-| `read_email` | Read a specific email by message ID |
-| `search_emails` | Search emails using Gmail query syntax |
-| `modify_email` | Add/remove labels on an email |
-| `delete_email` | Permanently delete an email |
-| `list_email_labels` | List all Gmail labels |
-| `create_label` | Create a new label |
-| `update_label` | Update label name or visibility |
-| `delete_label` | Delete a label |
-| `get_or_create_label` | Get existing label or create if missing |
-| `batch_modify_emails` | Modify labels on multiple emails |
-| `batch_delete_emails` | Delete multiple emails in batches |
-| `create_filter` | Create a Gmail filter with criteria and actions |
-| `list_filters` | List all Gmail filters |
-| `get_filter` | Get details of a specific filter |
-| `delete_filter` | Delete a Gmail filter |
-| `create_filter_from_template` | Create filter from predefined template |
-| `download_attachment` | Download an email attachment |
-| `list_threads` | List email threads matching a query |
-| `get_thread` | Get full conversation thread |
-| `lookup_contact` | Look up contact by email via Google People API |
-
-### Google Calendar (6 tools)
-
-| Tool | Description |
-|------|-------------|
-| `list_calendars` | List all accessible calendars |
-| `list_events` | List events in a time range |
-| `create_event` | Create a new calendar event |
-| `get_event` | Get details of a specific event |
-| `update_event` | Update an existing event |
-| `delete_event` | Delete a calendar event |
-
-## Authentication Details
-
-- **Gmail OAuth keys:** `~/.gmail-mcp/gcp-oauth.keys.json`
-- **Gmail tokens:** `~/.gmail-mcp/credentials.json`
-- **Calendar OAuth keys:** `~/.calendar-mcp/gcp-oauth.keys.json`
-- **Calendar tokens:** `~/.calendar-mcp/credentials.json`
-- **Gmail scopes:** `gmail.modify`, `gmail.settings.basic`, `contacts.readonly`
-- **Calendar scopes:** `calendar`
-
-## Troubleshooting
-
-**"Credentials missing" warning on session start:**
-Run `/authenticate` to set up OAuth tokens.
-
-**"Insufficient Permission" on lookup_contact:**
-Enable the [People API](https://console.developers.google.com/apis/api/people.googleapis.com/overview) in your GCP project.
-
-**Port 3000 busy during auth:**
 ```bash
-lsof -ti:3000 | xargs kill
+mkdir -p ~/.gmail-mcp ~/.calendar-mcp
+cp your-oauth-keys.json ~/.gmail-mcp/gcp-oauth.keys.json
+cp your-oauth-keys.json ~/.calendar-mcp/gcp-oauth.keys.json
 ```
-Then re-run `/authenticate`.
 
-**Token expired / refresh errors:**
-Re-run `/authenticate` to get fresh tokens.
+### 4. Authenticate
+
+Run `/authenticate` in Claude Code to complete the OAuth flow for both services.
+
+## Calendar Shortnames
+
+The calendar server supports shortname resolution:
+
+| Shortname | Calendar |
+|-----------|----------|
+| `reggie` | reggie.chan@gmail.com |
+| `claude` / `claude_code` | Claude_Code calendar |
+| `family` | Family calendar |
+| `janice` | jnyarkomensah@gmail.com |
 
 ## License
 

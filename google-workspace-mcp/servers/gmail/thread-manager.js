@@ -10,32 +10,40 @@ export async function listThreads(gmail, query, maxResults = 10) {
 
     const threads = response.data.threads || [];
 
-    const results = await Promise.all(
-      threads.map(async (thread) => {
-        const detail = await gmail.users.threads.get({
-          userId: "me",
-          id: thread.id,
-          format: "metadata",
-          metadataHeaders: ["Subject", "From", "Date"],
-        });
+    // Fetch thread metadata in concurrency-controlled batches
+    const CONCURRENCY = 10;
+    const results = [];
+    for (let i = 0; i < threads.length; i += CONCURRENCY) {
+      const batch = threads.slice(i, i + CONCURRENCY);
+      const batchResults = await Promise.all(
+        batch.map(async (thread) => {
+          const detail = await gmail.users.threads.get({
+            userId: "me",
+            id: thread.id,
+            format: "metadata",
+            metadataHeaders: ["Subject", "From", "Date"],
+            fields: "id,messages(id,payload/headers,snippet)",
+          });
 
-        const messages = detail.data.messages || [];
-        const firstMessage = messages[0];
-        const lastMessage = messages[messages.length - 1];
-        const headers = firstMessage?.payload?.headers || [];
+          const messages = detail.data.messages || [];
+          const firstMessage = messages[0];
+          const lastMessage = messages[messages.length - 1];
+          const headers = firstMessage?.payload?.headers || [];
 
-        return {
-          id: thread.id,
-          subject: headers.find((h) => h.name === "Subject")?.value || "",
-          from: headers.find((h) => h.name === "From")?.value || "",
-          date: headers.find((h) => h.name === "Date")?.value || "",
-          messageCount: messages.length,
-          lastMessageDate:
-            lastMessage?.payload?.headers?.find((h) => h.name === "Date")?.value || "",
-          snippet: detail.data.messages?.[0]?.snippet || "",
-        };
-      })
-    );
+          return {
+            id: thread.id,
+            subject: headers.find((h) => h.name === "Subject")?.value || "",
+            from: headers.find((h) => h.name === "From")?.value || "",
+            date: headers.find((h) => h.name === "Date")?.value || "",
+            messageCount: messages.length,
+            lastMessageDate:
+              lastMessage?.payload?.headers?.find((h) => h.name === "Date")?.value || "",
+            snippet: thread.snippet || firstMessage?.snippet || "",
+          };
+        })
+      );
+      results.push(...batchResults);
+    }
 
     return results;
   } catch (error) {
