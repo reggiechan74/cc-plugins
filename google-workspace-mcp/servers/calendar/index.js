@@ -10,7 +10,7 @@
  *   - Trimmed responses: only essential fields (summary, start, end, etc.)
  *   - Google API fields parameter: reduce network transfer
  *   - In-memory cache with 3-minute TTL + syncToken-based revalidation
- *   - Calendar shortname resolver (reggie, claude, family, janice)
+ *   - Calendar shortname resolver (user-configurable)
  *   - Compact JSON responses (no pretty-printing)
  *   - Cache invalidation on write operations
  *
@@ -50,15 +50,13 @@ let oauth2Client;
 // Calendar shortname resolver
 // ---------------------------------------------------------------------------
 
-const CALENDAR_SHORTNAMES = {
-  reggie: "reggie.chan@gmail.com",
-  claude:
-    "509b753af6b5430ad7177f1c6c0110c3010a79524007379761bf074a3b2c5bcb@group.calendar.google.com",
-  claude_code:
-    "509b753af6b5430ad7177f1c6c0110c3010a79524007379761bf074a3b2c5bcb@group.calendar.google.com",
-  family: "family07579228297565344288@group.calendar.google.com",
-  janice: "jnyarkomensah@gmail.com",
-};
+// Customize these mappings with your own calendar shortnames.
+// Run list_calendars to discover your calendar IDs, then add entries below.
+// Example:
+//   work: "user@company.com",
+//   personal: "user@gmail.com",
+//   team: "abc123@group.calendar.google.com",
+const CALENDAR_SHORTNAMES = {};
 
 function resolveCalendarId(id) {
   if (!id) return "primary";
@@ -417,7 +415,7 @@ const CalendarIdField = z
   .optional()
   .default("primary")
   .describe(
-    'Calendar ID or shortname (reggie, claude, family, janice). Use "primary" for the main calendar. Defaults to "primary".'
+    'Calendar ID or shortname (if configured in CALENDAR_SHORTNAMES). Use "primary" for the main calendar. Defaults to "primary".'
   );
 
 const ListCalendarsSchema = z.object({});
@@ -485,7 +483,7 @@ const ListEventsMultiSchema = z.object({
   calendarIds: z
     .array(z.string())
     .describe(
-      "Array of calendar IDs or shortnames (reggie, claude, family, janice) to query in parallel"
+      "Array of calendar IDs or shortnames (if configured in CALENDAR_SHORTNAMES) to query in parallel"
     ),
   timeMin: z.string().describe("Start of time range (ISO format)"),
   timeMax: z.string().describe("End of time range (ISO format)"),

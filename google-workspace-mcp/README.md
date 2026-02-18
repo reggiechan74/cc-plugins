@@ -66,14 +66,17 @@ Run `/authenticate` in Claude Code to complete the OAuth flow for both services.
 
 ## Calendar Shortnames
 
-The calendar server supports shortname resolution:
+The calendar server supports optional shortname resolution. Edit the `CALENDAR_SHORTNAMES` map in `servers/calendar/index.js` to add your own mappings. Run `list_calendars` to discover your calendar IDs.
 
-| Shortname | Calendar |
-|-----------|----------|
-| `reggie` | reggie.chan@gmail.com |
-| `claude` / `claude_code` | Claude_Code calendar |
-| `family` | Family calendar |
-| `janice` | jnyarkomensah@gmail.com |
+Example:
+
+```js
+const CALENDAR_SHORTNAMES = {
+  work: "user@company.com",
+  personal: "user@gmail.com",
+  team: "abc123@group.calendar.google.com",
+};
+```
 
 ## License
 
