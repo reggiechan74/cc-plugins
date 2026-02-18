@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "google-calendar": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/calendar/index.js"]
+    },
+    "gmail": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/gmail/index.js"]
+    }
+  }
+}

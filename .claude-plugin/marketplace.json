@@ -17,6 +17,18 @@
       "version": "0.1.0"
     },
     {
+      "name": "d3-visualizations",
+      "source": "./d3-visualizations",
+      "description": "D3.js visualization skill for quickly creating any kind of data visualization",
+      "version": "0.1.0"
+    },
+    {
+      "name": "google-workspace-mcp",
+      "source": "./google-workspace-mcp",
+      "description": "Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code",
+      "version": "1.0.0"
+    },
+    {
       "name": "install-private-plugin",
       "source": "./install-private-plugin",
       "description": "Configure git auth for installing Claude Code plugins from private GitHub repos. Guides PAT creation, Codespace secret storage, and git URL rewriting when /plugin marketplace add fails with 403 or HTTPS auth errors.",

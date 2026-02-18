@@ -1,0 +1,12 @@
+{
+  "name": "google-workspace-mcp",
+  "version": "1.0.0",
+  "description": "Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code",
+  "author": {
+    "name": "Reggie Chan",
+    "url": "https://github.com/reggiechan74"
+  },
+  "repository": "https://github.com/reggiechan74/cc-plugins",
+  "license": "MIT",
+  "keywords": ["gmail", "google-calendar", "google-contacts", "mcp", "google-workspace"]
+}

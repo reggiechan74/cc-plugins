@@ -78,6 +78,47 @@ Create professional course curricula for 1-2 day workshops using backward design
 
 ---
 
+### d3-visualizations
+
+D3.js visualization skill for quickly creating any kind of data visualization.
+
+**Install:**
+```bash
+/plugin install d3-visualizations@reggiechan74
+```
+
+**Features:**
+- All D3 chart types: bar, line, area, scatter, pie, histogram, treemap, sunburst, force-directed, Sankey, chord, choropleth, and more
+- 173 gallery templates covering every example from the Observable D3 Gallery
+- Three output formats: standalone HTML, HTML + separate JS, React components
+- Two workflows: direct implementation (fast) and creative mode (design philosophy + implementation)
+- Discovery interview: 3-round, 12-question process to understand requirements before building
+- Clean professional style: NYT/FT-inspired defaults with muted colors, clean axes, good typography
+- Single-screen layout: 100vh no-scroll default for easy PDF/screenshot export
+- Sample data generation: visualizations work immediately out of the box
+
+---
+
+### google-workspace-mcp
+
+Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code.
+
+**Install:**
+```bash
+/plugin install google-workspace-mcp@reggiechan74
+```
+
+**Features:**
+- 22 Gmail tools: send, draft, read, search, modify, delete emails; label management; filters; attachments; threads; contact lookup
+- 6 Google Calendar tools: list calendars, list/create/get/update/delete events
+- OAuth 2.0 authentication with GCP credentials
+- Works with Gmail, Google Calendar, and Google People APIs
+
+**Commands:**
+- `/authenticate` - Run OAuth flow for Gmail and Calendar servers
+
+---
+
 ### install-private-plugin
 
 Configure git auth for installing Claude Code plugins from private GitHub repos. Guides PAT creation, Codespace secret storage, and git URL rewriting when `/plugin marketplace add` fails with 403 or HTTPS auth errors.

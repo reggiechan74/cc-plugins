@@ -1,0 +1,13 @@
+{
+  "SessionStart": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash -c 'if [ ! -f ~/.gmail-mcp/credentials.json ] || [ ! -f ~/.calendar-mcp/credentials.json ]; then echo \"Google Workspace MCP: Credentials missing. Run /authenticate to set up OAuth.\"; fi'",
+          "timeout": 5
+        }
+      ]
+    }
+  ]
+}
