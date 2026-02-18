@@ -26,7 +26,7 @@
       "name": "google-workspace-mcp",
       "source": "./google-workspace-mcp",
       "description": "Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code",
-      "version": "1.0.0"
+      "version": "2.0.0"
     },
     {
       "name": "install-private-plugin",
