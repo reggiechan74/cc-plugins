@@ -2,8 +2,7 @@
 /**
  * Enhanced Google Calendar MCP Server v4.0.0
  *
- * Based on @gongrzhe/server-calendar-autoauth-mcp v1.0.2
- * Enhancements:
+ * Features:
  *   - list_calendars tool to discover all available calendars
  *   - Optional calendarId parameter on all tools (default: 'primary')
  *   - list_events_multi: batched multi-calendar queries via Google Batch API
