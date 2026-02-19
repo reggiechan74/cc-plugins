@@ -321,59 +321,70 @@ async function fetchMultiWithCache(calendarApi, calendarIds, timeMin, timeMax, m
 // ---------------------------------------------------------------------------
 
 async function loadCredentials() {
-  if (!fs.existsSync(CONFIG_DIR)) {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
-  }
-  const localOAuthPath = path.join(process.cwd(), "gcp-oauth.keys.json");
-  if (fs.existsSync(localOAuthPath)) {
-    fs.copyFileSync(localOAuthPath, OAUTH_PATH);
-  }
-  if (!fs.existsSync(OAUTH_PATH)) {
-    console.error(
-      "Error: OAuth keys file not found. Place gcp-oauth.keys.json in",
-      CONFIG_DIR
-    );
-    process.exit(1);
-  }
-  const keysContent = JSON.parse(fs.readFileSync(OAUTH_PATH, "utf8"));
-  const keys = keysContent.installed || keysContent.web;
-  if (!keys) {
-    console.error("Error: Invalid OAuth keys file format.");
-    process.exit(1);
-  }
-  oauth2Client = new OAuth2Client(
-    keys.client_id,
-    keys.client_secret,
-    "http://localhost:3000/oauth2callback"
-  );
-  // Auto-persist refreshed tokens to disk
-  oauth2Client.on("tokens", (tokens) => {
-    try {
-      const existing = fs.existsSync(CREDENTIALS_PATH)
-        ? JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf8"))
-        : {};
-      fs.writeFileSync(
-        CREDENTIALS_PATH,
-        JSON.stringify({ ...existing, ...tokens })
-      );
-      console.error("OAuth tokens refreshed and saved.");
-    } catch (err) {
-      console.error("Failed to save refreshed tokens:", err.message);
+  try {
+    if (!fs.existsSync(CONFIG_DIR)) {
+      fs.mkdirSync(CONFIG_DIR, { recursive: true });
     }
-  });
+    if (!fs.existsSync(OAUTH_PATH)) {
+      console.error(
+        "Error: OAuth keys file not found. Place gcp-oauth.keys.json in",
+        CONFIG_DIR
+      );
+      process.exit(1);
+    }
+    const keysContent = JSON.parse(fs.readFileSync(OAUTH_PATH, "utf8"));
+    const keys = keysContent.installed || keysContent.web;
+    if (!keys) {
+      console.error("Error: Invalid OAuth keys file format.");
+      process.exit(1);
+    }
+    oauth2Client = new OAuth2Client(
+      keys.client_id,
+      keys.client_secret,
+      "http://localhost:3000/oauth2callback"
+    );
+    // Auto-persist refreshed tokens to disk
+    oauth2Client.on("tokens", (tokens) => {
+      try {
+        const existing = fs.existsSync(CREDENTIALS_PATH)
+          ? JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf8"))
+          : {};
+        fs.writeFileSync(
+          CREDENTIALS_PATH,
+          JSON.stringify({ ...existing, ...tokens })
+        );
+        console.error("OAuth tokens refreshed and saved.");
+      } catch (err) {
+        console.error("Failed to save refreshed tokens:", err.message);
+      }
+    });
 
-  if (fs.existsSync(CREDENTIALS_PATH)) {
-    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf8"));
-    oauth2Client.setCredentials(credentials);
+    if (fs.existsSync(CREDENTIALS_PATH)) {
+      const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf8"));
+      oauth2Client.setCredentials(credentials);
+    }
+  } catch (error) {
+    console.error("Error loading credentials:", error);
+    process.exit(1);
   }
 }
 
 async function authenticate() {
   const server = http.createServer();
-  server.listen(3000);
+  await new Promise((resolve, reject) => {
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        reject(new Error("Port 3000 is already in use. Close the other process and try again."));
+      } else {
+        reject(err);
+      }
+    });
+    server.listen(3000, resolve);
+  });
   return new Promise((resolve, reject) => {
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
+      prompt: "consent",
       scope: ["https://www.googleapis.com/auth/calendar"],
     });
     console.log("Please visit this URL to authenticate:", authUrl);

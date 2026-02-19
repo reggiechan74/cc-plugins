@@ -68,17 +68,7 @@ async function loadCredentials() {
       fs.mkdirSync(CONFIG_DIR, { recursive: true });
     }
 
-    // Check for OAuth keys in current directory first, copy to config dir
-    const localOAuthPath = path.join(process.cwd(), "gcp-oauth.keys.json");
     const oauthPath = resolveOAuthPath();
-
-    if (fs.existsSync(localOAuthPath)) {
-      const targetPath = path.join(CONFIG_DIR, "gcp-oauth.keys.json");
-      fs.copyFileSync(localOAuthPath, targetPath);
-      console.error(
-        "OAuth keys found in current directory, copied to global config."
-      );
-    }
 
     if (!fs.existsSync(oauthPath)) {
       console.error(
@@ -134,11 +124,21 @@ async function loadCredentials() {
 
 async function authenticate() {
   const server = http.createServer();
-  server.listen(3000);
+  await new Promise((resolve, reject) => {
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        reject(new Error("Port 3000 is already in use. Close the other process and try again."));
+      } else {
+        reject(err);
+      }
+    });
+    server.listen(3000, resolve);
+  });
 
   return new Promise((resolve, reject) => {
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
+      prompt: "consent",
       scope: [
         "https://www.googleapis.com/auth/gmail.modify",
         "https://www.googleapis.com/auth/gmail.settings.basic",
