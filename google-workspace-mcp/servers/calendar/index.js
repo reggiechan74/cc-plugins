@@ -503,6 +503,16 @@ const ListEventsMultiSchema = z.object({
     .describe("Maximum number of events per calendar (default 10)"),
 });
 
+const CreateEventsBatchSchema = z.object({
+  events: z
+    .array(CreateEventSchema)
+    .min(1)
+    .max(50)
+    .describe(
+      "Array of events to create (max 50). Each event has: calendarId (optional, defaults to primary), summary (required), start (required), end (required), description (optional), location (optional)"
+    ),
+});
+
 // ---------------------------------------------------------------------------
 // Retry wrapper with exponential backoff
 // ---------------------------------------------------------------------------
