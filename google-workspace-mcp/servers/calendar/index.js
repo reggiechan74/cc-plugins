@@ -709,6 +709,12 @@ async function main() {
         inputSchema: zodToJsonSchema(ListEventsMultiSchema),
         annotations: { readOnlyHint: true },
       },
+      {
+        name: "create_events_batch",
+        description:
+          "Creates multiple events across one or more calendars in a single call using the Google Batch API. Much faster than calling create_event separately for each event. Returns per-event success/failure results.",
+        inputSchema: zodToJsonSchema(CreateEventsBatchSchema),
+      },
     ],
   }));
 
@@ -861,6 +867,26 @@ async function main() {
               {
                 type: "text",
                 text: `Found ${totalEvents} events across ${results.length} calendars:\n${JSON.stringify(results)}`,
+              },
+            ],
+          };
+        }
+
+        case "create_events_batch": {
+          const validatedArgs = CreateEventsBatchSchema.parse(args);
+          const resolvedEvents = validatedArgs.events.map((evt) => ({
+            ...evt,
+            calendarId: resolveCalendarId(evt.calendarId),
+          }));
+          const results = await batchInsertEvents(resolvedEvents);
+          const created = results.filter((r) => r.status === "created").length;
+          return {
+            content: [
+              {
+                type: "text",
+                text:
+                  `Created ${created}/${results.length} events:\n` +
+                  JSON.stringify(results),
               },
             ],
           };
