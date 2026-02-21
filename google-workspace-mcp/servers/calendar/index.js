@@ -257,6 +257,101 @@ async function batchListEvents(requests) {
   });
 }
 
+async function batchInsertEvents(events) {
+  const { token } = await oauth2Client.getAccessToken();
+  if (!token) throw new Error("No access token for batch request");
+
+  const boundary = `batch_insert_${Date.now()}`;
+
+  // Build multipart request body with POST sub-requests
+  let body = "";
+  for (let i = 0; i < events.length; i++) {
+    const evt = events[i];
+    const { calendarId, ...eventData } = evt;
+    const jsonBody = JSON.stringify(eventData);
+    body += `--${boundary}\r\n`;
+    body += `Content-Type: application/http\r\n`;
+    body += `Content-ID: <evt${i}>\r\n\r\n`;
+    body += `POST /calendar/v3/calendars/${encodeURIComponent(calendarId)}/events HTTP/1.1\r\n`;
+    body += `Content-Type: application/json\r\n`;
+    body += `Content-Length: ${Buffer.byteLength(jsonBody)}\r\n\r\n`;
+    body += `${jsonBody}\r\n`;
+  }
+  body += `--${boundary}--`;
+
+  const response = await fetch(
+    "https://www.googleapis.com/batch/calendar/v3",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": `multipart/mixed; boundary=${boundary}`,
+      },
+      body,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Batch API returned ${response.status}`);
+  }
+
+  const responseText = await response.text();
+  const contentType = response.headers.get("content-type") || "";
+  const respBoundary = contentType.match(/boundary=([^\s;]+)/)?.[1];
+
+  if (!respBoundary) {
+    throw new Error("No boundary in batch response");
+  }
+
+  const parts = responseText.split(`--${respBoundary}`).slice(1, -1);
+
+  if (parts.length !== events.length) {
+    console.error(`Batch response had ${parts.length} parts for ${events.length} requests`);
+  }
+
+  // Collect unique calendarIds that had successful inserts for cache invalidation
+  const invalidatedCalendars = new Set();
+
+  const results = parts.map((part, i) => {
+    const calendarId = events[i].calendarId;
+    try {
+      // Extract HTTP status from the sub-response
+      const statusMatch = part.match(/HTTP\/1\.1\s+(\d+)/);
+      const httpStatus = statusMatch ? parseInt(statusMatch[1], 10) : 0;
+
+      const jsonStart = part.indexOf("{");
+      const jsonEnd = part.lastIndexOf("}");
+      if (jsonStart === -1 || jsonEnd === -1) {
+        return { index: i, calendarId, status: "error", error: "No JSON in response" };
+      }
+      const data = JSON.parse(part.slice(jsonStart, jsonEnd + 1));
+
+      if (httpStatus >= 200 && httpStatus < 300) {
+        invalidatedCalendars.add(calendarId);
+        return {
+          index: i,
+          calendarId,
+          status: "created",
+          eventId: data.id,
+          summary: events[i].summary,
+        };
+      } else {
+        const errMsg = data.error?.message || `HTTP ${httpStatus}`;
+        return { index: i, calendarId, status: "error", error: errMsg };
+      }
+    } catch (err) {
+      return { index: i, calendarId, status: "error", error: err.message };
+    }
+  });
+
+  // Invalidate cache for calendars that had successful inserts
+  for (const calId of invalidatedCalendars) {
+    invalidateCalendar(calId);
+  }
+
+  return results;
+}
+
 // Fetch multiple calendars: cache first, then batch uncached, fallback to Promise.all
 async function fetchMultiWithCache(calendarApi, calendarIds, timeMin, timeMax, maxResults) {
   const cached = new Map();
