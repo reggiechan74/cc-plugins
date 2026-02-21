@@ -313,6 +313,9 @@ async function batchInsertEvents(events) {
   const invalidatedCalendars = new Set();
 
   const results = parts.map((part, i) => {
+    if (i >= events.length) {
+      return { index: i, calendarId: "unknown", status: "error", error: "Extra response part" };
+    }
     const calendarId = events[i].calendarId;
     try {
       // Extract HTTP status from the sub-response
@@ -655,7 +658,7 @@ async function main() {
   const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
 
   const server = new Server(
-    { name: "google-calendar", version: "4.1.0" },
+    { name: "google-calendar", version: "4.2.0" },
     { capabilities: { tools: {} } }
   );
 
@@ -914,7 +917,7 @@ async function main() {
     console.error("Fatal error running server:", error);
     process.exit(1);
   });
-  console.error("Enhanced Google Calendar MCP Server v4.1.0 running on stdio");
+  console.error("Enhanced Google Calendar MCP Server v4.2.0 running on stdio");
 }
 
 main().catch(console.error);
