@@ -259,7 +259,7 @@ Prioritized list of changes needed:
 # Output Format
 
 **Save validation report to:**
-`${CLAUDE_PLUGIN_ROOT}/curricula/[course-code]/VALIDATION_REPORT.md`
+`[course-directory]/VALIDATION_REPORT.md` (in the course project directory being reviewed)
 
 **Report must include:**
 - YAML front matter with date, course code, overall rating, validator (quality-reviewer agent)
