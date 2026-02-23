@@ -296,6 +296,59 @@ TZ='America/New_York' date '+%Y-%m-%d'
 - Evaluate: Multi-criteria evaluation, recommendation
 - Create: Design, plan, strategy development
 
+## Incremental Update Mode
+
+When invoked with `--update`, modify existing objectives instead of regenerating all:
+
+### Adding Objectives
+
+```
+/generate-objectives --update "Add an Evaluate-level objective about assessing PropTech ROI"
+```
+
+**Behavior:**
+1. Read existing `01-planning/learning-objectives.md`
+2. Parse current objectives and cognitive level distribution
+3. Generate the new objective following the same quality standards
+4. Validate it doesn't duplicate existing objectives
+5. Add it in the appropriate position (maintaining Bloom's level progression)
+6. Update the Objective Summary Table and Cognitive Level Distribution
+7. Warn about downstream staleness: "⚠ Downstream files (rubrics, outline, lesson plans) may need regeneration. Run `/generate-rubrics`, `/generate-outline`, etc. to update."
+
+### Removing Objectives
+
+```
+/generate-objectives --update --remove 3
+```
+
+**Behavior:**
+1. Read existing objectives
+2. Remove objective #3
+3. Renumber remaining objectives
+4. Update Summary Table and Distribution
+5. Warn about downstream staleness
+
+### Modifying Objectives
+
+```
+/generate-objectives --update --modify 2 "Change to Analyze level with focus on market comparison"
+```
+
+**Behavior:**
+1. Read existing objectives
+2. Modify objective #2 as specified
+3. Validate modified objective meets quality standards
+4. Update Summary Table and Distribution
+5. Warn about downstream staleness
+
+### Validation After Update
+
+After any incremental change:
+- Revalidate cognitive level distribution is appropriate for duration
+- Revalidate total time allocation is realistic
+- Revalidate scaffolding progression
+- Update sourceHashes in frontmatter
+
 ---
 
 Generate learning objectives that are measurable, achievable, and appropriately scaffolded. Use Bloom's taxonomy action verbs, align with course positioning, and set foundation for assessment and activity design.

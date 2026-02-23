@@ -167,6 +167,68 @@ Prompt: "Review the outline. Would you like me to adjust module timing, regroup 
 
 Next: "Generate detailed lesson plans using `/generate-lesson-plans`"
 
+## Incremental Update Mode
+
+When invoked with `--update`, modify existing outline instead of regenerating:
+
+### Adding a Module
+
+```
+/generate-outline --update "Add a module on Advanced Analytics after Module 3"
+```
+
+**Behavior:**
+1. Read existing `02-design/course-outline.md`
+2. Insert new module at specified position
+3. Renumber subsequent modules
+4. Recalculate timing (adjust break/lunch schedule if needed)
+5. Assign relevant learning objectives to the new module
+6. Warn about downstream staleness: "⚠ Lesson plans need regeneration to include the new module. Run `/generate-lesson-plans` to update."
+
+### Removing a Module
+
+```
+/generate-outline --update --remove 4
+```
+
+**Behavior:**
+1. Remove module 4
+2. Renumber subsequent modules
+3. Recalculate timing
+4. Warn if removed module was the only one covering certain objectives
+5. Warn about downstream staleness
+
+### Reordering Modules
+
+```
+/generate-outline --update --move 5 --to 2
+```
+
+**Behavior:**
+1. Move module 5 to position 2
+2. Renumber all modules
+3. Recalculate timing
+4. Validate Bloom's level progression still makes sense (warn if not)
+
+### Adjusting Module Timing
+
+```
+/generate-outline --update --resize 3 120
+```
+
+**Behavior:**
+1. Change module 3 duration to 120 minutes
+2. Recalculate schedule (break/lunch/transition times)
+3. Warn if total time exceeds workshop duration
+
+### Validation After Update
+
+After any incremental change:
+- Verify all learning objectives are still covered by at least one module
+- Verify total time fits within workshop duration (with buffer)
+- Verify Bloom's level progression is maintained
+- Update sourceHashes in frontmatter
+
 ---
 
 Create structured outlines that scaffold learning, allocate time realistically, and prepare for detailed lesson planning.
