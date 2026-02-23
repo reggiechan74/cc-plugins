@@ -1,7 +1,7 @@
 ---
 name: create-course
 description: Initialize a new course curriculum project with directory structure and foundational files
-argument-hint: "[Course Title] [--duration 1-day|2-day] [--location path]"
+argument-hint: "[Course Title] [--duration 1-day|2-day] [--location path] [--series name --level N]"
 allowed-tools:
   - AskUserQuestion
   - Bash
@@ -78,6 +78,54 @@ Read from `.claude/course-curriculum-creator.local.md` if exists:
 - `default_audience_level`: Suggest in prompts
 
 If settings file doesn't exist, use sensible defaults or prompt user.
+
+## Series Integration
+
+When `--series` and `--level` flags are provided:
+
+### Step 1: Locate Series Plan
+
+Search for `[series-name]-series-plan.md`:
+1. In the `--location` directory (if provided)
+2. In the `courses_directory` from settings
+3. In the current working directory
+4. In the parent of the current working directory
+
+If not found: "Error: Series plan '[name]-series-plan.md' not found. Run `/design-series` first to create the series plan."
+
+### Step 2: Read Level Configuration
+
+From the series plan, read the section for the specified level:
+- Target audience → use as audience description
+- Prerequisites (from prior level's handoff outcomes) → use as prerequisites
+- Scope statement → use as value proposition context
+- Suggested duration → use as default duration (can be overridden by `--duration`)
+
+### Step 3: Pre-populate Course Positioning
+
+When generating `course-positioning.md`, add series metadata to the YAML frontmatter:
+
+```yaml
+seriesName: "[series-name]"
+seriesLevel: [N]
+seriesPlanFile: "[relative-path-to-series-plan.md]"
+```
+
+And pre-populate these sections from the series plan:
+- **Target Audience**: From the level's target audience
+- **Prerequisites**: From the prior level's handoff outcomes (listed explicitly)
+- **Scope > In Scope**: From the level's scope statement and topic areas
+- **Scope > Out of Scope**: Topics covered by other levels in the series
+
+### Step 4: Report Series Context
+
+In the completion message, add:
+```
+Series: [series-name] (Level [N] of [total])
+Prerequisites from Level [N-1]: [list handoff outcomes]
+
+Next: Generate objectives within this level's Bloom's bands using /generate-objectives
+```
 
 ## Directory Naming
 
