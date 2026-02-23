@@ -1,5 +1,5 @@
 ---
-name: Backward Design Methodology
+name: backward-design-methodology
 description: This skill should be used when the user asks to "use backward design", "create curriculum using UbD", "design learning outcomes first", "start with desired results", "plan assessments before activities", "design assessments first", "create outcomes-based curriculum", or references Understanding by Design framework. Also applies when user mentions aligning outcomes with assessments or avoiding activity-first planning. Provides comprehensive guidance on applying backward design methodology to create effective curricula for 1-2 day intensive workshops.
 version: 0.1.0
 ---

@@ -1,5 +1,5 @@
 ---
-name: Bloom's Taxonomy
+name: blooms-taxonomy
 description: This skill should be used when the user asks to "write learning objectives", "create measurable learning outcomes", "select action verbs for objectives", "what cognitive levels should I target", "how to scaffold learning", "write course objectives", "make objectives more specific", or references Bloom's taxonomy. Also relevant when users say "my objectives aren't measurable", "how do I assess what students learned", or "progression from basic to advanced skills". Provides comprehensive guidance on applying Bloom's taxonomy to create measurable, appropriately-leveled learning objectives for intensive workshops.
 version: 0.1.0
 ---
