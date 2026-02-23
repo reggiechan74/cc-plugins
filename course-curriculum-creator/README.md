@@ -14,6 +14,11 @@ This plugin helps independent consultants, trainers, and instructional designers
 - **Modular Architecture**: Create courses optimized for 1-2 day weekend workshops
 - **Professional Outputs**: Course descriptions, outlines, lesson plans, rubrics, student materials
 - **Template System**: Save and reuse course structures for variants and iterations
+- **Cascade Invalidation**: Automatic staleness detection when source files change
+- **Export Workflows**: Export as complete document, stakeholder summary, or student syllabus
+- **Delivery Support**: Workshop preparation checklists and post-workshop feedback processing
+- **Quality Gates**: Prerequisite validation hooks prevent generating files out of order
+- **Incremental Updates**: Add, remove, or modify individual objectives and modules
 - **Version Control Ready**: Semantic versioning with organized markdown files
 
 ## Installation
@@ -45,19 +50,23 @@ The `curriculum-architect` agent will automatically generate a complete curricul
 # 1. Initialize course project
 /create-course "PropTech Fundamentals"
 
-# 2. Generate course components
-/generate-description
-/generate-outline
-/generate-objectives
-/generate-lesson-plans
-/generate-rubrics
+# 2. Generate core curriculum (backward design order)
+/generate-objectives          # Stage 1: Desired results
+/generate-rubrics             # Stage 2: Assessment evidence
+/generate-outline             # Stage 3: Learning plan
+/generate-lesson-plans        # Stage 3: Detailed activities
+/generate-description         # Student-facing description
 
 # 3. Create additional materials
 /generate-artifacts --type handout
 /generate-artifacts --type instructor-guide
 
-# 4. Review quality
+# 4. Review and export
 /review-curriculum
+/export-curriculum --format full
+
+# 5. Prepare for delivery
+/generate-workshop-prep --date 2026-03-15
 ```
 
 ## Commands
@@ -65,15 +74,19 @@ The `curriculum-architect` agent will automatically generate a complete curricul
 | Command | Description |
 |---------|-------------|
 | `/create-course` | Initialize new course project with directory structure |
-| `/generate-description` | Create student-facing course description |
-| `/generate-outline` | Generate module structure with timing |
 | `/generate-objectives` | Create Bloom's-aligned learning objectives |
-| `/generate-lesson-plans` | Generate detailed module-level lesson plans |
 | `/generate-rubrics` | Create 1-5 scale analytical assessment rubrics |
+| `/generate-outline` | Generate module structure with timing |
+| `/generate-lesson-plans` | Generate detailed module-level lesson plans |
+| `/generate-description` | Create student-facing course description |
 | `/generate-artifacts` | Generate student handouts, instructor guides, etc. |
+| `/review-curriculum` | Validate curriculum quality and alignment |
+| `/export-curriculum` | Export curriculum as combined document (full/summary/syllabus) |
 | `/save-as-template` | Save course structure as reusable template |
 | `/create-from-template` | Create new course from existing template |
-| `/review-curriculum` | Validate curriculum quality and alignment |
+| `/list-templates` | List available course templates with details |
+| `/generate-workshop-prep` | Generate dated preparation checklist for delivery |
+| `/process-workshop-feedback` | Analyze feedback and generate improvement report |
 
 ## Skills
 
@@ -198,10 +211,12 @@ Update version in `course-positioning.md` frontmatter when making changes.
 ## Examples
 
 See `examples/` directory for:
-- Sample 1-day workshop curriculum
-- Sample 2-day workshop curriculum
-- Course template examples
-- Assessment rubric samples
+- `course-curriculum-creator.local.md` - Sample configuration file for customizing defaults
+
+See `skills/` subdirectories for worked examples:
+- `skills/blooms-taxonomy/examples/example-objectives-1day.md` - Complete 1-day workshop objective set
+- `skills/blooms-taxonomy/examples/example-objectives-2day.md` - Complete 2-day workshop objective set
+- `skills/backward-design-methodology/examples/example-backward-design-1day.md` - Full backward design walkthrough
 
 ## Contributing
 
