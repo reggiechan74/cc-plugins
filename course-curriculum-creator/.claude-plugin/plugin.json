@@ -1,6 +1,6 @@
 {
   "name": "course-curriculum-creator",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Create professional course curricula for 1-2 day workshops using backward design methodology and Bloom's taxonomy",
   "author": {
     "name": "Reggie Chan"

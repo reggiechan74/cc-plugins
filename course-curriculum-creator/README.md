@@ -92,6 +92,8 @@ The `curriculum-architect` agent will automatically generate a complete curricul
 | `/generate-workshop-prep` | Generate dated preparation checklist for delivery |
 | `/generate-transfer-plan` | Generate post-workshop transfer plan with action items, manager briefings, job aids, and follow-up touchpoints |
 | `/generate-evaluation-plan` | Generate Kirkpatrick L1-L4 evaluation plan with instruments, timelines, and success thresholds |
+| `/adapt-for-virtual` | Adapt an existing in-person curriculum for virtual or hybrid delivery |
+| `/generate-review-package` | Generate stakeholder/SME review package for curriculum approval |
 | `/process-workshop-feedback` | Analyze feedback and generate improvement report |
 
 ## Skills
@@ -120,6 +122,16 @@ Practical guidance for creating inclusive, accessible learning experiences using
 - Multiple Means of Action & Expression (the "how" of learning)
 
 **Triggers**: "apply UDL", "make course accessible", "inclusive design", "universal design for learning"
+
+### virtual-facilitation
+Practical guidance for designing and facilitating effective virtual and hybrid learning experiences:
+- Virtual vs. in-person timing, engagement, and activity differences
+- Activity substitution table for converting physical to digital activities
+- Hybrid equity rules and co-facilitation model
+- Platform-specific tips (Zoom, Teams, Meet)
+- Technology checklists and failure backup planning
+
+**Triggers**: "design virtual workshop", "adapt for remote delivery", "hybrid session", "virtual facilitation"
 
 ## Agents
 
@@ -254,6 +266,14 @@ See `skills/` subdirectories for worked examples:
 - `skills/backward-design-methodology/examples/example-backward-design-1day.md` - Full backward design walkthrough
 
 ## What's New
+
+### v0.6.0 - Delivery & Process
+- New: `/adapt-for-virtual` command for converting in-person curricula to virtual/hybrid
+- New: `/generate-review-package` command for stakeholder/SME review workflow
+- New: `virtual-facilitation` skill with platform-specific guidance
+- Enhanced: `--mode` flag in `/create-course` for virtual/hybrid from the start
+- Enhanced: Delivery mode awareness in `/generate-outline` and `/generate-lesson-plans`
+- Enhanced: Quality reviewer validates delivery mode compliance
 
 ### v0.5.0 - Learning Ecosystem
 - New: `/generate-transfer-plan` command for post-workshop learning transfer (action plans, manager briefings, job aids)
