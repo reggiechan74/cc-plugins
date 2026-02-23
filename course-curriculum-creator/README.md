@@ -189,7 +189,8 @@ CourseName-YYYY-MM-DD/
 ├── 01-planning/
 │   ├── course-positioning.md      # Market fit, audience, value proposition
 │   ├── course-description.md      # Student-facing description
-│   └── learning-objectives.md     # Bloom's-aligned outcomes
+│   ├── learning-objectives.md     # Bloom's-aligned outcomes
+│   └── content-sources.md         # Third-party content & licensing tracker
 ├── 02-design/
 │   ├── course-outline.md          # Module structure with timing
 │   └── lesson-plans.md            # Detailed module plans
@@ -266,6 +267,13 @@ See `skills/` subdirectories for worked examples:
 - `skills/backward-design-methodology/examples/example-backward-design-1day.md` - Full backward design walkthrough
 
 ## What's New
+
+### v1.0.0 - Polish & Completeness
+- Enhanced: `/process-workshop-feedback --pilot` flag for first-run pilot analysis with iteration planning
+- Enhanced: `/create-course` now generates `content-sources.md` for IP/licensing tracking
+- Enhanced: `/generate-lesson-plans` prompts for content source tracking after generation
+- Enhanced: Quality reviewer validates content licensing compliance
+- Enhanced: Curriculum architect tracks content sources in autonomous workflow
 
 ### v0.6.0 - Delivery & Process
 - New: `/adapt-for-virtual` command for converting in-person curricula to virtual/hybrid
