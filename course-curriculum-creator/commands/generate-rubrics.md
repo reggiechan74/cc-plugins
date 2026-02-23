@@ -159,6 +159,14 @@ If settings file doesn't exist, use sensible defaults or prompt user.
 - Differentiate clearly between levels
 - Align with objective's cognitive level
 
+### UDL-Aligned Criteria
+
+When writing rubric criteria, follow UDL Principle 3 (Multiple Means of Action & Expression):
+
+- **Assess content and skill, not format**: Use "Demonstrates understanding of..." not "Writes a paragraph about..."
+- **Allow multiple response formats**: Unless format IS the skill being assessed (e.g., "write a SQL query"), accept verbal, written, diagrammatic, or demonstrated responses
+- **Criteria should be format-neutral**: "Identifies all five forces with supporting evidence" works whether the learner writes, diagrams, or presents verbally
+
 ## File Output Format
 
 ### 03-assessment/rubrics.md

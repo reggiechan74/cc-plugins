@@ -38,10 +38,11 @@ When generating, always compute and write current source hashes to the output fi
 ## Command Behavior
 
 1. Load `backward-design-methodology` skill for Stage 3 guidance
-2. Read course outline for module structure
-3. Read objectives and rubrics for alignment
-4. Generate detailed plans for each module
-5. Write to `02-design/lesson-plans.md`
+2. Load universal-design-for-learning skill for accessibility and inclusive design
+3. Read course outline for module structure
+4. Read objectives and rubrics for alignment
+5. Generate detailed plans for each module
+6. Write to `02-design/lesson-plans.md`
 
 ## Lesson Plan Detail Level
 
@@ -215,6 +216,12 @@ For each module:
 - ✓ Cognitive level matches objective ([Level])
 - ✓ Scaffolding from guided to independent practice
 - ✓ Formative assessment embedded (guided practice, exit ticket)
+
+**Accessibility & UDL Notes:**
+- Representation modes used: [list — e.g., verbal instruction, visual slides, written handout]
+- Engagement options: [any learner choice in this module]
+- Expression alternatives: [how learners can demonstrate learning — e.g., written, verbal, diagram]
+- Accommodation reminders: [any specific notes — e.g., "Provide written instructions for Exercise 2.1 in addition to verbal walkthrough"]
 
 ```
 

@@ -35,10 +35,11 @@ When generating, always compute and write current source hashes to the output fi
 ## Command Behavior
 
 1. Read learning objectives and time allocations
-2. Group objectives into logical modules
-3. Allocate timing for instruction, practice, breaks
-4. Generate structured outline
-5. Write to `02-design/course-outline.md`
+2. Load universal-design-for-learning skill for accessibility and inclusive design guidance
+3. Group objectives into logical modules
+4. Allocate timing for instruction, practice, breaks
+5. Generate structured outline
+6. Write to `02-design/course-outline.md`
 
 ## Module Structure Logic
 
@@ -167,6 +168,21 @@ sourceHashes:
 Prompt: "Review the outline. Would you like me to adjust module timing, regroup objectives, or modify the sequence?"
 
 Next: "Generate detailed lesson plans using `/generate-lesson-plans`"
+
+### UDL Validation (Post-Generation)
+
+After generating the outline, validate each module against UDL minimums:
+
+- **Representation**: Does each module use at least 2 representation modes? (e.g., not all lecture, not all reading)
+  - Flag modules that rely on a single modality
+- **Engagement**: Does each half-day include at least one activity with learner choice?
+  - Flag half-days without choice opportunities
+- **Activity variety**: Do activity types rotate across the day? (individual → pair → group → individual)
+  - Flag sequences of 3+ same-format activities
+- **Breaks**: Are breaks scheduled every 45-60 minutes during instruction?
+  - Flag gaps longer than 60 minutes without breaks
+
+If any check fails, add a note to the outline: "⚠ UDL Note: [specific recommendation]"
 
 ## Incremental Update Mode
 
