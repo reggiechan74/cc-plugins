@@ -331,6 +331,13 @@ For each module:
 - Instructor notes address common issues
 ```
 
+**Content Source Reminder:**
+After generating lesson plans, check if any modules reference third-party content (frameworks, case studies, examples, tools, images). If so, prompt:
+
+"Some modules reference external content. Would you like me to update `01-planning/content-sources.md` with source tracking entries for: [list referenced content]?"
+
+If the user agrees, read `01-planning/content-sources.md` and append entries using the Source Registry entry template for each referenced source.
+
 Prompt: "Review lesson plans. Would you like me to adjust any module's activities, timing, or instructional strategies?"
 
 Next: "Generate student and instructor materials using `/generate-artifacts`"
