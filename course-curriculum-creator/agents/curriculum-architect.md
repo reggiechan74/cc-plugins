@@ -154,6 +154,22 @@ Add validation section to `course-positioning.md`:
 **Validation Date:** [current date]
 ```
 
+### Phase 9b: Transfer Planning
+
+Generate the transfer-of-learning plan using `/generate-transfer-plan`:
+- 30/60/90-day action plans derived from Apply+ objectives
+- Manager briefing for reinforcement support
+- Job aids for each Apply+ objective
+- Follow-up touchpoint schedule
+
+### Phase 9c: Evaluation Planning
+
+Generate the evaluation plan using `/generate-evaluation-plan`:
+- Kirkpatrick Level 1-4 instruments
+- Pre/post assessment alignment with objectives
+- Level 3 behavior observation instruments
+- Level 4 business metric connections (from TNA if available)
+
 ## Phase 10: Deliverables & Handoff (5 minutes)
 
 ### Step 10.1: Generate Summary Report
@@ -172,6 +188,8 @@ I've designed a comprehensive [duration] curriculum on [topic] for [audience].
 4. `02-design/course-outline.md` - [N] modules with timing
 5. `02-design/lesson-plans.md` - Detailed instructor guide
 6. `03-assessment/rubrics.md` - 1-5 scale assessment criteria
+7. `04-materials/transfer-plan.md` — Transfer of learning plan
+8. `03-assessment/evaluation-plan.md` — Kirkpatrick evaluation plan
 
 ## Curriculum Highlights
 - **Learning Outcomes:** [Brief list]
