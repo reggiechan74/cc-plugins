@@ -1,7 +1,7 @@
 ---
 name: create-course
 description: Initialize a new course curriculum project with directory structure and foundational files
-argument-hint: "[Course Title] [--duration 1-day|2-day] [--location path] [--series name --level N]"
+argument-hint: "[Course Title] [--duration 1-day|2-day] [--mode in-person|virtual|hybrid] [--location path] [--series name --level N]"
 allowed-tools:
   - AskUserQuestion
   - Bash
@@ -55,12 +55,13 @@ Use AskUserQuestion to gather missing information:
 - Course title (if not provided)
 - Duration: 1-day or 2-day workshop
 - Target audience description
+- Delivery mode: in-person (default), virtual, or hybrid
 - Output location (default from settings or prompt user)
 - Prerequisites (optional)
 
 **Args-based mode (all required args provided):**
 ```bash
-/create-course "PropTech Fundamentals" --duration 2-day --location ~/courses
+/create-course "PropTech Fundamentals" --duration 2-day --mode virtual --location ~/courses
 ```
 
 Parse arguments and create immediately without prompts.
@@ -125,6 +126,52 @@ Series: [series-name] (Level [N] of [total])
 Prerequisites from Level [N-1]: [list handoff outcomes]
 
 Next: Generate objectives within this level's Bloom's bands using /generate-objectives
+```
+
+## Delivery Mode
+
+When `--mode` is provided (or selected interactively):
+
+### In-Person (default)
+No changes to existing behavior. Standard workshop design.
+
+### Virtual
+Adds the following to `course-positioning.md`:
+- `deliveryMode: virtual` in YAML frontmatter
+- Platform requirements section (video conferencing, digital whiteboard, chat)
+- Virtual logistics section (tech check schedule, backup plans)
+
+Sets mode-specific defaults that propagate to downstream commands:
+- **Max session length:** 4 hours per day (not 6)
+- **Break frequency:** Every 45 minutes (not 60)
+- **Break duration:** 10 minutes (not 5-10)
+- **Activity format:** Breakout rooms replace table groups; digital collaboration replaces physical materials
+- **Engagement cadence:** Interaction point every 15-20 minutes (polls, chat, reactions)
+- **Buffer time:** 15% (not 10%)
+
+### Hybrid
+Adds the following to `course-positioning.md`:
+- `deliveryMode: hybrid` in YAML frontmatter
+- Dual-experience design notes (in-room and remote participants)
+- Technology requirements for both audiences
+- Equity considerations section
+
+Sets mode-specific defaults:
+- Inherits virtual timing constraints (shorter sessions, more breaks)
+- Adds camera/audio requirements for in-room
+- Activities must work for both audiences simultaneously
+- Facilitator attention split guidance
+
+### Frontmatter Addition
+
+When generating `course-positioning.md`, add to YAML frontmatter:
+```yaml
+deliveryMode: "[in-person|virtual|hybrid]"
+```
+
+And add to the "## Workshop Format" section:
+```markdown
+- **Delivery:** [In-person intensive workshop | Virtual workshop via [Platform] | Hybrid (in-room + remote participants)]
 ```
 
 ## Directory Naming
@@ -202,7 +249,7 @@ lastUpdated: YYYY-MM-DD
 
 - **Duration:** [1-day or 2-day]
 - **Format:** [From settings default_activity_format or TBD]
-- **Delivery:** In-person intensive workshop
+- **Delivery:** [In-person intensive workshop | Virtual workshop via [Platform] | Hybrid (in-room + remote participants)]
 
 ## Next Steps
 
