@@ -233,6 +233,35 @@ Use the Skill tool to load:
 - Flag activities that won't work in the specified delivery mode
 - Note missing technology requirements
 
+## 5d. Content Licensing Compliance
+
+**Check curriculum for content licensing and attribution compliance:**
+
+### Source Tracking
+- Does `01-planning/content-sources.md` exist?
+- Are all third-party frameworks, models, and case studies referenced in lesson plans tracked in content-sources.md?
+- Are there untracked external references in lesson plans or artifacts?
+
+### Attribution Completeness
+- Do all sources with "Attribution Required: Yes" have attribution text in the relevant course materials (handouts, slides, instructor guide)?
+- Are framework citations accurate and complete?
+
+### License Compliance
+- Are all sources marked with a valid license type?
+- Are any "Permission Requested" entries still unresolved?
+- Are any licenses expired or expiring before the next delivery?
+- If course charges fees, are any CC-BY-NC sources being used improperly?
+
+### Pre-Delivery Readiness
+- Is the pre-delivery checklist in content-sources.md complete?
+- Are there any "Denied" permission entries that require content removal?
+
+**Document findings:**
+- Rate content licensing compliance: COMPLIANT / PARTIALLY COMPLIANT / NON-COMPLIANT / NOT TRACKED
+- Flag untracked external content references
+- Flag unresolved permission requests
+- Note upcoming license expirations
+
 ## 6. Generate Validation Report
 
 Create a comprehensive validation report with the following structure:
@@ -298,6 +327,14 @@ Create a comprehensive validation report with the following structure:
 - Technology requirements completeness
 - Hybrid equity assessment (if applicable)
 
+### Content Licensing Compliance
+**Status**: PASS / FAIL / N/A
+
+- Source tracking completeness
+- Attribution accuracy in materials
+- License compliance status
+- Unresolved permissions or expirations
+
 ### Detailed Findings
 
 For each issue found, provide:
@@ -333,6 +370,7 @@ Prioritized list of changes needed:
 - **Stage 3 (Activities)**: All objectives supported, assessment preparation clear, scaffolding evident, feasible timing
 - **Overall Coherence**: Complete vertical alignment, no orphaned elements, adequate timing buffer, consistent terminology
 - **UDL & Accessibility**: Each module uses 2+ representation modes, each half-day includes learner choice, assessments accept multiple formats, proactive accommodations designed in
+- **Content Licensing**: All third-party content tracked in content-sources.md, attributions present in materials, no unresolved permissions, no expired licenses
 
 **Overall quality ratings:**
 
