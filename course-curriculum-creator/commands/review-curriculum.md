@@ -73,6 +73,37 @@ When user invokes `/review-curriculum [course-code-or-path]`:
    - Flag discrepancies > 10% between any two sources
    - Verify total instruction time fits within workshop duration (with 10-15% buffer)
 
+   **Series Alignment (if course is linked to a series):**
+
+   If `course-positioning.md` contains `seriesName` and `seriesLevel`:
+
+   1. Read the series plan file
+   2. Validate with **CRITICAL** severity:
+      - **Bloom's distribution compliance:** At least 60% of objectives fall within the level's primary band. Flag as CRITICAL if below 50%.
+      - **Stretch zone usage:** Stretch zone objectives include scaffolding and guided practice in lesson plans. Flag as CRITICAL if stretch objectives lack scaffolding.
+      - **Assumed floor violations:** No objectives re-teach content from the assumed floor. Flag as CRITICAL if formal objectives duplicate prior level's handoff outcomes.
+      - **Prerequisite chain:** Prior level's handoff outcomes appear in this course's prerequisites section. Flag as CRITICAL if missing.
+      - **Scope containment:** Course topics stay within the level's defined scope. Flag as HIGH if topics encroach on other levels' domains.
+      - **Handoff outcome coverage:** This level's handoff outcomes (from series plan) are covered by at least one objective. Flag as CRITICAL if a handoff outcome has no matching objective.
+
+   3. Add to validation report:
+      ```
+      ### Series Alignment Validation
+      **Status:** PASS / FAIL
+      **Series:** [name] | **Level:** [N]
+
+      | Check | Status | Details |
+      |-------|--------|---------|
+      | Bloom's distribution | PASS/FAIL | [X]% in primary band (target: 60%+) |
+      | Stretch scaffolding | PASS/FAIL | [N] stretch objectives, [N] with scaffolding |
+      | Assumed floor | PASS/FAIL | [N] objectives below floor |
+      | Prerequisite chain | PASS/FAIL | [N] of [N] handoffs present as prereqs |
+      | Scope containment | PASS/FAIL | [notes] |
+      | Handoff coverage | PASS/FAIL | [N] of [N] handoffs covered by objectives |
+      ```
+
+   Note: If course is NOT linked to a series, skip this entire section silently.
+
 5. **Generate validation report:**
 
    Create a report with:
