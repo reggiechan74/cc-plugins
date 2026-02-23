@@ -32,6 +32,7 @@ The command provides the standard file patterns and directory structure to look 
 Use the Skill tool to load:
 - `backward-design-methodology` skill (provides UbD framework guidance)
 - `blooms-taxonomy` skill (provides cognitive level guidance and verb lists)
+- `universal-design-for-learning` skill (provides UDL framework and accessibility validation guidance)
 
 ## 2. Stage 1 Validation: Learning Outcomes
 
@@ -166,6 +167,39 @@ Use the Skill tool to load:
 - Unprepared assessments (assessment without supporting activities)
 - Topic coverage gaps (course description promises not met)
 
+## 5b. UDL & Accessibility Validation
+
+**Check curriculum for Universal Design for Learning compliance:**
+
+### Representation (The "What")
+- Does each module present key concepts in 2+ formats?
+- Are visual aids used alongside verbal/text content?
+- Are technical terms defined at first use?
+- Do complex processes have visual representations?
+
+### Engagement (The "Why")
+- Does each half-day include at least one activity with learner choice?
+- Is there a mix of individual, pair, and group work across the day?
+- Do low-stakes practice activities precede assessed performance?
+
+### Action & Expression (The "How")
+- Do assessments allow 2+ response formats for major tasks?
+- Do timed activities include prioritization guidance?
+- Do rubrics assess content/skill rather than response format?
+
+### Proactive Accommodation
+- Are materials specified as available in digital and print formats?
+- Do slides meet minimum font size (14pt)?
+- Is color never the sole information carrier?
+- Are breaks scheduled every 45-60 minutes?
+- Is buffer time built into the schedule?
+
+**Document findings:**
+- Rate each UDL principle: STRONG / ADEQUATE / NEEDS IMPROVEMENT
+- Flag specific modules that lack representation variety
+- Flag assessments that penalize response format
+- Note accommodation gaps
+
 ## 6. Generate Validation Report
 
 Create a comprehensive validation report with the following structure:
@@ -214,6 +248,15 @@ Create a comprehensive validation report with the following structure:
 - Consistency check results
 - Recommendations for improvement
 
+### UDL & Accessibility Validation
+**Status**: PASS / FAIL
+
+- Representation analysis (per-module modality count)
+- Engagement analysis (choice opportunities per half-day)
+- Expression analysis (assessment format flexibility)
+- Accommodation readiness
+- Specific issues found with recommendations
+
 ### Detailed Findings
 
 For each issue found, provide:
@@ -248,6 +291,7 @@ Prioritized list of changes needed:
 - **Stage 2 (Assessments)**: 100% objective coverage, methods match cognitive levels, rubrics align with objectives, realistic timing
 - **Stage 3 (Activities)**: All objectives supported, assessment preparation clear, scaffolding evident, feasible timing
 - **Overall Coherence**: Complete vertical alignment, no orphaned elements, adequate timing buffer, consistent terminology
+- **UDL & Accessibility**: Each module uses 2+ representation modes, each half-day includes learner choice, assessments accept multiple formats, proactive accommodations designed in
 
 **Overall quality ratings:**
 
