@@ -25,6 +25,15 @@ Create compelling student-facing course description for marketing, course catalo
 3. Generate student-facing description
 4. Write to `01-planning/course-description.md`
 
+## Settings Integration
+
+Read from `.claude/course-curriculum-creator.local.md` if exists:
+- `instructor_name`: Populate the "About the Instructor" section
+- `instructor_bio`: Populate the "About the Instructor" section with credentials and experience
+- `organization`: Include in course details and registration information
+
+If settings file doesn't exist, use sensible defaults or prompt user.
+
 ## Description Components
 
 **Essential elements:**

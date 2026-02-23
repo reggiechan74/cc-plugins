@@ -26,6 +26,13 @@ Save current course structure as a reusable template for creating variants.
 4. Create template metadata
 5. Confirm template saved
 
+## Settings Integration
+
+Read from `.claude/course-curriculum-creator.local.md` if exists:
+- `template_directory`: Where to store saved templates (default: `~/.claude/course-templates/`)
+
+If settings file doesn't exist, use sensible defaults or prompt user.
+
 ## Template Storage
 
 **Location:** From settings `template_directory` or default `~/.claude/course-templates/`

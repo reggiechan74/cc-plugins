@@ -18,6 +18,13 @@ Create supporting course materials beyond core curriculum documents.
 - Depends on artifact type
 - Most artifacts need lesson-plans.md and objectives.md
 
+## Settings Integration
+
+Read from `.claude/course-curriculum-creator.local.md` if exists:
+- `instructor_name`: Use as facilitator name in instructor guide header and preparation checklists
+
+If settings file doesn't exist, use sensible defaults or prompt user.
+
 ## Artifact Types
 
 ### --type handout

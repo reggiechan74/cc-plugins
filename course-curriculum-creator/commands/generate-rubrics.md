@@ -20,6 +20,19 @@ Create assessment rubrics aligned to learning objectives following backward desi
 - Must be run within course project directory
 - Requires `01-planning/learning-objectives.md` to exist
 
+## Staleness Check
+
+Before generating, check if source files have changed since this file was last generated:
+
+1. If the output file `03-assessment/rubrics.md` already exists, read its YAML frontmatter `sourceHashes`
+2. Compute current hash of each source file: `md5sum 01-planning/learning-objectives.md | cut -c1-8`
+3. Compare hashes:
+   - If hashes match: sources are unchanged, proceed normally
+   - If hashes differ: warn the user: "⚠ Source file learning-objectives.md has changed since this file was last generated. Regenerating will incorporate these changes."
+   - If output file doesn't exist: skip check, proceed with generation
+
+When generating, always compute and write current source hashes to the output file's frontmatter.
+
 ## Command Behavior
 
 1. **Load required skill**: Load `backward-design-methodology` skill for assessment design guidance
@@ -55,6 +68,14 @@ Reference `references/assessment-design.md` for detailed rubric development guid
 - Rubric type preference if multiple objectives
 - Specific criteria priorities
 - Any custom requirements
+
+## Settings Integration
+
+Read from `.claude/course-curriculum-creator.local.md` if exists:
+- `rubric_scale`: Default scoring scale (e.g., 1-4 or 1-5) when not specified via arguments
+- `rubric_type`: Default rubric type (analytical, performance, or holistic) when not specified via arguments
+
+If settings file doesn't exist, use sensible defaults or prompt user.
 
 ## Rubric Types
 
@@ -152,6 +173,10 @@ courseVersion: [match course version]
 rubricScale: 1-5
 rubricType: analytical
 lastUpdated: YYYY-MM-DD
+sourceFiles:
+  learning-objectives: "01-planning/learning-objectives.md"
+sourceHashes:
+  learning-objectives: "[md5-first-8]"
 ---
 
 # Assessment Rubrics

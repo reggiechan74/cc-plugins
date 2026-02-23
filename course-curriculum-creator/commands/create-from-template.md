@@ -28,6 +28,13 @@ Generate new course by adapting a saved template.
 5. Generate new dates/versions
 6. Report created course with customization guidance
 
+## Settings Integration
+
+Read from `.claude/course-curriculum-creator.local.md` if exists:
+- `template_directory`: Where to look for saved templates (default: `~/.claude/course-templates/`)
+
+If settings file doesn't exist, use sensible defaults or prompt user.
+
 ## Arguments
 
 **Required:**
