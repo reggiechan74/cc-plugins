@@ -90,6 +90,8 @@ The `curriculum-architect` agent will automatically generate a complete curricul
 | `/create-from-template` | Create new course from existing template |
 | `/list-templates` | List available course templates with details |
 | `/generate-workshop-prep` | Generate dated preparation checklist for delivery |
+| `/generate-transfer-plan` | Generate post-workshop transfer plan with action items, manager briefings, job aids, and follow-up touchpoints |
+| `/generate-evaluation-plan` | Generate Kirkpatrick L1-L4 evaluation plan with instruments, timelines, and success thresholds |
 | `/process-workshop-feedback` | Analyze feedback and generate improvement report |
 
 ## Skills
@@ -252,6 +254,14 @@ See `skills/` subdirectories for worked examples:
 - `skills/backward-design-methodology/examples/example-backward-design-1day.md` - Full backward design walkthrough
 
 ## What's New
+
+### v0.5.0 - Learning Ecosystem
+- New: `/generate-transfer-plan` command for post-workshop learning transfer (action plans, manager briefings, job aids)
+- New: `/generate-evaluation-plan` command for Kirkpatrick L1-L4 evaluation design
+- Enhanced: Differentiated instruction (floor/scaffold/extension tiers) in lesson plan template
+- Enhanced: Quality reviewer validates differentiation in activities
+- Enhanced: Curriculum architect includes transfer and evaluation planning
+- Enhanced: Transfer plan prerequisite hook
 
 ### v0.4.0 - Professional L&D Foundations
 - New: `/assess-needs` command for training needs assessment (TNA)
