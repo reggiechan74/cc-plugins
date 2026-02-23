@@ -1,7 +1,7 @@
 ---
 name: generate-artifacts
 description: Generate additional course materials (handouts, guides, slides, assessments)
-argument-hint: "--type [handout|instructor-guide|slides|pre-assessment|post-assessment|evaluation|all]"
+argument-hint: "--type [handout|instructor-guide|slides|pre-assessment|post-assessment|evaluation|pre-work|post-work|all]"
 allowed-tools:
   - Bash
   - Read
@@ -73,8 +73,32 @@ Output: `04-materials/post-assessment.md`
 - Improvement suggestions
 Output: `04-materials/course-evaluation.md`
 
+### --type pre-work
+**Pre-Course Preparation Materials**
+- Reading assignments or video links for foundational concepts
+- Self-assessment (current knowledge baseline)
+- Preparation exercises for Day 1 readiness
+- Environment/tool setup instructions (if applicable)
+- Pre-reading for technical vocabulary
+
+Derived from Remember/Understand-level objectives in `01-planning/learning-objectives.md`.
+Linked to specific Day 1 morning modules from `02-design/course-outline.md`.
+Output: `04-materials/pre-work.md`
+
+### --type post-work
+**Post-Course Reinforcement Materials**
+- Application exercises tied to Apply+ level objectives
+- Reflection prompts for each major learning outcome
+- Resource compilation (further reading, tools, communities)
+- Learning journal template for ongoing practice
+- 30-day challenge or practice schedule
+
+Derived from Apply/Analyze/Evaluate/Create objectives in `01-planning/learning-objectives.md`.
+Linked to capstone or final module activities from `02-design/course-outline.md`.
+Output: `04-materials/post-work.md`
+
 ### --type all
-Generate all artifact types above
+Generate all artifact types above (handout, instructor-guide, slides, pre-assessment, post-assessment, evaluation, pre-work, post-work)
 
 ## Student Handout Structure
 
@@ -277,6 +301,196 @@ lastUpdated: YYYY-MM-DD
 - Review what worked/didn't
 - Update lesson plans
 - Note for next delivery
+```
+
+## Pre-Work Structure
+
+```markdown
+---
+title: Pre-Course Preparation - [Course Title]
+date: YYYY-MM-DD
+version: 0.1.0
+courseVersion: [match]
+lastUpdated: YYYY-MM-DD
+dueDate: [2 business days before workshop]
+estimatedTime: [30-60 minutes]
+---
+
+# Pre-Course Preparation
+
+## [Course Title]
+
+**Workshop Date:** [Date]
+**Please complete by:** [Due date — 2 business days before]
+**Estimated time:** [30-60 minutes]
+
+---
+
+## Welcome
+
+[Brief welcome explaining why pre-work matters and how it will make the workshop more effective]
+
+---
+
+## 1. Self-Assessment: Where Are You Now?
+
+Rate your current confidence with these topics (1 = No experience, 5 = Very confident):
+
+| Topic | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| [Topic from Understand-level objective 1] | | | | | |
+| [Topic from Understand-level objective 2] | | | | | |
+| [Topic from course positioning] | | | | | |
+
+---
+
+## 2. Foundational Reading
+
+### Required Reading (15-20 minutes)
+
+[Brief summaries or links to foundational content that maps to Remember/Understand objectives. Keep concise — focus on vocabulary and key concepts that will be built upon in the workshop.]
+
+**Reading 1:** [Title]
+[2-3 paragraph summary or link]
+**Key takeaway:** [One sentence]
+
+**Reading 2:** [Title]
+[2-3 paragraph summary or link]
+**Key takeaway:** [One sentence]
+
+---
+
+## 3. Preparation Exercise (10-15 minutes)
+
+[A simple exercise that activates prior knowledge and prepares learners for Day 1 activities]
+
+**Exercise:** [Description]
+
+**Your response:**
+[Space for learner to write/think]
+
+---
+
+## 4. Environment Setup (if applicable)
+
+[Technical setup instructions — software installation, account creation, file downloads]
+
+- [ ] [Setup step 1]
+- [ ] [Setup step 2]
+- [ ] [Verification: how to confirm setup is complete]
+
+---
+
+## 5. What to Bring
+
+- [ ] Laptop (if applicable)
+- [ ] This completed pre-work document
+- [ ] [Domain-specific items]
+- [ ] Questions or scenarios from your own work context
+
+---
+
+## Questions?
+
+Contact [instructor name] at [contact method] if you have questions about the pre-work or need accommodations for the workshop.
+```
+
+## Post-Work Structure
+
+```markdown
+---
+title: Post-Course Reinforcement - [Course Title]
+date: YYYY-MM-DD
+version: 0.1.0
+courseVersion: [match]
+lastUpdated: YYYY-MM-DD
+---
+
+# Post-Course Reinforcement
+
+## [Course Title]
+
+**Workshop Completed:** [Date]
+**Reinforcement Period:** 30 days
+
+---
+
+## Your Learning Journey Continues
+
+The workshop gave you foundational skills. This guide helps you apply and deepen them over the next 30 days. Research shows that applying new skills within 48 hours dramatically improves retention.
+
+---
+
+## Week 1: Immediate Application (Days 1-7)
+
+### Priority Actions
+
+Pick ONE thing from the workshop to apply this week:
+
+**Objective:** [From Apply-level objective]
+**Exercise:** [Specific application task related to their work]
+**Success indicator:** [Observable outcome]
+
+### Reflection
+
+After applying the skill, note:
+- What worked well?
+- What was harder than expected?
+- What would you do differently?
+
+---
+
+## Week 2: Deepening Practice (Days 8-14)
+
+**Objective:** [From Analyze-level objective, if exists]
+**Exercise:** [More complex application building on Week 1]
+**Success indicator:** [Observable outcome]
+
+---
+
+## Week 3: Integration (Days 15-21)
+
+**Objective:** [From Evaluate/Create-level objective, if exists]
+**Exercise:** [Integration task combining multiple workshop skills]
+**Success indicator:** [Observable outcome]
+
+---
+
+## Week 4: Reflection & Planning (Days 22-30)
+
+### Self-Assessment: Where Are You Now?
+
+Re-rate your confidence (compare to pre-work self-assessment):
+
+| Topic | Before | After | Growth |
+|---|---|---|---|
+| [Topic 1] | [pre-rating] | | |
+| [Topic 2] | [pre-rating] | | |
+
+### Continued Learning Resources
+
+**Books/Articles:**
+- [Resource 1 — brief description and why it's relevant]
+- [Resource 2]
+
+**Online Resources:**
+- [Resource 1 — communities, tools, courses]
+- [Resource 2]
+
+**Practice Opportunities:**
+- [Suggestion 1 for ongoing skill development]
+- [Suggestion 2]
+
+### Learning Journal Template
+
+Use this for ongoing reflection:
+
+**Date:** ___
+**Skill practiced:** ___
+**Context:** ___
+**What happened:** ___
+**What I learned:** ___
+**Next step:** ___
 ```
 
 ## Post-Generation
