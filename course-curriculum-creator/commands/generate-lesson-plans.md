@@ -39,10 +39,11 @@ When generating, always compute and write current source hashes to the output fi
 
 1. Load `backward-design-methodology` skill for Stage 3 guidance
 2. Load universal-design-for-learning skill for accessibility and inclusive design
-3. Read course outline for module structure
-4. Read objectives and rubrics for alignment
-5. Generate detailed plans for each module
-6. Write to `02-design/lesson-plans.md`
+3. If course-positioning.md has `deliveryMode: virtual` or `deliveryMode: hybrid`, load `virtual-facilitation` skill for platform-specific activity design
+4. Read course outline for module structure
+5. Read objectives and rubrics for alignment
+6. Generate detailed plans for each module
+7. Write to `02-design/lesson-plans.md`
 
 ## Lesson Plan Detail Level
 
@@ -400,6 +401,42 @@ When generating lesson plans, design each module's practice activities with thre
 - At the 50% mark: check class progress, decide if adjustment needed
 - Signals to watch: body language, question frequency, pace of work, error patterns
 - Default assumption: mixed-level audience until evidence suggests otherwise
+
+## Delivery Mode Adaptations
+
+Read `deliveryMode` from `01-planning/course-positioning.md` YAML frontmatter.
+
+### Virtual Mode Lesson Plan Adjustments
+
+When generating lesson plans for virtual delivery:
+
+**Module Flow Changes:**
+- **Introduction:** Add tech check/engagement activity (poll, chat question) in first 2 minutes
+- **Instruction:** Cap at 10 minutes before an interaction point (chat question, poll, or quick exercise)
+- **Guided Practice:** Use breakout rooms (3-4 people, 5-10 min) instead of table groups
+- **Independent Practice:** Provide digital workspace (shared doc, online tool); allow screen share for demonstration
+- **Debrief:** Use chat waterfall or gallery view share-out instead of physical gallery walk
+
+**Per-Module Additions:**
+```markdown
+**Virtual Facilitation Notes:**
+- Platform features used: [breakout rooms, polls, shared whiteboard, annotation, chat]
+- Engagement checkpoints: [every X minutes — specify the interaction type]
+- Tech failure backup: [what to do if primary activity tool fails]
+- Recording considerations: [what to record, privacy notes]
+```
+
+**Activity Substitution Guidance:**
+For each activity in the lesson plan, if deliveryMode is virtual or hybrid, specify both:
+- Primary activity (using digital tools)
+- Backup activity (if technology fails)
+
+### Hybrid Mode Lesson Plan Adjustments
+
+Inherit all virtual adjustments PLUS:
+- Note which activities run identically for both audiences vs. require parallel versions
+- Specify co-facilitator responsibilities per module
+- Add equity checks: "Can remote participants participate equally in this activity?"
 
 ---
 

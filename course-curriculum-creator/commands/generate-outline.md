@@ -36,10 +36,11 @@ When generating, always compute and write current source hashes to the output fi
 
 1. Read learning objectives and time allocations
 2. Load universal-design-for-learning skill for accessibility and inclusive design guidance
-3. Group objectives into logical modules
-4. Allocate timing for instruction, practice, breaks
-5. Generate structured outline
-6. Write to `02-design/course-outline.md`
+3. If course-positioning.md has `deliveryMode: virtual` or `deliveryMode: hybrid`, load `virtual-facilitation` skill for mode-specific timing and activity guidance
+4. Group objectives into logical modules
+5. Allocate timing for instruction, practice, breaks
+6. Generate structured outline
+7. Write to `02-design/course-outline.md`
 
 ## Module Structure Logic
 
@@ -71,6 +72,40 @@ When generating, always compute and write current source hashes to the output fi
 - Guided practice: 25-35%
 - Independent practice: 30-40%
 - Assessment/debrief: 10-15%
+
+## Delivery Mode Adjustments
+
+Read `deliveryMode` from `01-planning/course-positioning.md` YAML frontmatter.
+
+### If deliveryMode is "virtual"
+
+Override default timing:
+- **Max session length:** 3.5-4 hours (not 6)
+- **Module duration:** 45-60 minutes (not 60-120)
+- **Break frequency:** Every 45 minutes
+- **Break duration:** 10 minutes minimum
+- **Buffer time:** 15% (not 10%)
+- **Total instruction time (1-day):** ~5 hours across 2 sessions with extended lunch
+- **Total instruction time (2-day):** ~10 hours across 4 sessions
+
+Apply from virtual-facilitation skill:
+- Chunk large modules into 45-min segments
+- Add engagement checkpoints every 15-20 minutes within modules
+- Replace physical activities with virtual substitutes (breakout rooms, digital whiteboards, chat activities)
+- Add tech check slot at workshop start (15 min)
+- Add re-engagement activity after each break
+
+### If deliveryMode is "hybrid"
+
+Apply virtual timing constraints PLUS:
+- Add 15 additional minutes at start for dual-setup verification
+- Note co-facilitator requirement for each module
+- Flag activities that need parallel in-room and remote versions
+- Increase buffer to 20%
+
+### If deliveryMode is "in-person" (or not specified)
+
+No changes — use existing defaults.
 
 ## File Output
 
