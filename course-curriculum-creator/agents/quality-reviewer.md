@@ -1,7 +1,7 @@
 ---
 name: quality-reviewer
 description: Use this agent when you need to validate curriculum quality, check backward design alignment, or review pedagogical soundness of course materials. Examples: <example>Context: User just finished generating a curriculum using curriculum-architect agent. assistant: "I'll now validate the curriculum quality using the quality-reviewer agent to ensure backward design alignment." <commentary>After curriculum generation, proactively trigger quality validation to catch issues before delivery.</commentary></example> <example>Context: User is preparing to deliver a course and wants to ensure quality. user: "Can you review my Building AI Agents curriculum and make sure it's pedagogically sound?" assistant: "I'll use the quality-reviewer agent to perform a comprehensive validation of your curriculum." <commentary>Explicit request for curriculum validation should trigger this agent.</commentary></example> <example>Context: User mentions concerns about alignment between objectives and assessments. user: "I'm not sure if my assessments actually test what the learning objectives promise" assistant: "Let me validate the backward design alignment using the quality-reviewer agent." <commentary>Questions about objective-assessment alignment indicate need for quality review.</commentary></example> <example>Context: User runs review command after curriculum updates. user: "/review-curriculum 021-2-201" assistant: "I'll perform a quality review of the 021-2-201 curriculum." <commentary>Direct command invocation should trigger quality validation process.</commentary></example>
-model: claude-sonnet-4-5
+model: sonnet
 color: green
 tools: ["Read", "Write", "Skill", "Glob", "Bash"]
 ---
@@ -22,21 +22,10 @@ When validating a curriculum, follow this comprehensive process:
 
 ## 1. Curriculum Discovery and Loading
 
-**First, identify what needs to be reviewed:**
+Read `${CLAUDE_PLUGIN_ROOT}/commands/review-curriculum.md` using the Read tool.
+Follow its curriculum discovery instructions to locate and load all curriculum files.
 
-- If user provided a course code (e.g., "021-2-201"), locate the curriculum directory
-- If user mentioned a course name, search for matching directory
-- Default location pattern: `/home/codespace/.claude/plugins/course-curriculum-creator/curricula/[course-code]/`
-
-**Load all curriculum components:**
-
-Use Glob to find all markdown files in the curriculum directory, then Read:
-- `00_Course_Positioning.md` - Course context and rationale
-- `01_Learning_Outcomes.md` - Stage 1: Desired Results
-- `02_Assessment_Plan.md` - Stage 2: Evidence of Learning
-- `03_Learning_Activities.md` - Stage 3: Learning Experiences
-- `04_Workshop_Schedule.md` - Timing and sequencing
-- `rubrics/*.md` - Assessment rubrics (if present)
+The command provides the standard file patterns and directory structure to look for.
 
 **Load pedagogical reference materials:**
 
@@ -270,7 +259,7 @@ Prioritized list of changes needed:
 # Output Format
 
 **Save validation report to:**
-`/home/codespace/.claude/plugins/course-curriculum-creator/curricula/[course-code]/VALIDATION_REPORT.md`
+`${CLAUDE_PLUGIN_ROOT}/curricula/[course-code]/VALIDATION_REPORT.md`
 
 **Report must include:**
 - YAML front matter with date, course code, overall rating, validator (quality-reviewer agent)
