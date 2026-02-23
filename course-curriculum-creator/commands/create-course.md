@@ -31,7 +31,8 @@ When user invokes `/create-course [CourseName]`:
    ├── 01-planning/
    │   ├── course-positioning.md
    │   ├── course-description.md
-   │   └── learning-objectives.md
+   │   ├── learning-objectives.md
+   │   └── content-sources.md
    ├── 02-design/
    │   ├── course-outline.md
    │   └── lesson-plans.md
@@ -43,6 +44,7 @@ When user invokes `/create-course [CourseName]`:
 
 3. **Generate initial files**:
    - `course-positioning.md` with YAML frontmatter and template content
+   - `content-sources.md` with tracking template (see File Generation section)
    - `README.md` in project root with course overview
    - `.gitignore` (optional, based on settings)
 
@@ -363,6 +365,100 @@ Use `/generate-artifacts` command to generate:
 - Supply lists
 ```
 
+### 5. content-sources.md
+
+```markdown
+---
+title: Content Sources & Licensing - [Course Title]
+date: YYYY-MM-DD
+version: 0.1.0
+status: tracking
+lastUpdated: YYYY-MM-DD
+---
+
+# Content Sources & Licensing Tracker
+
+## [Course Title]
+
+**Purpose:** Track all third-party content, citations, and licensing requirements used in this course. Update this document whenever external content is incorporated into course materials.
+
+**Why This Matters:** Professional course delivery requires clear attribution, license compliance, and awareness of content expiration. This tracker prevents IP violations and ensures materials can be legally distributed.
+
+---
+
+## Source Registry
+
+[Add entries as content is incorporated during lesson plan and artifact development]
+
+### Entry Template
+
+| Field | Value |
+|-------|-------|
+| **Source Title** | [Title of source material] |
+| **Author/Creator** | [Name or organization] |
+| **Source Type** | [Book / Article / Video / Image / Framework / Tool / Dataset / Case Study / Software] |
+| **URL/Location** | [Link or citation] |
+| **License Type** | [CC-BY / CC-BY-SA / CC-BY-NC / MIT / Proprietary / Fair Use / Public Domain / Permission Granted] |
+| **Usage in Course** | [Which module(s) and how it's used: quoted, adapted, referenced, screenshot] |
+| **Attribution Required** | [Yes — exact text / No] |
+| **Permission Status** | [Not needed / Requested / Granted / Denied] |
+| **Expiration Date** | [If license or permission has a time limit, otherwise "None"] |
+| **Notes** | [Any restrictions, conditions, or context] |
+
+---
+
+## Quick Reference: License Types
+
+| License | Can Use in Course? | Can Distribute Handouts? | Attribution Needed? | Can Modify? |
+|---------|-------------------|--------------------------|--------------------|----|
+| **Public Domain** | Yes | Yes | No (but good practice) | Yes |
+| **CC-BY** | Yes | Yes | Yes | Yes |
+| **CC-BY-SA** | Yes | Yes (share-alike) | Yes | Yes (share-alike) |
+| **CC-BY-NC** | Yes (if not charging) | Depends on fee structure | Yes | Yes |
+| **Fair Use** | Limited (short excerpts) | Limited | Yes | Limited |
+| **Proprietary** | Only with permission | Only with permission | Per agreement | No |
+| **Permission Granted** | Per agreement | Per agreement | Per agreement | Per agreement |
+
+---
+
+## Frameworks & Models Used
+
+[Track conceptual frameworks referenced in the course — these may have specific citation requirements]
+
+| Framework/Model | Creator | Citation | License/Usage Notes |
+|----------------|---------|----------|-------------------|
+| [e.g., ADDIE Model] | [Creator] | [Proper citation] | [Public domain / Citation required / etc.] |
+
+---
+
+## Images, Diagrams & Media
+
+[Track visual assets separately — these have stricter licensing requirements]
+
+| Asset | Source | License | Used In | Attribution Text |
+|-------|--------|---------|---------|-----------------|
+| [Description] | [Source] | [License] | [Module/material] | [Required attribution] |
+
+---
+
+## Pre-Delivery Checklist
+
+- [ ] All sources with "Permission Requested" status have been resolved
+- [ ] All required attributions are included in course materials
+- [ ] No expired licenses are in use
+- [ ] Proprietary content has documented permission
+- [ ] Handout distribution rights are confirmed for all included content
+- [ ] Framework citations are accurate and complete
+
+---
+
+## Update Log
+
+| Date | Change | Updated By |
+|------|--------|-----------|
+| [YYYY-MM-DD] | Initial tracker created | [Name] |
+```
+
 ## Completion Message
 
 After successful creation, output to user:
@@ -374,7 +470,8 @@ Structure created:
   ├── 01-planning/
   │   ├── course-positioning.md (✓ initialized)
   │   ├── course-description.md (pending)
-  │   └── learning-objectives.md (pending)
+  │   ├── learning-objectives.md (pending)
+  │   └── content-sources.md (✓ initialized)
   ├── 02-design/
   │   ├── course-outline.md (pending)
   │   └── lesson-plans.md (pending)
