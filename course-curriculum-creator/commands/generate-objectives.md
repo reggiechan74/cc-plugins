@@ -32,6 +32,68 @@ Before generating, check if source files have changed since this file was last g
 
 When generating, always compute and write current source hashes to the output file's frontmatter.
 
+## Series Enforcement
+
+If `course-positioning.md` contains `seriesName` and `seriesLevel` in its YAML frontmatter:
+
+### Step 1: Load Series Context
+
+1. Read `seriesPlanFile` path from positioning frontmatter
+2. Read the series plan and extract this level's configuration:
+   - Primary Bloom's band
+   - Stretch zone
+   - Assumed floor (prior level's handoff outcomes)
+
+### Step 2: Constrain Generation
+
+When generating objectives:
+- Target 60-70% of objectives within the **primary band**
+- Allow up to 20% in the **stretch zone** (must be scaffolded)
+- Do NOT generate objectives at levels below the **assumed floor** (these are prerequisites, not learning targets)
+- Ensure assumed floor outcomes appear in the course prerequisites, not as new objectives
+
+### Step 3: Post-Generation Validation
+
+After generating all objectives, validate each one:
+
+For each objective, check its Bloom's level against the series bands:
+
+**If within primary band:** Pass (no action needed)
+
+**If within stretch zone:** Note in validation output: "Objective #N is in the stretch zone ([level]). Ensure it includes scaffolding and guided practice."
+
+**If outside both primary band and stretch zone (too high):**
+Prompt the user with AskUserQuestion:
+"Objective #[N] ('[objective text]') is at [Bloom's level], which is above this level's stretch zone ([stretch zone]).
+
+Options:
+1. Keep it anyway (override series constraint)
+2. Move it to Level [N+1]'s plan (note for future)
+3. Revise to [highest stretch zone level] with scaffolding"
+
+**If below assumed floor (too low / re-teaching):**
+Prompt the user:
+"Objective #[N] ('[objective text]') is at [Bloom's level], which is in the assumed floor for Level [level]. This should have been mastered in Level [N-1].
+
+Options:
+1. Keep it as a brief review activity (not a formal objective)
+2. Remove it (trust the prerequisite chain)
+3. Keep it as a formal objective (override series constraint)"
+
+### Step 4: Update Cognitive Level Distribution
+
+In the generated `Cognitive Level Distribution` section, add a series compliance note:
+
+```
+## Series Compliance
+
+**Series:** [name] | **Level:** [N]
+**Primary band:** [levels] | **Stretch zone:** [levels]
+**Objectives in primary band:** [count] ([%])
+**Objectives in stretch zone:** [count] ([%])
+**Overrides:** [count] (user chose to keep objectives outside bands)
+```
+
 ## Command Behavior
 
 1. **Load required skills**: Load `blooms-taxonomy` and `backward-design-methodology` skills
