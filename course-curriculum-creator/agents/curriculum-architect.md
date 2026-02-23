@@ -170,6 +170,14 @@ Generate the evaluation plan using `/generate-evaluation-plan`:
 - Level 3 behavior observation instruments
 - Level 4 business metric connections (from TNA if available)
 
+### Phase 9d: Content Source Tracking
+
+After generating lesson plans and artifacts, review all modules for third-party content references:
+1. Read `01-planning/content-sources.md`
+2. Scan lesson plans and artifacts for external frameworks, case studies, examples, tools, or images
+3. For each external reference found, add an entry to content-sources.md using the Source Registry template
+4. Flag any sources that need permission or have unclear licensing
+
 ## Phase 10: Deliverables & Handoff (5 minutes)
 
 ### Step 10.1: Generate Summary Report
@@ -190,6 +198,7 @@ I've designed a comprehensive [duration] curriculum on [topic] for [audience].
 6. `03-assessment/rubrics.md` - 1-5 scale assessment criteria
 7. `04-materials/transfer-plan.md` — Transfer of learning plan
 8. `03-assessment/evaluation-plan.md` — Kirkpatrick evaluation plan
+9. `01-planning/content-sources.md` — Third-party content & licensing tracker (populated)
 
 ## Curriculum Highlights
 - **Learning Outcomes:** [Brief list]
