@@ -1,7 +1,7 @@
 ---
 name: generate-outline
 description: Generate course outline with module structure and timing
-argument-hint: ""
+argument-hint: "[--modules N]"
 allowed-tools:
   - Bash
   - Read
@@ -17,6 +17,19 @@ Create high-level course structure with modules, timing, and topics following ba
 
 - Must have `01-planning/learning-objectives.md`
 - Should have `03-assessment/rubrics.md` (recommended)
+
+## Staleness Check
+
+Before generating, check if source files have changed since this file was last generated:
+
+1. If the output file `02-design/course-outline.md` already exists, read its YAML frontmatter `sourceHashes`
+2. Compute current hash of each source file: `md5sum 01-planning/learning-objectives.md | cut -c1-8`
+3. Compare hashes:
+   - If hashes match: sources are unchanged, proceed normally
+   - If hashes differ: warn the user: "⚠ Source file learning-objectives.md has changed since this file was last generated. Regenerating will incorporate these changes."
+   - If output file doesn't exist: skip check, proceed with generation
+
+When generating, always compute and write current source hashes to the output file's frontmatter.
 
 ## Command Behavior
 
@@ -67,6 +80,10 @@ version: 0.1.0
 status: draft
 courseVersion: [match]
 lastUpdated: YYYY-MM-DD
+sourceFiles:
+  learning-objectives: "01-planning/learning-objectives.md"
+sourceHashes:
+  learning-objectives: "[md5-first-8]"
 ---
 
 # Course Outline

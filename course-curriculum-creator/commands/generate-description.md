@@ -18,6 +18,21 @@ Create compelling student-facing course description for marketing, course catalo
 - Must have `01-planning/course-positioning.md`
 - Should have `01-planning/learning-objectives.md` (recommended)
 
+## Staleness Check
+
+Before generating, check if source files have changed since this file was last generated:
+
+1. If the output file `01-planning/course-description.md` already exists, read its YAML frontmatter `sourceHashes`
+2. Compute current hash of each source file:
+   - `md5sum 01-planning/course-positioning.md | cut -c1-8`
+   - `md5sum 01-planning/learning-objectives.md | cut -c1-8`
+3. Compare hashes:
+   - If hashes match: sources are unchanged, proceed normally
+   - If hashes differ: warn the user: "⚠ Source file [name] has changed since this file was last generated. Regenerating will incorporate these changes."
+   - If output file doesn't exist: skip check, proceed with generation
+
+When generating, always compute and write current source hashes to the output file's frontmatter.
+
 ## Command Behavior
 
 1. Read course positioning and objectives
@@ -73,6 +88,12 @@ status: draft
 courseVersion: [match]
 tone: [professional|conversational|technical]
 lastUpdated: YYYY-MM-DD
+sourceFiles:
+  course-positioning: "01-planning/course-positioning.md"
+  learning-objectives: "01-planning/learning-objectives.md"
+sourceHashes:
+  course-positioning: "[md5-first-8]"
+  learning-objectives: "[md5-first-8]"
 ---
 
 # [Course Title]
