@@ -318,6 +318,45 @@ Prompt: "Review lesson plans. Would you like me to adjust any module's activitie
 
 Next: "Generate student and instructor materials using `/generate-artifacts`"
 
+## Timing Reconciliation
+
+After generating lesson plans, perform timing reconciliation across all curriculum documents:
+
+1. **Collect time data from three sources:**
+   - **Objectives**: Read time allocations from each objective in `01-planning/learning-objectives.md`
+   - **Outline**: Read module durations from `02-design/course-outline.md`
+   - **Lesson Plans**: Sum activity block durations from each module in the generated lesson plans
+
+2. **Compare and validate:**
+   - Sum objective time allocations → should equal total instruction time
+   - Sum outline module durations → should equal total instruction time
+   - Sum lesson plan phase totals → should equal module durations from outline
+
+3. **Flag discrepancies:**
+   - If any source differs by more than 10% from another, warn the user:
+     "⚠ Timing discrepancy detected: [source A] allocates [X] minutes but [source B] allocates [Y] minutes ([Z]% difference). Review and reconcile before delivery."
+   - List specific modules/objectives where discrepancies occur
+
+4. **Reconciliation guidance:**
+   - Objective times are the source of truth for what's pedagogically needed
+   - Outline times are the source of truth for scheduling
+   - Lesson plan times must fit within outline times
+   - If lesson plan activities exceed outline module time, suggest compressing or splitting
+
+## Module Validation
+
+After generating lesson plans, validate module count and titles against the course outline:
+
+1. **Count modules**: Count the number of modules in `02-design/course-outline.md` and compare to the number of module sections generated in lesson plans. They must match exactly.
+
+2. **Validate titles**: Each module title in lesson plans must match the corresponding module title in course-outline.md exactly (or with only minor clarifying additions).
+
+3. **Check objective mapping**: Every learning objective should appear in at least one module's lesson plan. List any unmapped objectives as warnings.
+
+If mismatches are found:
+- "⚠ Module count mismatch: outline has [X] modules but lesson plans have [Y] modules."
+- "⚠ Module title mismatch: outline Module [N] is '[title A]' but lesson plan Module [N] is '[title B]'."
+
 ---
 
 Create detailed, practical lesson plans that instructors can follow while maintaining flexibility for audience needs and pacing adjustments.

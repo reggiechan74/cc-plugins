@@ -16,7 +16,7 @@ Create compelling student-facing course description for marketing, course catalo
 ## Prerequisites
 
 - Must have `01-planning/course-positioning.md`
-- Should have `01-planning/learning-objectives.md` (recommended)
+- Must have `01-planning/learning-objectives.md`
 
 ## Staleness Check
 
@@ -32,6 +32,14 @@ Before generating, check if source files have changed since this file was last g
    - If output file doesn't exist: skip check, proceed with generation
 
 When generating, always compute and write current source hashes to the output file's frontmatter.
+
+## Error Handling
+
+**Missing learning-objectives.md:**
+- "Error: learning-objectives.md not found. The course description's 'What You'll Learn' section must be derived from actual learning objectives. Run `/generate-objectives` first."
+
+**Missing course-positioning.md:**
+- "Error: course-positioning.md not found. Cannot generate description without course context. Run `/create-course` first."
 
 ## Command Behavior
 
@@ -59,6 +67,8 @@ If settings file doesn't exist, use sensible defaults or prompt user.
 - Prerequisites (if any)
 - What's included (materials, certificate, etc.)
 - Instructor information (from settings)
+
+> **Note:** The "What You'll Learn" section must be derived directly from learning-objectives.md. Do not invent or improvise learning outcomes.
 
 ## Tone Options
 
