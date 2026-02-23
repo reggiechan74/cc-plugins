@@ -33,6 +33,7 @@ Use the Skill tool to load:
 - `backward-design-methodology` skill (provides UbD framework guidance)
 - `blooms-taxonomy` skill (provides cognitive level guidance and verb lists)
 - `universal-design-for-learning` skill (provides UDL framework and accessibility validation guidance)
+- If course has `deliveryMode: virtual` or `deliveryMode: hybrid` in positioning frontmatter, also load `virtual-facilitation` skill
 
 ## 2. Stage 1 Validation: Learning Outcomes
 
@@ -206,6 +207,32 @@ Use the Skill tool to load:
 - Flag assessments that penalize response format
 - Note accommodation gaps
 
+## 5c. Delivery Mode Validation (if virtual or hybrid)
+
+**Check curriculum for delivery mode compliance:**
+
+### Virtual Timing
+- Are sessions capped at 4 hours per day?
+- Are breaks scheduled every 45 minutes?
+- Are modules 60 minutes or less?
+- Is buffer time at least 15%?
+
+### Virtual Activities
+- Do all activities have virtual equivalents (no physical-only activities)?
+- Are engagement checkpoints present every 15-20 minutes?
+- Do activities use appropriate platform features (breakout rooms, polls, chat)?
+- Is there a tech failure backup for each tech-dependent activity?
+
+### Hybrid Equity (if hybrid)
+- Can remote participants participate equally in every activity?
+- Is a co-facilitator role defined for virtual audience management?
+- Are materials available in both digital and physical formats?
+
+**Document findings:**
+- Rate delivery mode readiness: READY / NEEDS ADJUSTMENTS / NOT ADAPTED
+- Flag activities that won't work in the specified delivery mode
+- Note missing technology requirements
+
 ## 6. Generate Validation Report
 
 Create a comprehensive validation report with the following structure:
@@ -262,6 +289,14 @@ Create a comprehensive validation report with the following structure:
 - Expression analysis (assessment format flexibility)
 - Accommodation readiness
 - Specific issues found with recommendations
+
+### Delivery Mode Validation (if applicable)
+**Status**: PASS / FAIL / N/A
+
+- Timing compliance for virtual/hybrid constraints
+- Activity compatibility with delivery mode
+- Technology requirements completeness
+- Hybrid equity assessment (if applicable)
 
 ### Detailed Findings
 
