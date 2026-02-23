@@ -80,6 +80,7 @@ The `curriculum-architect` agent will automatically generate a complete curricul
 | `/generate-lesson-plans` | Generate detailed module-level lesson plans |
 | `/generate-description` | Create student-facing course description |
 | `/generate-artifacts` | Generate student handouts, instructor guides, etc. |
+| `/design-series` | Design a leveled course series (101/201/301/401) |
 | `/review-curriculum` | Validate curriculum quality and alignment |
 | `/export-curriculum` | Export curriculum as combined document (full/summary/syllabus) |
 | `/save-as-template` | Save course structure as reusable template |
@@ -188,6 +189,27 @@ Save successful courses as templates for reuse:
 ```
 
 Templates preserve structure, objectives, and pedagogical approach while allowing customization for different audiences or contexts.
+
+## Course Series
+
+Design progressive course series that build from foundational to advanced mastery:
+
+```bash
+# Design a 4-level series
+/design-series "PropTech" --levels 4
+
+# Create individual courses linked to the series
+/create-course "PropTech 101" --series proptech --level 101
+/create-course "PropTech 201" --series proptech --level 201
+
+# Series plan enforces Bloom's bands during objective generation
+/generate-objectives    # warns if objectives outside level's bands
+
+# Retrofit existing courses into a series
+/design-series "PropTech" --from-existing ./PropTech-Basics/ ./PropTech-Advanced/
+```
+
+Series use a **Bloom's Center-of-Gravity model** where each level has a primary Bloom's band (where 60-70% of objectives live), a stretch zone (higher levels with scaffolding), and an assumed floor (mastered in prior levels, not re-taught).
 
 ## Version Control
 
