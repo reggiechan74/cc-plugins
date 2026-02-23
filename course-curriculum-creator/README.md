@@ -60,6 +60,8 @@ The `curriculum-architect` agent will automatically generate a complete curricul
 # 3. Create additional materials
 /generate-artifacts --type handout
 /generate-artifacts --type instructor-guide
+/generate-artifacts --type pre-work
+/generate-artifacts --type post-work
 
 # 4. Review and export
 /review-curriculum
@@ -73,6 +75,7 @@ The `curriculum-architect` agent will automatically generate a complete curricul
 
 | Command | Description |
 |---------|-------------|
+| `/assess-needs` | Conduct a training needs assessment to determine if a course is the right intervention |
 | `/create-course` | Initialize new course project with directory structure |
 | `/generate-objectives` | Create Bloom's-aligned learning objectives |
 | `/generate-rubrics` | Create 1-5 scale analytical assessment rubrics |
@@ -107,6 +110,14 @@ Guides creation of measurable learning objectives across cognitive levels:
 - Scaffolding strategies for multi-day workshops
 
 **Triggers**: "write learning objectives", "use Bloom's taxonomy", "create measurable outcomes"
+
+### universal-design-for-learning
+Practical guidance for creating inclusive, accessible learning experiences using the three UDL principles:
+- Multiple Means of Engagement (the "why" of learning)
+- Multiple Means of Representation (the "what" of learning)
+- Multiple Means of Action & Expression (the "how" of learning)
+
+**Triggers**: "apply UDL", "make course accessible", "inclusive design", "universal design for learning"
 
 ## Agents
 
@@ -239,6 +250,22 @@ See `skills/` subdirectories for worked examples:
 - `skills/blooms-taxonomy/examples/example-objectives-1day.md` - Complete 1-day workshop objective set
 - `skills/blooms-taxonomy/examples/example-objectives-2day.md` - Complete 2-day workshop objective set
 - `skills/backward-design-methodology/examples/example-backward-design-1day.md` - Full backward design walkthrough
+
+## What's New
+
+### v0.4.0 - Professional L&D Foundations
+- New: `/assess-needs` command for training needs assessment (TNA)
+- New: `universal-design-for-learning` skill with worked example
+- New: Pre-work and post-work artifact types in `/generate-artifacts`
+- Enhanced: UDL validation integrated into `/generate-outline`, `/generate-lesson-plans`, `/generate-rubrics`
+- Enhanced: Quality reviewer agent now validates UDL compliance
+- Enhanced: Advisory TNA hook in prerequisite system
+
+### v0.3.0 - Course Series
+- New: `/design-series` command for leveled course series (101/201/301/401)
+- New: `--series`/`--level` flags on `/create-course`
+- New: Bloom's band enforcement during objective generation
+- New: Series validation in `/review-curriculum`
 
 ## Contributing
 
