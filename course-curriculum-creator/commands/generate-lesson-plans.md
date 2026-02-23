@@ -167,9 +167,18 @@ For each module:
 - [Formative or summative]
 - [Self/peer/instructor assessment]
 
-**Differentiation:**
-- **Struggling students:** [Support strategy]
-- **Advanced students:** [Extension challenge]
+**Differentiation Strategy:**
+
+| Tier | Learners | Approach | Activity Modification |
+|---|---|---|---|
+| **Floor (all learners)** | Everyone | Core exercise with essential requirements | Complete [core task] using provided template/guide |
+| **Support scaffold** | Learners needing more guidance | Additional structure, worked examples, peer pairing | Same task with: step-by-step checklist, worked example to reference, or partner work option |
+| **Extension challenge** | Advanced learners finishing early | Deeper complexity, fewer constraints, mentoring role | [Extended version]: remove template, add constraint, or mentor a peer |
+
+**Instructor Decision Guide:**
+- If >30% of class is struggling: Pause, re-teach key concept, provide additional worked example
+- If >30% of class finishes early: Introduce extension challenge to whole class as optional
+- If mixed: Pair advanced learners with struggling learners for guided practice portion
 
 **Instructor Notes:**
 - [What to monitor]
@@ -363,6 +372,34 @@ After generating lesson plans, validate module count and titles against the cour
 If mismatches are found:
 - "⚠ Module count mismatch: outline has [X] modules but lesson plans have [Y] modules."
 - "⚠ Module title mismatch: outline Module [N] is '[title A]' but lesson plan Module [N] is '[title B]'."
+
+## Differentiation Guidance
+
+When generating lesson plans, design each module's practice activities with three tiers:
+
+### Floor Activities (Required for All)
+- Define the minimum successful completion that demonstrates the learning objective
+- Must be achievable by ALL learners within the allotted time
+- Provide sufficient scaffolding: templates, step-by-step guides, worked examples
+- This is what rubric criteria assess — the core expectation
+
+### Support Scaffolds (For Learners Who Struggle)
+- Same task, with additional structure: checklists, partially completed examples, peer support
+- Do NOT reduce the learning objective — reduce the barriers to achieving it
+- Common scaffolds: simplified vocabulary, visual guides, partner work, extended time
+- Remove scaffolds gradually as learner gains confidence
+
+### Extension Challenges (For Advanced Learners)
+- Same domain, higher complexity: remove constraints, add variables, require justification
+- Or: mentoring role — advanced learners help teach concepts to peers (deepens their own understanding)
+- Should be genuinely challenging, not just "do more of the same"
+- Extension work is optional — never penalize for not completing it
+
+### Instructor Decision Points
+- Build decision points into each practice activity
+- At the 50% mark: check class progress, decide if adjustment needed
+- Signals to watch: body language, question frequency, pace of work, error patterns
+- Default assumption: mixed-level audience until evidence suggests otherwise
 
 ---
 

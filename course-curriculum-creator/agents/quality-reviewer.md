@@ -129,6 +129,12 @@ Use the Skill tool to load:
 - Is there variety in activity types to maintain engagement?
 - Are activities appropriately interactive for adult learners?
 
+### Differentiation
+- Do practice activities include floor (core), support scaffold, and extension tiers?
+- Are support scaffolds focused on reducing barriers (not reducing expectations)?
+- Are extension challenges genuinely more complex (not just "do more")?
+- Are instructor decision points built into practice activities?
+
 ### Timing Feasibility
 - Is time allocated realistic for activity completion?
 - Are there natural break points in the schedule?
