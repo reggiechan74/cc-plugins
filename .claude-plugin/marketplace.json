@@ -14,7 +14,7 @@
       "name": "course-curriculum-creator",
       "source": "./course-curriculum-creator",
       "description": "Create professional course curricula for 1-2 day workshops using backward design methodology and Bloom's taxonomy",
-      "version": "0.1.0"
+      "version": "1.0.0"
     },
     {
       "name": "d3-visualizations",
