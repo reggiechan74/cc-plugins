@@ -73,28 +73,67 @@ The `curriculum-architect` agent will automatically generate a complete curricul
 
 ## Commands
 
+Commands are organized by curriculum development lifecycle stage:
+
+### Stage 0: Analysis & Initialization (`commands/0-analysis/`)
+
 | Command | Description |
 |---------|-------------|
 | `/assess-needs` | Conduct a training needs assessment to determine if a course is the right intervention |
 | `/create-course` | Initialize new course project with directory structure |
+| `/design-series` | Design a leveled course series (101/201/301/401) |
+
+### Stage 1: Desired Results (`commands/1-desired-results/`)
+
+| Command | Description |
+|---------|-------------|
 | `/generate-objectives` | Create Bloom's-aligned learning objectives |
+
+### Stage 2: Assessment Evidence (`commands/2-assessment-evidence/`)
+
+| Command | Description |
+|---------|-------------|
 | `/generate-rubrics` | Create 1-5 scale analytical assessment rubrics |
+| `/generate-evaluation-plan` | Generate Kirkpatrick L1-L4 evaluation plan with instruments, timelines, and success thresholds |
+
+### Stage 3: Learning Plan (`commands/3-learning-plan/`)
+
+| Command | Description |
+|---------|-------------|
 | `/generate-outline` | Generate module structure with timing |
 | `/generate-lesson-plans` | Generate detailed module-level lesson plans |
+| `/generate-transfer-plan` | Generate post-workshop transfer plan with action items, manager briefings, job aids, and follow-up touchpoints |
+
+### Stage 4: Materials & Communication (`commands/4-materials/`)
+
+| Command | Description |
+|---------|-------------|
 | `/generate-description` | Create student-facing course description |
 | `/generate-artifacts` | Generate student handouts, instructor guides, etc. |
-| `/design-series` | Design a leveled course series (101/201/301/401) |
+| `/adapt-for-virtual` | Adapt an existing in-person curriculum for virtual or hybrid delivery |
+
+### Stage 5: Quality Assurance & Approval (`commands/5-quality-and-review/`)
+
+| Command | Description |
+|---------|-------------|
 | `/review-curriculum` | Validate curriculum quality and alignment |
+| `/generate-review-package` | Generate stakeholder/SME review package for curriculum approval |
 | `/export-curriculum` | Export curriculum as combined document (full/summary/syllabus) |
+
+### Stage 6: Delivery & Iteration (`commands/6-delivery/`)
+
+| Command | Description |
+|---------|-------------|
+| `/generate-workshop-prep` | Generate dated preparation checklist for delivery |
+| `/process-workshop-feedback` | Analyze feedback and generate improvement report |
+
+### Templates (`commands/7-templates/`)
+
+| Command | Description |
+|---------|-------------|
 | `/save-as-template` | Save course structure as reusable template |
 | `/create-from-template` | Create new course from existing template |
 | `/list-templates` | List available course templates with details |
-| `/generate-workshop-prep` | Generate dated preparation checklist for delivery |
-| `/generate-transfer-plan` | Generate post-workshop transfer plan with action items, manager briefings, job aids, and follow-up touchpoints |
-| `/generate-evaluation-plan` | Generate Kirkpatrick L1-L4 evaluation plan with instruments, timelines, and success thresholds |
-| `/adapt-for-virtual` | Adapt an existing in-person curriculum for virtual or hybrid delivery |
-| `/generate-review-package` | Generate stakeholder/SME review package for curriculum approval |
-| `/process-workshop-feedback` | Analyze feedback and generate improvement report |
 
 ## Skills
 
