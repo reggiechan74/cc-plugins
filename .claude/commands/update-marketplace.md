@@ -96,7 +96,7 @@ Short description from manifest.
 
 **Install:**
 \`\`\`bash
-/plugin install plugin-name@reggiechan74
+/plugin install plugin-name@cc-plugins
 \`\`\`
 
 **Features:**

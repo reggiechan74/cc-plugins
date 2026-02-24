@@ -24,21 +24,15 @@ This plugin helps independent consultants, trainers, and instructional designers
 ## Installation
 
 ### From Marketplace
-```bash
-# Add the marketplace (one-time setup)
-claude plugin marketplace add reggiechan74/cc-plugins
-
-# Install the plugin
-claude plugin install course-curriculum-creator@cc-plugins
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install course-curriculum-creator@cc-plugins
 ```
 
 ### Local Development
-```bash
-# Add local directory as a marketplace source
-claude plugin marketplace add ./path/to/cc-plugins
-
-# Install from local marketplace
-claude plugin install course-curriculum-creator@cc-plugins
+```
+/plugin marketplace add ./path/to/cc-plugins
+/plugin install course-curriculum-creator@cc-plugins
 ```
 
 ## Quick Start

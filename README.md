@@ -18,7 +18,7 @@ Multi-agent verification system implementing organizational intelligence for pro
 
 **Install:**
 ```bash
-/plugin install code-coherence@reggiechan74
+/plugin install code-coherence@cc-plugins
 ```
 
 **Features:**
@@ -49,7 +49,7 @@ Create professional course curricula for 1-2 day workshops using backward design
 
 **Install:**
 ```bash
-/plugin install course-curriculum-creator@reggiechan74
+/plugin install course-curriculum-creator@cc-plugins
 ```
 
 **Features:**
@@ -84,7 +84,7 @@ D3.js visualization skill for quickly creating any kind of data visualization.
 
 **Install:**
 ```bash
-/plugin install d3-visualizations@reggiechan74
+/plugin install d3-visualizations@cc-plugins
 ```
 
 **Features:**
@@ -105,7 +105,7 @@ Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code.
 
 **Install:**
 ```bash
-/plugin install google-workspace-mcp@reggiechan74
+/plugin install google-workspace-mcp@cc-plugins
 ```
 
 **Features:**
@@ -125,7 +125,7 @@ Configure git auth for installing Claude Code plugins from private GitHub repos.
 
 **Install:**
 ```bash
-/plugin install install-private-plugin@reggiechan74
+/plugin install install-private-plugin@cc-plugins
 ```
 
 **Features:**
@@ -147,7 +147,7 @@ Plan and book kids' summer camps, March break programs, and PA day coverage with
 
 **Install:**
 ```bash
-/plugin install kids-camp-planner@reggiechan74
+/plugin install kids-camp-planner@cc-plugins
 ```
 
 **Features:**
@@ -183,7 +183,7 @@ Query Mississauga building permit data by address with filtering and summary sta
 
 **Install:**
 ```bash
-/plugin install mississauga-permits@reggiechan74
+/plugin install mississauga-permits@cc-plugins
 ```
 
 **Features:**
@@ -206,7 +206,7 @@ Convert markdown research reports into interactive React presentation websites f
 
 **Install:**
 ```bash
-/plugin install report-to-web@reggiechan74
+/plugin install report-to-web@cc-plugins
 ```
 
 **Features:**
@@ -231,7 +231,7 @@ Generate portfolio-ready repository snapshots for resume and job documentation.
 
 **Install:**
 ```bash
-/plugin install resume-snapshot@reggiechan74
+/plugin install resume-snapshot@cc-plugins
 ```
 
 **Features:**
@@ -257,7 +257,7 @@ Professional-grade rubric creation skill with validity, reliability, and fairnes
 
 **Install:**
 ```bash
-/plugin install rubric-creator@reggiechan74
+/plugin install rubric-creator@cc-plugins
 ```
 
 **Features:**
@@ -284,7 +284,7 @@ Generate and apply themed spinner verbs for Claude Code status messages. Include
 
 **Install:**
 ```bash
-/plugin install spinnerverbs@reggiechan74
+/plugin install spinnerverbs@cc-plugins
 ```
 
 **Features:**

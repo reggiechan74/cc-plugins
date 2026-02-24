@@ -20,14 +20,15 @@ This plugin helps Ontario families navigate the complex puzzle of school-break c
 ## Installation
 
 ### From Marketplace
-```bash
-cc plugin install kids-camp-planner
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install kids-camp-planner@cc-plugins
 ```
 
 ### Local Development
-```bash
-cp -r kids-camp-planner ~/.claude/plugins/
-cc plugin enable kids-camp-planner
+```
+/plugin marketplace add ./path/to/cc-plugins
+/plugin install kids-camp-planner@cc-plugins
 ```
 
 ## Quick Start

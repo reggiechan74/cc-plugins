@@ -69,18 +69,15 @@ Per-project settings via `.claude/code-coherence.local.md`:
 
 ## Installation
 
-### Local Installation
-
-Copy the plugin to your project:
-```bash
-cp -r code-coherence /path/to/your/project/.claude/plugins/
+### From Marketplace
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install code-coherence@cc-plugins
 ```
 
-### Testing
-
+### Local Development
 ```bash
-cd /path/to/your/project
-claude --plugin-dir .claude/plugins/code-coherence
+claude --plugin-dir /path/to/code-coherence
 ```
 
 ## Usage

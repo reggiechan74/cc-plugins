@@ -10,24 +10,13 @@ Claude Code plugin for querying the City of Mississauga Open Data portal. Provid
 
 ## Installation
 
-### As a project command (recommended for single repo)
-
-Copy the plugin folder into your project and create command shims:
-
-```bash
-cp -r mississauga-permits /your-repo/.claude/plugins/
-cp mississauga-permits/commands/fetch-permits.md /your-repo/.claude/commands/
-cp mississauga-permits/commands/fetch-mississauga.md /your-repo/.claude/commands/
+### From Marketplace
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install mississauga-permits@cc-plugins
 ```
 
-Then edit the two command shims in `.claude/commands/` to replace `${CLAUDE_PLUGIN_ROOT}` with the project-relative path `.claude/plugins/mississauga-permits`:
-
-```
-python3 .claude/plugins/mississauga-permits/scripts/fetch_permits.py ...
-python3 .claude/plugins/mississauga-permits/scripts/fetch_mississauga.py ...
-```
-
-### As a Claude Code plugin
+### Local Development
 
 ```bash
 claude --plugin-dir /path/to/mississauga-permits
