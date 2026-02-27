@@ -1,0 +1,44 @@
+{
+  "name": "consulting",
+  "description": "Professional consulting deliverable - McKinsey/BCG aesthetic",
+  "default_aspect": "16:9",
+  "default_size": "2K",
+  "default_model": "flash",
+  "color_palette": "deep navy, white, accent coral, light gray",
+  "typography_hint": "sans-serif, Helvetica/Inter weight hierarchy",
+  "global_prompt_prefix": "Professional consulting presentation slide with consistent brand identity, clean modern design, deep navy and white color scheme with coral accents, high-contrast text areas, presentation-quality typography, 16:9 widescreen format, ",
+  "layouts": [
+    "left-visual-right-text",
+    "full-bleed-image",
+    "split-horizontal",
+    "centered-statement",
+    "grid-2x2",
+    "grid-3-column"
+  ],
+  "slide_types": {
+    "title": {
+      "prompt_prefix": "Presentation title slide, 16:9 widescreen: large bold sans-serif title centered in upper third, subtitle below in lighter weight font, clean brand gradient background transitioning from deep navy to dark blue, subtle geometric accent pattern in corners, professional consulting firm quality, no slide number, generous whitespace framing the title block, ",
+      "default_layout": "centered-statement"
+    },
+    "section-divider": {
+      "prompt_prefix": "Section divider slide, 16:9 widescreen: bold section title left-aligned with oversized font, thin decorative accent bar in coral below the title, abstract background visual related to section topic on right side, muted navy palette with subtle gradient, clean transition aesthetic separating major deck sections, ",
+      "default_layout": "left-visual-right-text"
+    },
+    "content": {
+      "prompt_prefix": "Content slide, 16:9 widescreen: clear heading at top in bold sans-serif, organized body content area with short bullet points or key phrases, supporting icon or small visual element, consistent deep navy and white brand colors with coral accents on key data, generous whitespace between elements, single key message per slide, small slide number in lower-right corner, ",
+      "default_layout": "left-visual-right-text"
+    },
+    "data-chart": {
+      "prompt_prefix": "Data visualization slide, 16:9 widescreen: prominent professional chart or graph as hero element occupying 60-70% of slide area, clear axis labels with units and data point markers, insight callout annotation with leader line pointing to key finding, muted navy and gray palette with coral highlight on key data series, clean gridlines, legend with consistent typography, publication-quality data journalism aesthetic, ",
+      "default_layout": "full-bleed-image"
+    },
+    "quote": {
+      "prompt_prefix": "Quote slide, 16:9 widescreen: large quotation in elegant serif font centered vertically and horizontally, oversized opening quotation mark as decorative element in light navy, attribution line below in smaller sans-serif with coral accent dash, subtle textured or lightly gradient navy background, generous whitespace framing the quote, editorial quality, ",
+      "default_layout": "centered-statement"
+    },
+    "closing": {
+      "prompt_prefix": "Closing slide, 16:9 widescreen: prominent thank you message or summary statement in large sans-serif, contact information block below with email and phone in clean layout, company logo placement area in lower portion, clean professional background matching title slide gradient aesthetic, subtle call-to-action text, consistent brand identity with title slide, ",
+      "default_layout": "centered-statement"
+    }
+  }
+}

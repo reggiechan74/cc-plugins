@@ -1,0 +1,12 @@
+{
+  "name": "nano-banana",
+  "version": "1.0.0",
+  "description": "AI image generation and presentation deck creation via Gemini API. 25 style presets, batch deck generation, and report-to-slides decomposition.",
+  "author": {
+    "name": "Reggie Chan",
+    "url": "https://github.com/reggiechan74"
+  },
+  "repository": "https://github.com/reggiechan74/cc-plugins",
+  "license": "MIT",
+  "keywords": ["image-generation", "gemini", "presentations", "slides", "ai-art"]
+}

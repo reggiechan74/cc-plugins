@@ -47,6 +47,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "nano-banana",
+      "source": "./nano-banana-plugin",
+      "description": "AI image generation and presentation deck creation via Gemini API. 25 style presets, batch deck generation, and report-to-slides decomposition.",
+      "version": "1.0.0"
+    },
+    {
       "name": "report-to-web",
       "source": "./report-to-web",
       "description": "Convert markdown research reports into interactive React presentation websites for GitHub Pages",

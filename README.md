@@ -200,6 +200,28 @@ Query Mississauga building permit data by address with filtering and summary sta
 
 ---
 
+### nano-banana
+
+AI image generation and presentation deck creation via Gemini API. 25 style presets, batch deck generation, and report-to-slides decomposition.
+
+**Install:**
+```bash
+/plugin install nano-banana@cc-plugins
+```
+
+**Features:**
+- 25 style presets across 6 categories: Technical, Business, Creative, UI/UX, Photography, Specialized
+- Image editing with up to 14 reference images per call
+- Batch deck generation from JSON specifications with resume support
+- Report-to-slides decomposition — convert markdown/PDF reports into presentation decks
+- Version-safe output — never overwrites existing files
+
+**Skills:**
+- `nano-banana` - Image generation and editing via Gemini API
+- `/deck-prompt` - Decompose reports into deck specification JSON
+
+---
+
 ### report-to-web
 
 Convert markdown research reports into interactive React presentation websites for GitHub Pages.

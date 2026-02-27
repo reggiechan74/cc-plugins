@@ -1,0 +1,44 @@
+{
+  "name": "workshop",
+  "description": "Educational workshop deck - warm, accessible, progressive disclosure",
+  "default_aspect": "16:9",
+  "default_size": "2K",
+  "default_model": "flash",
+  "color_palette": "warm teal, soft amber, cream, charcoal gray",
+  "typography_hint": "rounded sans-serif, friendly approachable hierarchy",
+  "global_prompt_prefix": "Clear educational presentation slide, visual learning aids, warm inviting design, accessible typography hierarchy, teal and amber color scheme, cream background with charcoal text, rounded sans-serif fonts, 16:9 widescreen format, ",
+  "layouts": [
+    "left-visual-right-text",
+    "full-bleed-image",
+    "split-horizontal",
+    "centered-statement",
+    "grid-2x2",
+    "grid-3-column"
+  ],
+  "slide_types": {
+    "title": {
+      "prompt_prefix": "Welcoming workshop opening slide, 16:9 widescreen: large friendly rounded sans-serif title centered in upper half, warm teal gradient background fading to cream, subtitle in soft amber below title, approachable and inviting tone with gentle geometric shapes as decorative accents, no slide number, generous padding around text block, warm natural light aesthetic, ",
+      "default_layout": "centered-statement"
+    },
+    "section-divider": {
+      "prompt_prefix": "Workshop section divider slide, 16:9 widescreen: bold section title in charcoal with teal underline accent bar, numbered module indicator in soft amber circle badge, simple illustrative icon representing the section topic on the right, cream background with subtle warm gradient edge, clear visual break signaling new learning module, ",
+      "default_layout": "left-visual-right-text"
+    },
+    "content": {
+      "prompt_prefix": "Step-by-step visual progression slide, 16:9 widescreen: clear heading in charcoal at top, numbered or sequenced content blocks showing progressive disclosure of concepts, teal accent icons or visual markers for each step, soft amber highlights on key terms and takeaways, cream background with generous whitespace between learning points, single teaching concept per slide, small slide number in lower-right, ",
+      "default_layout": "left-visual-right-text"
+    },
+    "data-chart": {
+      "prompt_prefix": "Simplified chart with clear takeaway label, 16:9 widescreen: clean approachable data visualization as central element with rounded styling, large bold takeaway statement above or below the chart in charcoal, teal and amber data series with cream background, minimal gridlines, oversized axis labels for readability, annotation callout in amber highlighting the key insight, accessible and easy to understand at a glance, ",
+      "default_layout": "full-bleed-image"
+    },
+    "quote": {
+      "prompt_prefix": "Inspirational learning quote slide, 16:9 widescreen: motivational or pedagogical quote in warm charcoal rounded serif font centered on cream background, large decorative quotation mark in soft teal, attribution in amber below with friendly dash separator, subtle warm teal border or frame accent, gentle and encouraging tone, generous whitespace for contemplation, ",
+      "default_layout": "centered-statement"
+    },
+    "closing": {
+      "prompt_prefix": "Workshop closing slide, 16:9 widescreen: warm thank you message or key takeaways summary in large rounded sans-serif, recap of learning objectives in teal bullet points, next steps or resources section in amber accented block below, contact and follow-up information in charcoal, cream background matching title slide warmth, encouraging call-to-action for continued learning, ",
+      "default_layout": "centered-statement"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "pitch",
+  "description": "Startup/VC pitch deck - bold, high-contrast, minimal text",
+  "default_aspect": "16:9",
+  "default_size": "2K",
+  "default_model": "flash",
+  "color_palette": "pure black, electric blue, white, neon accent green",
+  "typography_hint": "bold geometric sans-serif, maximum contrast",
+  "global_prompt_prefix": "Bold startup pitch deck slide, high-impact visual, dark background, minimal text, electric blue and black color scheme, neon green accents, geometric sans-serif typography, maximum contrast, 16:9 widescreen format, ",
+  "layouts": [
+    "left-visual-right-text",
+    "full-bleed-image",
+    "split-horizontal",
+    "centered-statement",
+    "grid-2x2",
+    "grid-3-column"
+  ],
+  "slide_types": {
+    "title": {
+      "prompt_prefix": "Bold founder vision statement title slide, 16:9 widescreen: massive geometric sans-serif headline in white dominating the center, pure black background with electric blue gradient glow edge, company name or tagline as single powerful statement, no subtitle clutter, neon green thin accent line below title, cinematic dramatic lighting feel, zero visual noise, total confidence aesthetic, ",
+      "default_layout": "centered-statement"
+    },
+    "section-divider": {
+      "prompt_prefix": "High-impact section break slide, 16:9 widescreen: single bold word or short phrase in oversized white geometric sans-serif on pure black, electric blue abstract geometric shape or light streak as background accent, minimal and dramatic, creates visual pause and anticipation for next section, neon green thin border accent on one edge, ",
+      "default_layout": "centered-statement"
+    },
+    "content": {
+      "prompt_prefix": "Single bold statement with hero number slide, 16:9 widescreen: one oversized key metric or statistic in electric blue or neon green occupying top half, short declarative sentence in white below explaining significance, pure black background, zero bullet points, extreme whitespace, geometric sans-serif at maximum weight, every element earns its place on the slide, investor-ready minimal aesthetic, ",
+      "default_layout": "centered-statement"
+    },
+    "data-chart": {
+      "prompt_prefix": "Dramatic growth chart with highlighted inflection point, 16:9 widescreen: bold data visualization on pure black background, electric blue line or bar chart with neon green highlight on key inflection point or growth spike, minimal axis labels in white, large callout annotation in white pointing to the critical data moment, dark moody aesthetic with glowing data elements, no gridlines, cinematic data storytelling, ",
+      "default_layout": "full-bleed-image"
+    },
+    "quote": {
+      "prompt_prefix": "Power quote slide, 16:9 widescreen: short impactful quote in large white geometric sans-serif on pure black background, electric blue oversized quotation mark as dramatic decorative element, attribution in neon green small caps below, stark cinematic contrast, quote should feel like a bold manifesto statement, extreme whitespace for dramatic emphasis, ",
+      "default_layout": "centered-statement"
+    },
+    "closing": {
+      "prompt_prefix": "Pitch closing ask slide, 16:9 widescreen: bold call-to-action or funding ask in massive white geometric type on black, key terms or round size highlighted in electric blue or neon green, minimal contact details in white small text at bottom, clean dramatic finish matching title slide energy, single clear next step for investors, no visual clutter, ",
+      "default_layout": "centered-statement"
+    }
+  }
+}

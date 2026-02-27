@@ -1,0 +1,160 @@
+{
+  "output_dir": "output/nano-banana",
+  "size": "2K",
+  "aspect": "1:1",
+  "model": "flash",
+  "preset": null,
+  "filename_template": "{prompt_slug}_{timestamp}.png",
+  "presets": {
+    "blueprint": {
+      "category": "Technical",
+      "prompt_prefix": "Orthographic projection technical blueprint: precise white linework on deep blueprint-blue background, ISO standard engineering drawing with dimension chains and tolerances, section hatching on cut planes, top/front/side views with projection lines, fine grid overlay, sans-serif Helvetica-style labels, title block in lower-right corner, no perspective distortion, technical pen precision. ",
+      "default_aspect": "3:2",
+      "default_size": "2K"
+    },
+    "exploded-view": {
+      "category": "Technical",
+      "prompt_prefix": "Exploded view technical illustration: isometric 30-degree exploded assembly diagram, components floating along dotted alignment axes with consistent separation distance, white background, numbered callouts with leader lines, clean uniform-weight linework, subtle drop shadows beneath each part, part hierarchy from outside-in, assembly manual reference quality, patent illustration style. ",
+      "default_aspect": "1:1",
+      "default_size": "2K"
+    },
+    "anatomical": {
+      "category": "Technical",
+      "prompt_prefix": "Anatomical cross-section medical illustration in the style of Frank Netter: precise pencil and ink rendering on warm cream paper, labeled with fine leader lines and Latin terminology, stippling and crosshatch shading for depth, scientific textbook quality, detailed internal structures with color-coded systems, subtle watercolor washes for tissue differentiation, publication-ready medical reference quality. ",
+      "default_aspect": "3:4",
+      "default_size": "2K"
+    },
+    "isometric": {
+      "category": "Technical",
+      "prompt_prefix": "Isometric view 3D miniature diorama: true 30-degree isometric projection, tilt-shift photography effect with shallow depth of field at edges, toy-like miniature scale, flat cutaway base showing cross-section, vivid saturated colors, warm ambient occlusion shadows, tiny detailed props and miniature people for scale, soft even studio lighting from upper-left, no vanishing point distortion, collectible model quality. ",
+      "default_aspect": "1:1",
+      "default_size": "2K"
+    },
+    "system-diagram": {
+      "category": "Technical",
+      "prompt_prefix": "Clean flat system architecture diagram: rounded-rectangle nodes with consistent icon set inside each, directional arrows with labeled data flows, muted color-coded zones with subtle background fills, sans-serif labels in dark gray, white background, legend in corner, logical left-to-right or top-to-bottom hierarchy, professional technical documentation quality, visually balanced spacing between components. ",
+      "default_aspect": "16:9",
+      "default_size": "2K"
+    },
+    "site-map": {
+      "category": "Technical",
+      "prompt_prefix": "Topographic map style aerial plan view: fine elevation contour lines with spot heights, land-use color coding following cartographic conventions, surveying map aesthetic with property boundary lines, north arrow and graphic scale bar, vegetation symbols and water features in blue, drawing border with coordinate grid ticks, professional cartographic quality, USGS or Ordnance Survey style, crisp linework on light background. ",
+      "default_aspect": "4:3",
+      "default_size": "2K"
+    },
+    "infographic": {
+      "category": "Business",
+      "prompt_prefix": "Flat vector infographic: bold typography hierarchy with large statistic callouts, organized data visualization panels with charts and progress bars, icon-driven section layout with consistent line-icon set, limited 3-4 color palette with one accent color, generous whitespace, clear section dividers, editorial magazine layout quality, information flows top-to-bottom, clean visual storytelling. ",
+      "default_aspect": "9:16",
+      "default_size": "2K"
+    },
+    "slide": {
+      "category": "Business",
+      "prompt_prefix": "Single presentation slide layout: 16:9 widescreen format, clear title zone with large sans-serif heading, body text area with short bullet points, one prominent hero visual or chart, brand-consistent color blocking with accent bar, generous margins and breathing room, single key message per slide, slide number in corner, McKinsey or Apple keynote quality, minimal professional design. ",
+      "default_aspect": "16:9",
+      "default_size": "2K"
+    },
+    "hero-banner": {
+      "category": "Business",
+      "prompt_prefix": "Social media hero banner: horizontal hero image with clear text-safe zone on left or center, bold headline placement area with high-contrast background, vibrant gradient or brand colors with smooth transitions, subtle CTA button area, platform-safe margins on all edges, lifestyle or abstract background imagery, professional marketing quality, web-optimized composition, eye-catching but not cluttered. ",
+      "default_aspect": "16:9",
+      "default_size": "2K"
+    },
+    "product-mockup": {
+      "category": "Business",
+      "prompt_prefix": "Product mockup studio photography: clean white cyclorama background with subtle gradient, soft diffused shadow and gentle reflection on surface, 3/4 hero angle with slight elevation, professional three-point studio lighting with soft key light and rim highlight, photorealistic render quality, crisp material textures and surface details visible, commercial e-commerce product photography standard, brand-ready composition. ",
+      "default_aspect": "1:1",
+      "default_size": "2K"
+    },
+    "data-viz": {
+      "category": "Business",
+      "prompt_prefix": "Editorial data visualization: magazine-quality illustrated chart, annotated bar/line/area chart with clear gridlines and data point markers, muted earth-tone palette with one highlight color for key data, clear axis labels with units, narrative callout annotations pointing to insights, legend with clean typography, trend lines or annotations where relevant, New York Times or Economist visual journalism quality. ",
+      "default_aspect": "16:9",
+      "default_size": "2K"
+    },
+    "watercolor": {
+      "category": "Creative",
+      "prompt_prefix": "Watercolor illustration: loose wet-on-wet technique with visible pigment granulation and salt texture effects, cold-pressed paper texture showing through, soft bleed edges where colors meet, transparent layered washes building depth, limited harmonious palette of 4-5 colors, deliberate white paper areas preserved as highlights, color blooms and backruns as happy accidents, editorial illustration style, fine detail work with small round brush in focal areas. ",
+      "default_aspect": "3:2",
+      "default_size": "2K"
+    },
+    "pencil-sketch": {
+      "category": "Creative",
+      "prompt_prefix": "Pencil sketch graphite drawing on heavyweight drawing paper: varied line weight from 2H to 6B, crosshatching and contour shading for volume, loose confident gestural construction lines still visible, Conte crayon accents in darkest shadows, visible paper tooth texture, smudged tonal gradients in mid-tones, no color purely monochrome, sharp detail in focal area with looser marks at periphery, fine art life-drawing quality. ",
+      "default_aspect": "1:1",
+      "default_size": "2K"
+    },
+    "flat-vector": {
+      "category": "Creative",
+      "prompt_prefix": "Flat vector illustration: clean geometric shapes with mathematically precise curves, bold uniform-weight outlines, limited 5-6 color palette with intentional color harmony, Dribbble and Behance trending style, no gradients or textures, consistent rounded line caps, systematic spacing and alignment, scalable design language, playful but professional, negative space used deliberately, modern Silicon Valley illustration style. ",
+      "default_aspect": "1:1",
+      "default_size": "2K"
+    },
+    "cinematic": {
+      "category": "Creative",
+      "prompt_prefix": "Cinematic photograph shot on anamorphic lens: golden hour or blue hour dramatic lighting, Kodak Vision3 film stock grain and color response, shallow depth of field with creamy oval bokeh, 2.39:1 letterbox framing, professional color grading with teal-and-orange split toning, volumetric light rays and atmospheric haze, moody emotional atmosphere, foreground silhouette framing, Roger Deakins cinematography quality, movie poster or film still composition. ",
+      "default_aspect": "21:9",
+      "default_size": "4K"
+    },
+    "concept-art": {
+      "category": "Creative",
+      "prompt_prefix": "Concept art matte painting: epic environment design with dramatic atmospheric perspective, volumetric god-rays through clouds or fog, ArtStation trending quality, richly detailed background world with painterly brushwork blended with photographic textures, strong value composition with clear focal hierarchy, mood-defining color key, sense of massive scale with tiny figures or structures for reference, cinematic wide establishing shot framing. ",
+      "default_aspect": "16:9",
+      "default_size": "4K"
+    },
+    "pixel-art": {
+      "category": "Creative",
+      "prompt_prefix": "Pixel art in 16-bit SNES era style: carefully curated 32-color palette with intentional hue ramps, visible crisp pixel grid with no anti-aliasing or sub-pixel rendering, dithering patterns for smooth gradients, retro game aesthetic with modern color sensibility, clean deliberate pixel placement, consistent light source with pixel-level shading, sprite-ready proportions, tile-friendly edges, nostalgic but polished. ",
+      "default_aspect": "1:1",
+      "default_size": "1K"
+    },
+    "app-mockup": {
+      "category": "UI/UX",
+      "prompt_prefix": "Mobile app UI design mockup: clean modern interface following iOS Human Interface Guidelines, SF Pro typography, system-standard navigation bar and tab bar, card-based content layout with consistent 8px grid spacing, status bar with time and indicators visible, safe area insets respected, frosted glass effects and subtle shadows, cohesive color system with accessible contrast ratios, professional Figma-quality design, realistic content not lorem ipsum. ",
+      "default_aspect": "9:16",
+      "default_size": "2K"
+    },
+    "icon": {
+      "category": "UI/UX",
+      "prompt_prefix": "Icon design on optical grid: consistent 2px stroke weight, 24x24 or 48x48 pixel grid with proper optical alignment, monochrome single-color, rounded corners and line caps, clear visual metaphor readable at small sizes, system icon aesthetic matching SF Symbols or Material Icons weight, balanced negative space, geometric construction, pixel-perfect alignment on grid, transparent background, UI icon library production quality. ",
+      "default_aspect": "1:1",
+      "default_size": "1K"
+    },
+    "logo": {
+      "category": "UI/UX",
+      "prompt_prefix": "Vector logo design: minimal precise geometry with golden ratio proportions, clever negative space concept, single flat color on transparent background, works at both 16px favicon and billboard scale, clean scalable mark with clear space around it, timeless not trendy, brand identity quality comparable to Pentagram or Wolff Olins, no gradients or effects, strong silhouette recognition, balanced visual weight. ",
+      "default_aspect": "1:1",
+      "default_size": "1K"
+    },
+    "wireframe": {
+      "category": "UI/UX",
+      "prompt_prefix": "Website wireframe: lo-fi wireframe in grayscale with blue annotation overlay, placeholder image blocks marked with X, clear typographic hierarchy with varied box sizes for headings and body, visible CTA buttons with rounded rectangles, annotation arrows pointing to interactive elements, component labels in small text, responsive grid structure visible, UX documentation quality, Balsamiq or Whimsical style, content-first layout thinking. ",
+      "default_aspect": "16:9",
+      "default_size": "2K"
+    },
+    "portrait": {
+      "category": "Photography",
+      "prompt_prefix": "Professional headshot portrait: Rembrandt lighting with soft key light creating triangle on far cheek, subtle fill light, clean catchlight reflections in eyes, shallow depth of field shot at 85mm equivalent, smooth neutral gray or dark background with slight vignette, DSLR full-frame sensor quality, natural skin tones with no over-retouching, confident approachable expression, shoulders slightly angled, corporate or editorial headshot standard. ",
+      "default_aspect": "3:4",
+      "default_size": "2K"
+    },
+    "lifestyle": {
+      "category": "Photography",
+      "prompt_prefix": "Lifestyle photography: natural ambient window light or golden hour warmth, candid editorial style capturing an authentic unposed moment, rule-of-thirds composition with environmental context telling a story, warm Kodak Portra film-like color grade with lifted shadows, shallow depth of field with subject in focus and background softly blurred, magazine editorial quality, genuine human emotion, styled but not artificial. ",
+      "default_aspect": "3:2",
+      "default_size": "2K"
+    },
+    "architectural-viz": {
+      "category": "Photography",
+      "prompt_prefix": "Architectural visualization: photorealistic 3D render with V-Ray or Corona quality, natural golden-hour HDRI lighting with warm sun and cool sky fill, physically accurate material textures including glass reflections and concrete roughness, professional landscaping with mature trees and ground cover, human figures for scale casually placed, interior warmth glowing through windows, two-point perspective with vertical lines corrected, award-winning archviz competition quality. ",
+      "default_aspect": "16:9",
+      "default_size": "4K"
+    },
+    "storyboard": {
+      "category": "Specialized",
+      "prompt_prefix": "Storyboard panel for film production: dynamic sketch-style illustration with confident ink linework, panel border with shot type label (WS/MS/CU/ECU) in corner, camera movement arrows and direction annotations, clear character staging and blocking, dramatic perspective matching the shot type, light/shadow indication with quick hatching, sequential narrative clarity, Ridley Scott or Spielberg production quality storyboard, action lines for movement. ",
+      "default_aspect": "16:9",
+      "default_size": "2K"
+    }
+  }
+}
