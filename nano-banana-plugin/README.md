@@ -2,11 +2,13 @@
 
 # nano-banana
 
+<!-- badges-start -->
 [![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/reggiechan74/cc-plugins/releases/tag/nano-banana-v1.0.0)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-yellow)](https://www.python.org)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet)](https://claude.ai/claude-code)
 [![Gemini API](https://img.shields.io/badge/powered_by-Gemini_API-orange)](https://aistudio.google.com)
+<!-- badges-end -->
 
 AI image generation and presentation deck creation plugin for Claude Code, powered by the Gemini API.
 

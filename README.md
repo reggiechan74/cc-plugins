@@ -1,9 +1,11 @@
 # Reggie Chan's Claude Code Plugins
 
+<!-- badges-start -->
 [![Plugins](https://img.shields.io/badge/plugins-12-blue)](https://github.com/reggiechan74/cc-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-marketplace-blueviolet)](https://claude.ai/claude-code)
 [![GitHub Stars](https://img.shields.io/github/stars/reggiechan74/cc-plugins?style=flat&color=yellow)](https://github.com/reggiechan74/cc-plugins/stargazers)
+<!-- badges-end -->
 
 A marketplace of Claude Code plugins for enhanced development workflows.
 
