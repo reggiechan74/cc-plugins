@@ -68,25 +68,75 @@ Tell Claude: *"generate an image of a modern office building at sunset using the
 
 Tell Claude: *"/deck-prompt path/to/report.md --preset consulting"*
 
-### Available presets
+### Image presets
 
-| Category | Presets |
-|----------|---------|
-| Technical | blueprint, exploded-view, anatomical, isometric, system-diagram, site-map |
-| Business | infographic, slide, hero-banner, product-mockup, data-viz |
-| Creative | watercolor, pencil-sketch, flat-vector, cinematic, concept-art, pixel-art |
-| UI/UX | app-mockup, icon, logo, wireframe |
-| Photography | portrait, lifestyle, architectural-viz |
-| Specialized | storyboard |
+25 presets organized into 6 categories. Each preset applies a tuned system prompt, default aspect ratio, and resolution so you only need to describe your subject.
+
+#### Technical
+
+| Preset | Default Aspect | Resolution | Best for |
+|--------|---------------|------------|----------|
+| `blueprint` | 3:2 | 2K | Architectural plans, technical drawings, floor layouts |
+| `exploded-view` | 1:1 | 2K | Product teardowns, assembly diagrams, component breakdowns |
+| `anatomical` | 3:4 | 2K | Biological diagrams, medical illustrations, cross-sections |
+| `isometric` | 1:1 | 2K | 3D-style diagrams, office layouts, system overviews |
+| `system-diagram` | 16:9 | 2K | Architecture diagrams, network topologies, flow charts |
+| `site-map` | 4:3 | 2K | Website structure maps, navigation hierarchies |
+
+#### Business
+
+| Preset | Default Aspect | Resolution | Best for |
+|--------|---------------|------------|----------|
+| `infographic` | 9:16 | 2K | Vertical data stories, social media graphics, stat summaries |
+| `slide` | 16:9 | 2K | Presentation slides, meeting visuals, keynote graphics |
+| `hero-banner` | 16:9 | 2K | Website headers, marketing banners, landing page visuals |
+| `product-mockup` | 1:1 | 2K | Product shots, packaging previews, e-commerce images |
+| `data-viz` | 16:9 | 2K | Charts, dashboards, data-driven graphics |
+
+#### Creative
+
+| Preset | Default Aspect | Resolution | Best for |
+|--------|---------------|------------|----------|
+| `watercolor` | 3:2 | 2K | Artistic illustrations, soft editorial art, greeting cards |
+| `pencil-sketch` | 1:1 | 2K | Hand-drawn style concepts, storyboard frames, draft visuals |
+| `flat-vector` | 1:1 | 2K | Icons at scale, blog illustrations, clean graphic art |
+| `cinematic` | 21:9 | 4K | Film-style scenes, dramatic landscapes, widescreen hero images |
+| `concept-art` | 16:9 | 4K | Game/film concept art, environment design, character concepts |
+| `pixel-art` | 1:1 | 1K | Retro game assets, 8-bit style icons, nostalgic illustrations |
+
+#### UI/UX
+
+| Preset | Default Aspect | Resolution | Best for |
+|--------|---------------|------------|----------|
+| `app-mockup` | 9:16 | 2K | Mobile app screens, phone UI previews |
+| `icon` | 1:1 | 1K | App icons, toolbar icons, favicon designs |
+| `logo` | 1:1 | 1K | Brand logos, wordmarks, monograms |
+| `wireframe` | 16:9 | 2K | Low-fidelity layouts, UX sketches, page structure drafts |
+
+#### Photography
+
+| Preset | Default Aspect | Resolution | Best for |
+|--------|---------------|------------|----------|
+| `portrait` | 3:4 | 2K | Headshots, character portraits, profile images |
+| `lifestyle` | 3:2 | 2K | Product-in-context shots, editorial photography, social content |
+| `architectural-viz` | 16:9 | 4K | Building renders, interior design, real estate visuals |
+
+#### Specialized
+
+| Preset | Default Aspect | Resolution | Best for |
+|--------|---------------|------------|----------|
+| `storyboard` | 16:9 | 2K | Sequential scene planning, video pre-production, narrative frames |
 
 ### Presentation presets
 
-| Preset | Style |
-|--------|-------|
-| `consulting` | McKinsey/BCG professional (deep navy, coral, white) |
-| `workshop` | Educational, warm (teal, amber, cream) |
-| `pitch` | Startup/VC bold (black, electric blue, neon green) |
-| `creative` | Portfolio/agency (cream, matte black, terracotta) |
+4 presets for slide deck generation via `/deck-prompt`. Each defines a color palette, typography style, and per-slide-type prompt prefixes that are automatically applied.
+
+| Preset | Style | Color Palette | Best for |
+|--------|-------|---------------|----------|
+| `consulting` | McKinsey/BCG professional | Deep navy, coral, white, light gray | Client deliverables, strategy decks, board presentations |
+| `workshop` | Educational, warm, accessible | Warm teal, soft amber, cream, charcoal | Training sessions, classroom materials, onboarding decks |
+| `pitch` | Startup/VC, bold, high-contrast | Pure black, electric blue, white, neon green | Investor pitches, product launches, demo days |
+| `creative` | Portfolio/agency, editorial | Warm cream, matte black, terracotta, sage green | Design portfolios, creative briefs, agency proposals |
 
 ## Skills
 
