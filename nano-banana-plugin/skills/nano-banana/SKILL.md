@@ -5,7 +5,7 @@ description: This skill should be used when the user asks to "generate an image"
 
 ## Purpose
 
-Generate and edit images via the Gemini REST API using the Python script at `$CLAUDE_PLUGIN_ROOT/skills/nano-banana/scripts/nano_banana.py`. Support 25 style presets across 6 categories (Technical, Business, Creative, UI/UX, Photography, Specialized) to produce consistently styled output without manual prompt engineering. Configure aspect ratios from 14 available options and resolution tiers ranging from 512px to 4K to match any output target.
+Generate and edit images via the Gemini REST API using the Python script at `scripts/nano_banana.py` (relative to this skill's base directory). Support 25 style presets across 6 categories (Technical, Business, Creative, UI/UX, Photography, Specialized) to produce consistently styled output without manual prompt engineering. Configure aspect ratios from 14 available options and resolution tiers ranging from 512px to 4K to match any output target.
 
 ## Prerequisites
 
@@ -15,15 +15,17 @@ Generate and edit images via the Gemini REST API using the Python script at `$CL
 
 ## Quick Start
 
+**Path resolution:** When this skill is loaded, Claude Code displays a "Base directory for this skill:" header. Use that absolute path to resolve script paths in all bash commands below. In the examples, `$BASE_DIR` represents this path.
+
 **Minimal (auto-names file using config defaults):**
 ```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/nano-banana/scripts/nano_banana.py \
+python3 $BASE_DIR/scripts/nano_banana.py \
   --prompt "A modern office building at sunset"
 ```
 
 **With preset and explicit output:**
 ```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/nano-banana/scripts/nano_banana.py \
+python3 $BASE_DIR/scripts/nano_banana.py \
   --prompt "A Victorian house with garden" \
   --output ./house_blueprint.png \
   --preset blueprint
@@ -31,7 +33,7 @@ python3 $CLAUDE_PLUGIN_ROOT/skills/nano-banana/scripts/nano_banana.py \
 
 **Image editing (with reference):**
 ```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/nano-banana/scripts/nano_banana.py \
+python3 $BASE_DIR/scripts/nano_banana.py \
   --prompt "Convert to watercolor style" \
   --output ./watercolor_version.png \
   --preset watercolor \
@@ -112,7 +114,7 @@ Generate an entire slide deck from a JSON specification file in a single invocat
 
 **Invoke with `--deck`:**
 ```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/nano-banana/scripts/nano_banana.py --deck ./decks/my_deck_spec.json
+python3 $BASE_DIR/scripts/nano_banana.py --deck ./decks/my_deck_spec.json
 ```
 
 **Key behaviors:**
@@ -181,7 +183,7 @@ Parse stdout JSON to confirm success and retrieve the resolved absolute output p
 
 ## Configuration
 
-Edit `$CLAUDE_PLUGIN_ROOT/skills/nano-banana/config.json` to set persistent defaults:
+Edit `$BASE_DIR/config.json` to set persistent defaults:
 
 ```json
 {
@@ -218,4 +220,4 @@ When `--output` is omitted, the script auto-generates a filename using `output_d
 
 ## Additional Resources
 
-- **`$CLAUDE_PLUGIN_ROOT/skills/nano-banana/references/presets.md`** — Full prompt engineering guide with per-preset tips, example prompts, and customization advice for each of the 25 presets
+- **`$BASE_DIR/references/presets.md`** — Full prompt engineering guide with per-preset tips, example prompts, and customization advice for each of the 25 presets

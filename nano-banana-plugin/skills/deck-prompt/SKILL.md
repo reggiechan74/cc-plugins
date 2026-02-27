@@ -9,6 +9,10 @@ argument-hint: report_path --preset name --slides count
 
 Decompose a markdown or PDF report into a structured deck specification JSON file that the nano-banana `--deck` mode can consume to generate presentation slide images. Claude reads the source document, understands its structure and content, selects appropriate slide types and layouts, writes concise visual prompts for each slide, and outputs a complete deck spec ready for image generation.
 
+## Path Resolution
+
+When this skill is loaded, Claude Code displays a "Base directory for this skill:" header. Use that absolute path to resolve file paths in all commands below. In the examples, `$BASE_DIR` represents this path. The sibling nano-banana skill lives at `$BASE_DIR/../nano-banana`.
+
 ## Workflow
 
 ### Step 1: Read the Source Report
@@ -25,7 +29,7 @@ Parse the document structure: title, abstract/summary, section headings, body co
 Read the presentation config JSON to understand available slide types, layouts, prompt prefixes, and brand identity:
 
 ```
-$CLAUDE_PLUGIN_ROOT/skills/nano-banana/presets/presentations/{preset}.json
+$BASE_DIR/../nano-banana/presets/presentations/{preset}.json
 ```
 
 **Available presets:**
@@ -128,13 +132,13 @@ After writing the deck spec:
 3. Offer to run nano-banana to generate the slide images:
 
 ```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/nano-banana/scripts/nano_banana.py --deck path/to/deck_spec.json
+python3 $BASE_DIR/../nano-banana/scripts/nano_banana.py --deck path/to/deck_spec.json
 ```
 
 If the user wants to regenerate specific slides (e.g., after prompt edits), use `--force`:
 
 ```bash
-python3 $CLAUDE_PLUGIN_ROOT/skills/nano-banana/scripts/nano_banana.py --deck path/to/deck_spec.json --force
+python3 $BASE_DIR/../nano-banana/scripts/nano_banana.py --deck path/to/deck_spec.json --force
 ```
 
 ## Deck Spec JSON Schema
