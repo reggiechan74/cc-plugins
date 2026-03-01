@@ -22,7 +22,7 @@ BEHAVIOR validate_email: Check that an input string conforms to basic email addr
   RULE has_domain:
     WHEN input contains "@"
     THEN the portion after "@" MUST contain at least one "." character
-    AND the portion after "@" MUST be at least 3 characters long
+         AND the portion after "@" MUST be at least 3 characters long
 
   ERROR invalid_email:
     WHEN input fails contains_at_sign OR has_domain
@@ -37,11 +37,12 @@ BEHAVIOR validate_email: Check that an input string conforms to basic email addr
 
   EXAMPLE missing_at_sign:
     INPUT: "reggie.chan.tenebrus.ca"
-    EXPECTED: { "valid": false, "error": "Invalid email address: does not meet structural requirements" }
-    NOTES: No @ character present -- triggers contains_at_sign rule failure
+    EXPECTED: { "valid": false,
+                "error": "Invalid email address: does not meet structural requirements" }
+    NOTES: No @ character present — triggers contains_at_sign rule failure
 
 Constraints
-* Validation is structural only -- does not verify that the domain exists or accepts mail
+* Validation is structural only — does not verify that the domain exists or accepts mail
 ```
 
 ---
@@ -59,11 +60,15 @@ Meta
 * Tier: standard
 
 Purpose
-Extract structured data from commercial lease PDF documents to populate a standardized lease database for portfolio management and analysis. Focuses on the five core extraction concerns: parties, premises, term, rent, and overall confidence scoring.
+Extract structured data from commercial lease PDF documents to populate a standardized
+lease database for portfolio management and analysis. Focuses on the five core extraction
+concerns: parties, premises, term, rent, and overall confidence scoring.
 
 Scope
-* IN SCOPE: Party identification (landlord, tenant), premises details, lease term dates, rent and escalation terms, extraction confidence scoring
-* OUT OF SCOPE: Legal clause interpretation, market rent analysis, negotiation recommendations, amendment tracking, estoppel generation
+* IN SCOPE: Party identification (landlord, tenant), premises details,
+  lease term dates, rent and escalation terms, extraction confidence scoring
+* OUT OF SCOPE: Legal clause interpretation, market rent analysis,
+  negotiation recommendations, amendment tracking, estoppel generation
 
 Inputs
 * lease_pdf: file - PDF document of a commercial lease agreement - required
@@ -186,7 +191,8 @@ BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease 
       "error": "Could not identify landlord in lease document",
       "confidence": 0.0
     }
-    NOTES: OCR damage obscured first page -- landlord name unreadable. Extraction halts.
+    NOTES: OCR damage obscured first page — landlord name unreadable. Extraction halts.
+
 
 BEHAVIOR premises_extraction: Extract physical property details from the lease
 
@@ -195,10 +201,11 @@ BEHAVIOR premises_extraction: Extract physical property details from the lease
 
   RULE address_required:
     premises.address MUST NOT be empty
-    AND premises.city MUST NOT be empty
+         AND premises.city MUST NOT be empty
 
   RULE sqft_reasonableness:
-    premises.sqft SHOULD be between 100 and 2000000  -- flag outliers for review
+    premises.sqft SHOULD be between 100 and 2000000
+    -- flag outliers for review
 
   ERROR missing_sqft:
     WHEN premises.sqft is null or premises.sqft = 0
@@ -225,6 +232,7 @@ BEHAVIOR premises_extraction: Extract physical property details from the lease
     }
     NOTES: Older lease format did not include sqft. Extraction continues with warning.
 
+
 BEHAVIOR term_extraction: Extract and validate lease commencement and expiration dates
 
   RULE expiration_after_commencement:
@@ -234,7 +242,8 @@ BEHAVIOR term_extraction: Extract and validate lease commencement and expiration
     term.months MUST equal months_between(term.commencement, term.expiration)
 
   RULE term_reasonableness:
-    term.months SHOULD be between 1 and 300  -- flag unusual terms for review
+    term.months SHOULD be between 1 and 300
+    -- flag unusual terms for review
 
   ERROR date_parse_failure:
     WHEN commencement or expiration date cannot be parsed from document text
@@ -259,6 +268,7 @@ BEHAVIOR term_extraction: Extract and validate lease commencement and expiration
       "error": "Could not parse lease term dates from document"
     }
     NOTES: Document contained handwritten date amendments that OCR could not resolve.
+
 
 BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation schedule
 
@@ -304,6 +314,7 @@ BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation sche
       }
     }
     NOTES: Flat $4,500/month with no escalations. annual_rent(rent, null) = $54,000.
+
 
 BEHAVIOR confidence_scoring: Compute overall extraction confidence based on field completeness
 
@@ -351,16 +362,24 @@ Meta
 * Tier: complex
 
 Purpose
-Route purchase order requests through the appropriate approval chain based on dollar thresholds, department policies, and urgency levels. Manage notification dispatch, timeout escalation, and state transitions to ensure proper financial controls while allowing emergency overrides for time-critical needs.
+Route purchase order requests through the appropriate approval chain based on dollar
+thresholds, department policies, and urgency levels. Manage notification dispatch,
+timeout escalation, and state transitions to ensure proper financial controls while
+allowing emergency overrides for time-critical needs.
 
 Scope
-* IN SCOPE: PO validation, approval routing by amount threshold, emergency override, notification dispatch (sequential and parallel), timeout escalation, state management
-* OUT OF SCOPE: Purchase order creation UI, vendor management, payment processing, budget tracking, three-way matching
+* IN SCOPE: PO validation, approval routing by amount threshold, emergency override,
+  notification dispatch (sequential and parallel), timeout escalation, state management
+* OUT OF SCOPE: Purchase order creation UI, vendor management, payment processing,
+  budget tracking, three-way matching
 
 Audience
-* AI agents: This spec drives an automated workflow engine. Each behavior is self-contained. Process behaviors in PRECEDENCE order when a PO enters the system.
-* Human reviewers: Start with approval_routing to understand threshold logic, then read notification_dispatch and timeout_escalation for the async flow.
-* Administrators: Threshold amounts and timeout durations are defined as constants in the rules. Adjust these values when corporate policy changes.
+* AI agents: This spec drives an automated workflow engine. Each behavior is
+  self-contained. Process behaviors in PRECEDENCE order when a PO enters the system.
+* Human reviewers: Start with approval_routing to understand threshold logic,
+  then read notification_dispatch and timeout_escalation for the async flow.
+* Administrators: Threshold amounts and timeout durations are defined as constants
+  in the rules. Adjust these values when corporate policy changes.
 
 Inputs
 * purchase_order: PurchaseOrder - the PO requiring approval - required
@@ -433,7 +452,8 @@ FUNCTION calculate_timeout(urgency):
     timeout = 2 hours
   RETURNS timeout
 
-BEHAVIOR request_validation: Validate that a purchase order has all required fields and a valid budget code before entering the approval workflow
+BEHAVIOR request_validation: Validate that a purchase order has all required fields
+  and a valid budget code before entering the approval workflow
 
   RULE required_fields:
     purchase_order.vendor MUST NOT be empty
@@ -454,13 +474,15 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     WHEN any of vendor, description, justification, or amount fails validation
     SEVERITY critical
     ACTION reject PO and return to requester
-    MESSAGE "Purchase order is incomplete. All fields (vendor, description, justification, amount) are required."
+    MESSAGE "Purchase order is incomplete.
+             All fields (vendor, description, justification, amount) are required."
 
   ERROR invalid_budget_code:
     WHEN purchase_order.budget_code does not match required pattern
     SEVERITY critical
     ACTION reject PO and return to requester
-    MESSAGE "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)."
+    MESSAGE "Budget code format invalid.
+             Expected format: XX-0000-000 (e.g., EN-4200-310)."
 
   EXAMPLE valid_request:
     INPUT: {
@@ -487,38 +509,48 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     EXPECTED: { "validation": "failed", "error": "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)." }
     NOTES: "OPS-42" does not match the required pattern [A-Z]{2}-[0-9]{4}-[0-9]{3}.
 
-BEHAVIOR approval_routing: Determine the approval chain based on PO amount, then route for review. Emergency purchases bypass the standard chain.
+
+BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
+  then route for review. Emergency purchases bypass the standard chain.
 
   State: pending -> in_review -> approved | rejected | info_requested
 
   RULE emergency_override:
-    WHEN urgency = "emergency" AND purchase_order.amount <= 10000
+    WHEN urgency = "emergency"
+         AND purchase_order.amount <= 10000
     THEN approval_chain = [get_department_head(purchase_order.department)]
-    AND approval_status.state = "in_review"
+         AND approval_status.state = "in_review"
     PRIORITY 1
 
   RULE amount_threshold_1:
     WHEN purchase_order.amount <= 5000
     THEN approval_chain = [requester.manager_id]
-    AND approval_status.state = "in_review"
+         AND approval_status.state = "in_review"
     PRIORITY 5
 
   RULE amount_threshold_2:
-    WHEN purchase_order.amount > 5000 AND purchase_order.amount <= 25000
-    THEN approval_chain = [requester.manager_id, get_department_head(purchase_order.department)]
-    AND approval_status.state = "in_review"
+    WHEN purchase_order.amount > 5000
+         AND purchase_order.amount <= 25000
+    THEN approval_chain = [requester.manager_id,
+                           get_department_head(purchase_order.department)]
+         AND approval_status.state = "in_review"
     PRIORITY 6
 
   RULE amount_threshold_3:
-    WHEN purchase_order.amount > 25000 AND purchase_order.amount <= 100000
-    THEN approval_chain = [requester.manager_id, get_department_head(purchase_order.department), "usr_finance_director"]
-    AND approval_status.state = "in_review"
+    WHEN purchase_order.amount > 25000
+         AND purchase_order.amount <= 100000
+    THEN approval_chain = [requester.manager_id,
+                           get_department_head(purchase_order.department),
+                           "usr_finance_director"]
+         AND approval_status.state = "in_review"
     PRIORITY 7
 
   RULE amount_threshold_4:
     WHEN purchase_order.amount > 100000
-    THEN approval_chain = [requester.manager_id, get_department_head(purchase_order.department), "usr_finance_director", "usr_cfo"]
-    AND approval_status.state = "in_review"
+    THEN approval_chain = [requester.manager_id,
+                           get_department_head(purchase_order.department),
+                           "usr_finance_director", "usr_cfo"]
+         AND approval_status.state = "in_review"
     PRIORITY 8
 
   RULE chain_progression:
@@ -582,19 +614,23 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount, then
         { "user_id": "usr_ops_head", "role": "Department Head", "level": 1, "decision": "pending" }
       ]
     }
-    NOTES: Emergency + amount <= $10K triggers PRIORITY 1 override. Bypasses manager, routes directly to department head. 2-hour timeout applies.
+    NOTES: Emergency + amount <= $10K triggers PRIORITY 1 override.
+           Bypasses manager, routes directly to department head. 2-hour timeout applies.
 
-BEHAVIOR notification_dispatch: Send approval request notifications to the appropriate approvers. Standard urgency uses sequential notification; urgent uses parallel.
+
+BEHAVIOR notification_dispatch: Send approval request notifications to the
+  appropriate approvers. Standard urgency uses sequential notification; urgent
+  uses parallel.
 
   RULE standard_sequential:
     WHEN urgency = "standard"
     THEN notify only the current approver in the chain
-    AND do not notify subsequent approvers until the current one decides
+         AND do not notify subsequent approvers until the current one decides
 
   RULE urgent_parallel:
     WHEN urgency = "urgent"
     THEN notify all approvers in the chain simultaneously
-    AND all approvers MUST approve for the PO to be approved
+         AND all approvers MUST approve for the PO to be approved
     PRIORITY 2
 
   RULE emergency_immediate:
@@ -609,7 +645,8 @@ BEHAVIOR notification_dispatch: Send approval request notifications to the appro
     WHEN notification delivery fails after 3 retry attempts
     SEVERITY warning
     ACTION log failure, continue workflow, alert system administrator
-    MESSAGE "Failed to deliver notification to {recipient_email} after 3 attempts"
+    MESSAGE "Failed to deliver notification to {recipient_email}
+             after 3 attempts"
 
   EXAMPLE standard_sequential_notification:
     INPUT: {
@@ -641,30 +678,39 @@ BEHAVIOR notification_dispatch: Send approval request notifications to the appro
         { "id": "ntf_90004", "recipient_email": "finance.director@company.ca", "type": "approval_request", "sent_at": "2026-03-01T09:15:01-05:00" }
       ]
     }
-    NOTES: Urgent -- all three approvers notified simultaneously with identical URGENT-prefixed messages. All must approve.
+    NOTES: Urgent — all three approvers notified simultaneously
+           with identical URGENT-prefixed messages. All must approve.
 
-BEHAVIOR timeout_escalation: Escalate to the next level of management when an approver does not respond within the timeout window defined by urgency level.
+
+BEHAVIOR timeout_escalation: Escalate to the next level of management when an
+  approver does not respond within the timeout window defined by urgency level.
 
   RULE standard_timeout:
-    WHEN urgency = "standard" AND current approver has not responded within 48 hours
+    WHEN urgency = "standard"
+         AND current approver has not responded within 48 hours
     THEN send reminder notification to current approver
-    AND if no response within additional 24 hours, escalate to current approver's manager
+         AND if no response within additional 24 hours,
+             escalate to current approver's manager
 
   RULE urgent_timeout:
-    WHEN urgency = "urgent" AND any approver has not responded within 4 hours
+    WHEN urgency = "urgent"
+         AND any approver has not responded within 4 hours
     THEN escalate immediately to that approver's manager
-    AND send escalation notification
+         AND send escalation notification
 
   RULE emergency_timeout:
-    WHEN urgency = "emergency" AND approver has not responded within 2 hours
+    WHEN urgency = "emergency"
+         AND approver has not responded within 2 hours
     THEN escalate to CFO directly
-    AND send escalation notification with "EMERGENCY ESCALATION" prefix
+         AND send escalation notification with "EMERGENCY ESCALATION" prefix
 
   ERROR approver_unavailable:
-    WHEN escalation target (approver's manager) is also unavailable or has no manager_id
+    WHEN escalation target (approver's manager) is also unavailable
+         or has no manager_id
     SEVERITY critical
     ACTION escalate to CFO as final fallback, alert system administrator
-    MESSAGE "Approval chain broken: no available escalation target for PO {po_id}"
+    MESSAGE "Approval chain broken: no available escalation target
+             for PO {po_id}"
 
   EXAMPLE standard_timeout_escalation:
     INPUT: {
@@ -710,7 +756,8 @@ PRECEDENCE:
   6. amount_threshold_1 (from BEHAVIOR approval_routing)
 
 Constraints
-* Approval decisions MUST be recorded with timestamp and persisted to survive system restarts
+* Approval decisions MUST be recorded with timestamp
+  and persisted to survive system restarts
 * Notifications MUST be dispatched within 60 seconds of a state change
 * Timeout checks MUST run on a recurring schedule (every 15 minutes minimum)
 * All monetary amounts MUST be displayed with two decimal places and currency code
@@ -719,14 +766,17 @@ Constraints
 
 Dependencies
 * org_directory service for manager lookups and department head resolution
-* budget_code registry for validation against pattern [A-Z]{2}-[0-9]{4}-[0-9]{3}
+* budget_code registry for validation against pattern
+  [A-Z]{2}-[0-9]{4}-[0-9]{3}
 * notification service (email gateway) with retry capability
 * workflow state persistence store (database or durable queue)
 * scheduled job runner for timeout escalation checks
 
 Changelog
-* 2.1.0: 2026-03-01 - Migrated to SESF v2 behavior-centric format. Added PRECEDENCE block. Added explicit PRIORITY tags to approval_routing rules.
-* 2.0.0: 2026-01-18 - Added emergency override rule for amounts under $10K. Added timeout escalation behavior.
+* 2.1.0: 2026-03-01 - Migrated to SESF v2 behavior-centric format.
+  Added PRECEDENCE block and explicit PRIORITY tags to approval_routing rules.
+* 2.0.0: 2026-01-18 - Added emergency override rule for amounts under $10K.
+  Added timeout escalation behavior.
 * 1.1.0: 2025-11-22 - Added parallel notification for urgent requests
 * 1.0.0: 2025-09-01 - Initial version with sequential approval only
 ```

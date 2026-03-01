@@ -4,11 +4,11 @@ Syntax examples, keyword definitions, and quality checklists for writing SESF sp
 
 ## Tier Comparison
 
-| Tier | Required Sections | Use When | Target Length |
-|------|-------------------|----------|---------------|
-| Micro | Meta, Purpose, Behaviors, Constraints (optional) | Single behavior, 1-2 rules | 20-40 lines |
+| Tier     | Required Sections                              | Use When                            | Target Length |
+|----------|------------------------------------------------|-------------------------------------|---------------|
+| Micro    | Meta, Purpose, Behaviors, Constraints (opt.)   | Single behavior, 1-2 rules          | 20-40 lines   |
 | Standard | Meta, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors, Constraints, Dependencies | Multiple behaviors sharing types | 100-300 lines |
-| Complex | Everything in Standard + Precedence, State/Flow, Cross-behavior references, Audience notes | Interacting behaviors, overlapping rules, state machines | 300-600 lines |
+| Complex  | Everything in Standard + Precedence, State/Flow, Audience notes | Overlapping rules, state machines | 300-600 lines |
 
 ## Requirement Keywords
 
@@ -50,6 +50,7 @@ BEHAVIOR behavior_name: Brief description of what this behavior does
     INPUT: { concrete input data }
     EXPECTED: { concrete expected output }
     NOTES: clarification if needed
+
 ```
 
 ## Rule Syntax Variants
@@ -58,7 +59,8 @@ BEHAVIOR behavior_name: Brief description of what this behavior does
 
 ```
 RULE discount_eligibility:
-  WHEN order.total > 500 AND customer.tier = "gold"
+  WHEN order.total > 500
+       AND customer.tier = "gold"
   THEN apply discount of 15%
   ELSE apply standard pricing
   PRIORITY 2
@@ -78,9 +80,9 @@ RULE currency_required:
 
 ```
 RULE select_output_format:
-  WHEN output = "text" THEN add "-o /tmp/result.md"
-  ELSE WHEN output = "json" THEN add "--json"
-  ELSE WHEN output = "schema" THEN add "--output-schema <file>"
+  WHEN output = "text"  THEN add "-o /tmp/result.md"
+  ELSE WHEN output = "json"    THEN add "--json"
+  ELSE WHEN output = "schema"  THEN add "--output-schema <file>"
 ```
 
 ## Type Definition Syntax
@@ -103,7 +105,11 @@ LineItem {
 }
 ```
 
-**Supported primitive types**: string, number (includes decimals), integer (whole numbers only), boolean, date (YYYY-MM-DD), datetime (ISO 8601), enum [option1, option2, ...], list of [type], [TypeName] (reference to a defined type).
+**Supported primitive types**:
+string, number (includes decimals), integer (whole numbers only),
+boolean, date (YYYY-MM-DD), datetime (ISO 8601),
+enum [option1, option2, ...], list of [type],
+[TypeName] (reference to a defined type).
 
 ## Function Definition Syntax
 
@@ -157,6 +163,7 @@ Within a single behavior, use PRIORITY tags on individual rules to control evalu
 
 ```
 BEHAVIOR validation:
+
   RULE check_required_fields:
     WHEN any required field is null
     THEN reject with error "Missing required fields"
@@ -166,11 +173,15 @@ BEHAVIOR validation:
     WHEN any field fails format validation
     THEN reject with error "Invalid field format"
     PRIORITY 2
+
 ```
 
-**Consistency**: Inline PRIORITY tags within behaviors MUST NOT contradict the global PRECEDENCE block.
+**Consistency**: Inline PRIORITY tags within behaviors
+MUST NOT contradict the global PRECEDENCE block.
 
-**When to use**: If no two rules from different behaviors can ever match the same input, you do not need a PRECEDENCE block -- even at Complex tier. Precedence resolves ambiguity when conditions overlap.
+**When to use**: If no two rules from different behaviors can ever match
+the same input, you do not need a PRECEDENCE block — even at Complex tier.
+Precedence resolves ambiguity when conditions overlap.
 
 ## Inline Comment Syntax
 
@@ -184,7 +195,8 @@ RULE apply_late_fee:
 
 ## Example Syntax
 
-Examples within a behavior demonstrate that behavior's rules and error cases. Use concrete values -- never placeholders:
+Examples within a behavior demonstrate that behavior's rules and error cases.
+Use concrete values — never placeholders:
 
 ```
 EXAMPLE valid_gold_discount:
@@ -196,6 +208,7 @@ EXAMPLE standard_pricing_fallback:
   INPUT: { "order": { "total": 750 }, "customer": { "tier": "silver" } }
   EXPECTED: { "discount": 0, "final_total": 750 }
   NOTES: Non-gold customer gets standard pricing via ELSE branch
+
 ```
 
 ## Anti-Patterns

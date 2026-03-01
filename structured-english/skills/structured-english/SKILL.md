@@ -50,6 +50,7 @@ Functions
 
 Behaviors
 
+
 BEHAVIOR select_tier: Determine the correct specification tier based on complexity signals and user intent
 
   RULE explicit_override:
@@ -105,29 +106,35 @@ BEHAVIOR select_tier: Determine the correct specification tier based on complexi
     EXPECTED: { "tier": "micro" }
     NOTES: User override takes precedence over complexity signals
 
+
 BEHAVIOR structure_document: Assemble the specification with correct section ordering and required sections per tier
 
   RULE section_order:
-    sections MUST appear in this order: Meta, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors, Precedence, Constraints, Dependencies, Changelog
+    sections MUST appear in this order:
+    Meta, Purpose, Scope, Inputs, Outputs, Types, Functions,
+    Behaviors, Precedence, Constraints, Dependencies, Changelog
 
   RULE micro_sections:
     WHEN tier = micro
     THEN include Meta, Purpose, Behaviors
-    AND Constraints is optional
-    AND all other sections MUST be omitted
+    AND  Constraints is optional
+    AND  all other sections MUST be omitted
 
   RULE standard_sections:
     WHEN tier = standard
-    THEN include Meta, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors, Constraints, Dependencies
-    AND Changelog is optional
+    THEN include Meta, Purpose, Scope, Inputs, Outputs, Types,
+         Functions, Behaviors, Constraints, Dependencies
+    AND  Changelog is optional
 
   RULE complex_sections:
     WHEN tier = complex
     THEN include all standard sections plus Precedence
-    AND behaviors MAY include State/Flow and Audience notes subsections
+    AND  behaviors MAY include State/Flow and Audience notes subsections
 
   RULE meta_fields:
-    Meta MUST contain: Version (semver), Date (YYYY-MM-DD), Domain, Status (draft|active|deprecated), Tier
+    Meta MUST contain:
+    Version (semver), Date (YYYY-MM-DD), Domain,
+    Status (draft|active|deprecated), Tier
 
   RULE empty_section_stubs:
     WHEN a required section has no content (e.g., no shared types exist)
@@ -154,6 +161,7 @@ BEHAVIOR structure_document: Assemble the specification with correct section ord
   EXAMPLE micro_with_extras:
     INPUT: { "tier": "micro", "sections_present": ["Meta", "Purpose", "Behaviors", "Inputs", "Types"] }
     EXPECTED: { "valid": false, "error": "Micro tier MUST NOT include Inputs or Types sections" }
+
 
 BEHAVIOR write_behaviors: Compose BEHAVIOR blocks with rules, errors, and examples grouped by concern
 
@@ -186,18 +194,21 @@ BEHAVIOR write_behaviors: Compose BEHAVIOR blocks with rules, errors, and exampl
     AND MUST include both happy-path and error-triggering examples
 
   RULE explicit_outcomes:
-    every conditional branch MUST have an explicit outcome (THEN and ELSE, or document that no action is taken)
+    every conditional branch MUST have an explicit outcome
+    (THEN and ELSE, or document that no action is taken)
     -- AI agents interpret literally; implicit "do nothing" is ambiguous
 
   RULE no_ambiguity:
-    rules MUST NOT use vague language: "handle appropriately", "use common sense", "extract relevant fields"
+    rules MUST NOT use vague language:
+    "handle appropriately", "use common sense", "extract relevant fields"
     -- specify each case explicitly; name specific fields; define expected behavior
 
   RULE inline_comments:
     non-obvious rule logic SHOULD include a `-- comment` explaining the rationale
 
   RULE evaluation_order:
-    rules within a behavior are evaluated in declaration order unless a PRIORITY tag overrides it
+    rules within a behavior are evaluated in declaration order
+    unless a PRIORITY tag overrides it
 
   ERROR vague_rule:
     WHEN a rule uses vague language like "handle appropriately" or "validate the data"
@@ -221,6 +232,7 @@ BEHAVIOR write_behaviors: Compose BEHAVIOR blocks with rules, errors, and exampl
     EXPECTED: { "valid": false, "error": "Rule is too vague" }
     NOTES: Must specify each error case explicitly
 
+
 BEHAVIOR write_shared_definitions: Place types, functions, and precedence rules correctly
 
   RULE type_placement:
@@ -237,7 +249,8 @@ BEHAVIOR write_shared_definitions: Place types, functions, and precedence rules 
     ELSE inline it within the single behavior that uses it
 
   RULE no_orphan_definitions:
-    every Type and Function defined in the shared sections MUST be referenced by at least one BEHAVIOR
+    every Type and Function defined in the shared sections
+    MUST be referenced by at least one BEHAVIOR
     -- unreferenced definitions are dead weight; remove them or add references
 
   RULE precedence_required:
@@ -247,7 +260,8 @@ BEHAVIOR write_shared_definitions: Place types, functions, and precedence rules 
     THEN PRECEDENCE block MUST be omitted -- even at complex tier
 
   RULE priority_consistency:
-    inline PRIORITY tags within behaviors MUST NOT contradict the global PRECEDENCE block
+    inline PRIORITY tags within behaviors
+    MUST NOT contradict the global PRECEDENCE block
 
   ERROR orphan_type:
     WHEN a Type is defined but no BEHAVIOR references it
@@ -271,6 +285,7 @@ BEHAVIOR write_shared_definitions: Place types, functions, and precedence rules 
     EXPECTED: { "placement": "inline within calculate_total behavior" }
     NOTES: Only one behavior uses it — inline rather than promote to shared Types
 
+
 BEHAVIOR ensure_quality: Validate the completed specification against SESF standards
 
   RULE deduplicate:
@@ -292,16 +307,19 @@ BEHAVIOR ensure_quality: Validate the completed specification against SESF stand
     AND complex specs SHOULD stay within 300-600 lines
 
   RULE keyword_capitalization:
-    requirement keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY) MUST be capitalized when used with their RFC 2119 meanings
+    requirement keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY)
+    MUST be capitalized when used with their RFC 2119 meanings
 
   RULE run_validator:
     WHEN specification is complete
-    THEN run `python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <spec.md>` and fix all failures
+    THEN run `python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <spec.md>`
+         and fix all failures
     -- warnings are acceptable when example count < rule count in some behaviors
 
   RULE yaml_frontmatter:
     WHEN the specification is a Claude Code skill
-    THEN it MUST include YAML frontmatter with `name` and `description` fields before the title
+    THEN it MUST include YAML frontmatter with `name` and `description` fields
+         before the title
 
   ERROR validation_failure:
     WHEN validator reports failures > 0

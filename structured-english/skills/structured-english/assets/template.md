@@ -16,20 +16,25 @@ Purpose
 [One sentence describing what this specification accomplishes]
 
 BEHAVIOR [behavior_name]: [Brief description of this behavior]
+
   RULE [rule_name]:
     [condition or constraint statement using MUST/SHOULD/MAY]
+
   RULE [conditional_rule_name]:
     WHEN [condition]
     THEN [action]
     ELSE [alternative action]
+
   ERROR [error_name]:
     WHEN [condition that triggers this error]
     SEVERITY [critical | warning | info]
     ACTION [what to do when this error occurs]
     MESSAGE "[user-facing error message]"
+
   EXAMPLE [success_case]:
     INPUT: [concrete input value or object]
     EXPECTED: [concrete expected output]
+
   EXAMPLE [failure_case]:
     INPUT: [concrete input that triggers the error above]
     EXPECTED: [error output or rejection result]
@@ -87,21 +92,26 @@ FUNCTION [function_name]([parameter1], [parameter2]):
 Behaviors
 
 BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
+
   RULE [rule_name]:
     WHEN [condition]
     THEN [action]
     ELSE [alternative action]
+
   RULE [simple_rule_name]:
     [field] MUST [satisfy constraint]
+
   ERROR [error_name]:
     WHEN [condition]
     SEVERITY [critical | warning | info]
     ACTION [what to do]
     MESSAGE "[user-facing message]"
+
   EXAMPLE [success_case]:
     INPUT: { [concrete input data] }
     EXPECTED: { [concrete expected output] }
     NOTES: [clarification if needed]
+
   EXAMPLE [failure_case]:
     INPUT: { [concrete input that triggers error] }
     EXPECTED: { [error output] }
@@ -156,45 +166,57 @@ FUNCTION [function_name]([parameter1]):
 Behaviors
 
 BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
+
   RULE [rule_name]:
     WHEN [condition]
     THEN [action]
     ELSE [alternative action]
     PRIORITY 1
+
   RULE [simple_rule_name]:
     [field] MUST [satisfy constraint]
     PRIORITY 2
+
   ERROR [error_name]:
     WHEN [condition]
     SEVERITY [critical | warning | info]
     ACTION [what to do]
     MESSAGE "[user-facing message]"
+
   EXAMPLE [success_case]:
     INPUT: { [concrete input data] }
     EXPECTED: { [concrete expected output] }
+
   EXAMPLE [failure_case]:
     INPUT: { [concrete input that triggers error] }
     EXPECTED: { [error output] }
+
   State/Flow
     [state_name] -> [next_state]: WHEN [transition condition]
     [state_name] -> [terminal_state]: WHEN [completion condition]
+
   Audience notes
     * AI agents: [implementation guidance for literal interpretation]
     * Human readers: [context or rationale for this behavior]
 
+
 BEHAVIOR [second_behavior_name]: [Brief description]
+
   RULE [rule_name]:
     WHEN [condition]
     THEN [action]
     PRIORITY 1
+
   ERROR [error_name]:
     WHEN [condition]
     SEVERITY [critical | warning | info]
     ACTION [what to do]
     MESSAGE "[user-facing message]"
+
   EXAMPLE [success_case]:
     INPUT: { [concrete input] }
     EXPECTED: { [concrete output] }
+
   EXAMPLE [edge_case]:
     INPUT: { [input that tests overlap with first behavior] }
     EXPECTED: { [output showing precedence resolution] }

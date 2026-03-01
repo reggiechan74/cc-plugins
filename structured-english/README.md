@@ -27,11 +27,12 @@ Add the marketplace, then install the plugin:
 
 ## Usage
 
-### Slash command
+### Slash commands
 
 ```
 /write-spec payment webhook handler
 /write-spec email classification agent
+/assess-doc path/to/existing-document.md
 ```
 
 ### Natural language triggers
@@ -48,7 +49,7 @@ The skill activates automatically when you ask Claude to:
 | Component | Description |
 |-----------|-------------|
 | **Skill** | SESF v2 authoring rules — tier selection, document structuring, behavior composition, quality assurance |
-| **Command** | `/write-spec` — guided specification creation workflow |
+| **Commands** | `/write-spec` — guided specification creation workflow; `/assess-doc` — evaluate whether an existing document would benefit from SESF conversion |
 | **Validator** | `validate_sesf.py` — structural validation with pass/fail/warning output |
 | **Templates** | Fill-in-the-blank starting points for micro, standard, and complex tiers |
 | **Examples** | Complete specs: email validator (micro), lease abstraction (standard), PO approval workflow (complex) |
