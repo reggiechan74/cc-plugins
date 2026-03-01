@@ -53,11 +53,6 @@ Single-agent AI systems fail 40% of the time on critical tasks because:
   - **healthcare-critic**: HIPAA compliance, patient safety
   - **legal-critic**: Regulatory compliance, contract validation
 
-### 🔒 Automatic Verification Gates
-
-- **PreToolUse hook**: Intercepts risky operations (Write, Edit, git, npm, docker)
-- **PostToolUse hook**: Validates outputs immediately after execution
-
 ### ⚙️ Configuration
 
 Per-project settings via `.claude/code-coherence.local.md`:
@@ -251,7 +246,6 @@ For issues or questions:
 - Core verification skills
 - Base critic agents (planner, code, security, domain)
 - Specialized domain critics (financial, healthcare, legal)
-- Hooks for automatic verification
 - Settings system with cascade support
 - Audit trail with persistence
 - Cost visibility and reporting

@@ -411,7 +411,6 @@ Pre-built acceptance criteria for common scenarios:
 **Consensus**: Unanimous approval required (any veto blocks), majority/weighted as options
 
 **Integration points**:
-- Hooks: PreToolUse warns before high-stakes operations, PostToolUse validates outputs
 - Agents: Planner, code-critic, security-critic, domain-critic work together
 - Settings: Per-project configuration in `.claude/code-coherence.local.md`
 - Audit: All decisions logged to `.claude/coherence-audit/` with git commit references

@@ -24,6 +24,5 @@
     "./agents/financial-critic.md",
     "./agents/healthcare-critic.md",
     "./agents/legal-critic.md"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
