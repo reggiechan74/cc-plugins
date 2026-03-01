@@ -1,10 +1,14 @@
-# SESF v2 Templates
+# SESF v3 Templates
 
-Fill-in-the-blank starting points for each specification tier. Copy the template that matches your complexity, replace `[bracketed placeholders]` with your values, and delete any optional sections you do not need.
+Fill-in-the-blank starting points for each specification tier. Copy the template that matches your complexity, replace `[bracketed placeholders]` with your values, and delete any optional sections you do not need. Each tier includes both BEHAVIOR and PROCEDURE templates -- use whichever block type fits your problem, or combine them in the same spec.
 
 ---
 
 ## Micro Tier Template
+
+> **Choosing a block type:** Use BEHAVIOR for declarative rules (conditions lead to outcomes). Use PROCEDURE for ordered steps (do this, then this). A spec can use either or both.
+
+### BEHAVIOR (Micro)
 
 ```
 # [Specification Name]
@@ -43,9 +47,48 @@ Constraints
 * [constraint statement]
 ```
 
+### PROCEDURE (Micro)
+
+```
+# [Specification Name]
+
+Meta
+* Version: [1.0.0] | Date: [YYYY-MM-DD] | Domain: [context] | Status: [draft] | Tier: micro
+
+Purpose
+[One sentence describing what this specification accomplishes]
+
+PROCEDURE [procedure_name]: [Brief description of what this procedure does]
+
+  STEP [step_name]: [Description]
+    [natural English action or actions]
+
+  STEP [another_step]: [Description]
+    [natural English action or actions]
+
+  ERROR [error_name]:
+    WHEN [condition that triggers this error]
+    SEVERITY [critical | warning | info]
+    ACTION [what to do when this error occurs]
+    MESSAGE "[user-facing error message]"
+
+  EXAMPLE [success_case]:
+    INPUT: [concrete input value or object]
+    EXPECTED: [concrete expected output or side effects]
+
+  EXAMPLE [failure_case]:
+    INPUT: [concrete input that triggers the error above]
+    EXPECTED: [error output or rejection result]
+
+Constraints
+* [constraint statement]
+```
+
 ---
 
 ## Standard Tier Template
+
+> **Choosing a block type:** Use BEHAVIOR for declarative rules (conditions lead to outcomes). Use PROCEDURE for ordered steps (do this, then this). A spec can use either or both.
 
 ```
 # [Specification Name]
@@ -89,6 +132,10 @@ FUNCTION [function_name]([parameter1], [parameter2]):
     [alternative action]
   RETURNS [output]
 
+ACTION [action_name]([parameter1], [parameter2]):
+  [natural English actions with side effects]
+  RETURNS [output]
+
 Behaviors
 
 BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
@@ -116,6 +163,31 @@ BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
     INPUT: { [concrete input that triggers error] }
     EXPECTED: { [error output] }
 
+Procedures
+
+PROCEDURE [procedure_name]: [Brief description of what this procedure does]
+
+  STEP [step_name]: [Description]
+    [natural English action or actions]
+
+  STEP [another_step]: [Description]
+    [natural English action or actions]
+
+  ERROR [error_name]:
+    WHEN [condition]
+    SEVERITY [critical | warning | info]
+    ACTION [what to do]
+    MESSAGE "[user-facing message]"
+
+  EXAMPLE [success_case]:
+    INPUT: { [concrete input data] }
+    EXPECTED: { [concrete expected output or side effects] }
+    NOTES: [clarification if needed]
+
+  EXAMPLE [failure_case]:
+    INPUT: { [concrete input that triggers error] }
+    EXPECTED: { [error output] }
+
 Constraints
 * [constraint statement using MUST/SHOULD/MAY]
 
@@ -126,6 +198,8 @@ Dependencies
 ---
 
 ## Complex Tier Template
+
+> **Choosing a block type:** Use BEHAVIOR for declarative rules (conditions lead to outcomes). Use PROCEDURE for ordered steps (do this, then this). A spec can use either or both.
 
 ```
 # [Specification Name]
@@ -161,6 +235,10 @@ Functions
 
 FUNCTION [function_name]([parameter1]):
   [logic as simple statements]
+  RETURNS [output]
+
+ACTION [action_name]([parameter1]):
+  [natural English actions with side effects]
   RETURNS [output]
 
 Behaviors
@@ -221,6 +299,41 @@ BEHAVIOR [second_behavior_name]: [Brief description]
     INPUT: { [input that tests overlap with first behavior] }
     EXPECTED: { [output showing precedence resolution] }
     NOTES: [explain which behavior/rule takes priority and why]
+
+Procedures
+
+PROCEDURE [procedure_name]: [Brief description of what this procedure does]
+
+  STEP [step_name]: [Description]
+    [natural English action or actions]
+
+  STEP [another_step]: [Description]
+    [natural English action or actions]
+
+  STEP [final_step]: [Description]
+    [natural English action or actions]
+
+  ERROR [error_name]:
+    WHEN [condition]
+    SEVERITY [critical | warning | info]
+    ACTION [what to do]
+    MESSAGE "[user-facing message]"
+
+  EXAMPLE [success_case]:
+    INPUT: { [concrete input data] }
+    EXPECTED: { [concrete expected output or side effects] }
+
+  EXAMPLE [failure_case]:
+    INPUT: { [concrete input that triggers error] }
+    EXPECTED: { [error output] }
+
+  State/Flow
+    [state_name] -> [next_state]: WHEN [transition condition]
+    [state_name] -> [terminal_state]: WHEN [completion condition]
+
+  Audience notes
+    * AI agents: [implementation guidance for literal interpretation]
+    * Human readers: [context or rationale for this procedure]
 
 Precedence
 
