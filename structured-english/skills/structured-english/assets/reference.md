@@ -24,6 +24,12 @@ These concepts apply to both BEHAVIOR and PROCEDURE blocks.
 | Standard | Multiple BEHAVIORs and/or PROCEDUREs sharing types  | Multiple concerns                                     | 100-300 lines |
 | Complex  | Everything + PRECEDENCE, State/Flow                  | Overlapping rules, state machines, mixed declarative+procedural | 300-600 lines |
 
+**Required sections per tier:**
+
+- **Micro**: Meta, Purpose, Behaviors/Procedures. Constraints is optional.
+- **Standard**: Meta, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors/Procedures, Constraints, Dependencies. Changelog is optional.
+- **Complex**: All Standard sections plus Precedence. Behaviors MAY include State/Flow and Audience notes subsections.
+
 ### Requirement Keywords
 
 Use these keywords with precise meanings (always capitalize):
@@ -61,7 +67,7 @@ Natural phrasing is preferred. Mathematical symbols are valid as shorthand in nu
 | is less than / is below             | <                |
 | is at least / is greater than or equal to | >=         |
 | is at most / is less than or equal to     | <=         |
-| is between X and Y                  | --               |
+| is between X and Y                  | (none)           |
 
 ### Arithmetic
 
@@ -451,7 +457,7 @@ FUNCTION calculate_order_total(items):
   RETURNS result
 ```
 
-Functions support conditional logic using IF/ELSE IF/ELSE and all v3 constructs in their body:
+Functions support conditional logic using IF/ELSE IF/ELSE. Function bodies may use either `=` assignment or natural phrasing (`Calculate X as...`) -- both are valid:
 
 ```
 FUNCTION apply_tax_rate(amount, jurisdiction):
