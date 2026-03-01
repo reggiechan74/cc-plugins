@@ -330,7 +330,7 @@ Generate and apply themed spinner verbs for Claude Code status messages. Include
 
 ### structured-english
 
-Write specifications using Structured English Specification Format (SESF) — a behavior-centric format for defining instructions, rules, and behaviors for AI systems.
+Write specifications and procedural pseudocode using Structured English Specification Format (SESF v3) — a natural-language format for defining declarative rules, step-by-step workflows, and reusable logic for AI systems.
 
 **Install:**
 ```bash
@@ -338,13 +338,16 @@ Write specifications using Structured English Specification Format (SESF) — a 
 ```
 
 **Features:**
+- Dual-mode blocks: BEHAVIOR for declarative rules, PROCEDURE for step-by-step workflows
+- Natural English syntax: Non-programmers can read and write specs without programming experience
+- ACTION functions: Distinguish pure calculations (FUNCTION) from side-effect operations (ACTION)
 - 3-tier scaling: Micro (20-40 lines), Standard (100-300 lines), Complex (300-600 lines)
-- Behavior-centric grouping: Rules, errors, and examples grouped by concern
-- Structural validator: Python script that checks section completeness, behavior structure, and tier compliance
-- Templates and examples: Fill-in-the-blank templates for all tiers, plus complete working examples
+- Structural validator: Python script that checks section completeness, block structure, and tier compliance
+- Templates and examples: Fill-in-the-blank templates and 6 complete working examples (3 declarative, 3 procedural)
 
 **Commands:**
-- `/write-spec <domain>` - Guided SESF specification creation with tier selection, authoring, and validation
+- `/write-spec <domain>` - Guided SESF specification creation with block type selection, authoring, and validation
+- `/assess-doc <path>` - Evaluate whether a document would benefit from SESF conversion
 
 ---
 
