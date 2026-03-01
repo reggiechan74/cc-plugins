@@ -252,7 +252,13 @@ def parse_sesf(filepath: str) -> SESFDocument:
             current_behavior = None
 
     def _finish_proc_sub_block():
-        """Flush the current step/error/example into the current procedure."""
+        """Flush the current step/error/example into the current procedure.
+
+        NOTE: current_error and current_example are shared with _finish_sub_block
+        (BEHAVIOR flush). Mutual exclusion is guaranteed because the parser never
+        allows both current_behavior and current_procedure to be non-None — entering
+        a BEHAVIOR calls _finish_procedure() first, and vice versa.
+        """
         nonlocal current_step, current_error, current_example
         if current_step and current_procedure:
             current_procedure.steps.append(current_step)
@@ -372,6 +378,8 @@ def parse_sesf(filepath: str) -> SESFDocument:
             _finish_behavior()
             _finish_procedure()
             _finish_type()
+            # PROCEDURE blocks share the "behaviors" section key with BEHAVIORs
+            # for tier-requirement checking purposes.
             current_section = "behaviors"
             if "behaviors" not in doc.sections:
                 doc.sections["behaviors"] = []
