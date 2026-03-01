@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""SESF v2 Structural Validator
+"""SESF v3 Structural Validator
 
-Parses SESF v2 specification files (markdown) and validates them for
+Parses SESF v3 specification files (markdown) and validates them for
 structural correctness. Checks section completeness based on the declared
-tier (micro, standard, complex) and validates behavior block structure.
+tier (micro, standard, complex) and validates behavior block structure,
+procedure block structure, and action declarations.
 
 Usage:
     python3 validate_sesf.py <spec_file.md>
@@ -64,6 +65,23 @@ class SESFBehavior:
 
 
 @dataclass
+class SESFStep:
+    name: str
+    description: str = ""
+    raw_text: str = ""
+    line_number: int = 0
+
+
+@dataclass
+class SESFProcedure:
+    name: str
+    steps: list = field(default_factory=list)    # list[SESFStep]
+    errors: list = field(default_factory=list)   # list[SESFError]
+    examples: list = field(default_factory=list)  # list[SESFExample]
+    line_number: int = 0
+
+
+@dataclass
 class SESFTypeField:
     name: str
     type_str: str
@@ -85,6 +103,8 @@ class SESFDocument:
     types: list = field(default_factory=list)      # list[SESFType]
     functions: list = field(default_factory=list)   # list of function names
     behaviors: list = field(default_factory=list)   # list[SESFBehavior]
+    procedures: list = field(default_factory=list)  # list[SESFProcedure]
+    actions: list = field(default_factory=list)     # list of action names
     precedence: list = field(default_factory=list)  # ordered list of rule names
 
 
@@ -184,7 +204,7 @@ def _parse_meta_pipe(line: str) -> dict:
 # ---------------------------------------------------------------------------
 
 def parse_sesf(filepath: str) -> SESFDocument:
-    """Parse an SESF v2 specification file and return an SESFDocument."""
+    """Parse an SESF v3 specification file and return an SESFDocument."""
     doc = SESFDocument()
     path = Path(filepath)
     if not path.exists():
@@ -205,6 +225,8 @@ def parse_sesf(filepath: str) -> SESFDocument:
     current_rule: Optional[SESFRule] = None
     current_error: Optional[SESFError] = None
     current_example: Optional[SESFExample] = None
+    current_procedure: Optional[SESFProcedure] = None
+    current_step: Optional[SESFStep] = None
     in_type_block = False
     current_type: Optional[SESFType] = None
     meta_started = False
@@ -229,6 +251,26 @@ def parse_sesf(filepath: str) -> SESFDocument:
             doc.behaviors.append(current_behavior)
             current_behavior = None
 
+    def _finish_proc_sub_block():
+        """Flush the current step/error/example into the current procedure."""
+        nonlocal current_step, current_error, current_example
+        if current_step and current_procedure:
+            current_procedure.steps.append(current_step)
+            current_step = None
+        if current_error and current_procedure:
+            current_procedure.errors.append(current_error)
+            current_error = None
+        if current_example and current_procedure:
+            current_procedure.examples.append(current_example)
+            current_example = None
+
+    def _finish_procedure():
+        nonlocal current_procedure
+        _finish_proc_sub_block()
+        if current_procedure:
+            doc.procedures.append(current_procedure)
+            current_procedure = None
+
     def _finish_type():
         nonlocal current_type, in_type_block
         if current_type:
@@ -251,6 +293,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
         # --- Spec separator: stop at first `---` after we've started parsing ---
         if stripped == "---" and (doc.title or doc.meta):
             _finish_behavior()
+            _finish_procedure()
             _finish_type()
             break
 
@@ -289,8 +332,9 @@ def parse_sesf(filepath: str) -> SESFDocument:
         # Only consider it a section header if the line is NOT indented
         # (indented lines within behaviors are sub-blocks, not section headers)
         if section_match and not raw_line.startswith((" ", "\t")):
-            # Close any open behavior / type before switching sections
+            # Close any open behavior / procedure / type before switching sections
             _finish_behavior()
+            _finish_procedure()
             _finish_type()
 
             current_section = section_match
@@ -311,6 +355,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
         behavior_match = re.match(r"^\s*BEHAVIOR\s+(\w+)\s*:", stripped)
         if behavior_match:
             _finish_behavior()
+            _finish_procedure()
             _finish_type()
             current_section = "behaviors"
             if "behaviors" not in doc.sections:
@@ -321,10 +366,26 @@ def parse_sesf(filepath: str) -> SESFDocument:
             doc.sections["behaviors"].append(stripped)
             continue
 
+        # --- PROCEDURE detection (parallel to BEHAVIOR) ---
+        procedure_match = re.match(r"^\s*PROCEDURE\s+(\w+)\s*:", stripped)
+        if procedure_match:
+            _finish_behavior()
+            _finish_procedure()
+            _finish_type()
+            current_section = "behaviors"
+            if "behaviors" not in doc.sections:
+                doc.sections["behaviors"] = []
+            current_procedure = SESFProcedure(
+                name=procedure_match.group(1), line_number=line_num
+            )
+            doc.sections["behaviors"].append(stripped)
+            continue
+
         # --- PRECEDENCE detection (can appear after behaviors, at top level) ---
         prec_header_match = re.match(r"^PRECEDENCE\s*:", stripped)
         if prec_header_match and not raw_line.startswith((" ", "\t")):
             _finish_behavior()
+            _finish_procedure()
             _finish_type()
             current_section = "precedence"
             if "precedence" not in doc.sections:
@@ -379,12 +440,15 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 continue
             continue
 
-        # --- Inside Functions section: capture FUNCTION declarations ---
+        # --- Inside Functions section: capture FUNCTION and ACTION declarations ---
         if current_section == "functions":
             doc.sections["functions"].append(stripped)
             func_match = re.match(r"^FUNCTION\s+(\w+)\s*\(", stripped)
             if func_match:
                 doc.functions.append(func_match.group(1))
+            action_match = re.match(r"^ACTION\s+(\w+)\s*\(", stripped)
+            if action_match:
+                doc.actions.append(action_match.group(1))
             continue
 
         # --- Inside Precedence section: parse numbered rule references ---
@@ -485,12 +549,87 @@ def parse_sesf(filepath: str) -> SESFDocument:
 
             continue
 
+        # --- Inside a PROCEDURE block: parse STEP / ERROR / EXAMPLE ---
+        if current_procedure:
+            # Track content in behaviors section
+            if "behaviors" in doc.sections:
+                doc.sections["behaviors"].append(stripped)
+
+            # STEP detection
+            step_match = re.match(r"^\s*STEP\s+(\w+)\s*:", stripped)
+            if step_match:
+                _finish_proc_sub_block()
+                current_step = SESFStep(
+                    name=step_match.group(1), line_number=line_num
+                )
+                continue
+
+            # ERROR detection
+            error_match = re.match(r"^\s*ERROR\s+(\w+)\s*:", stripped)
+            if error_match:
+                _finish_proc_sub_block()
+                current_error = SESFError(
+                    name=error_match.group(1), line_number=line_num
+                )
+                continue
+
+            # EXAMPLE detection
+            example_match = re.match(r"^\s*EXAMPLE\s+(\w+)\s*:", stripped)
+            if example_match:
+                _finish_proc_sub_block()
+                current_example = SESFExample(
+                    name=example_match.group(1), line_number=line_num
+                )
+                continue
+
+            # Sub-block field parsing
+            if current_step:
+                current_step.raw_text += stripped + "\n"
+                # First non-empty content line becomes the description
+                if not current_step.description:
+                    current_step.description = stripped
+                continue
+
+            if current_error:
+                up = stripped.upper().strip()
+                if up.startswith("WHEN "):
+                    current_error.when_clause = stripped.strip()[5:].strip()
+                elif up.startswith("SEVERITY "):
+                    current_error.severity = stripped.strip().split(None, 1)[1].strip()
+                elif up.startswith("ACTION "):
+                    current_error.action = stripped.strip().split(None, 1)[1].strip()
+                elif up.startswith("MESSAGE "):
+                    current_error.message = stripped.strip().split(None, 1)[1].strip().strip('"')
+                continue
+
+            if current_example:
+                up = stripped.upper().strip()
+                if up.startswith("INPUT:"):
+                    current_example.input_text = stripped.strip()[6:].strip()
+                elif up.startswith("EXPECTED:"):
+                    current_example.expected_text = stripped.strip()[9:].strip()
+                elif up.startswith("NOTES:"):
+                    current_example.notes = stripped.strip()[6:].strip()
+                continue
+
+            # Lines inside a procedure that don't match sub-block patterns
+            prec_match_inline = re.match(r"^PRECEDENCE\s*:", stripped)
+            if prec_match_inline and not raw_line.startswith((" ", "\t")):
+                _finish_procedure()
+                current_section = "precedence"
+                if "precedence" not in doc.sections:
+                    doc.sections["precedence"] = []
+                continue
+
+            continue
+
         # --- Default: store content in current section ---
         if current_section and current_section in doc.sections:
             doc.sections[current_section].append(stripped)
 
     # Flush any remaining open blocks
     _finish_behavior()
+    _finish_procedure()
     _finish_type()
 
     return doc
@@ -590,10 +729,10 @@ def check_structural_completeness(doc: SESFDocument) -> list:
     # 2. Required sections for declared tier
     required = TIER_REQUIREMENTS.get(tier, TIER_REQUIREMENTS["micro"])
     present_sections = set(doc.sections.keys())
-    # Behaviors can also be detected via doc.behaviors even if the section
-    # keyword "Behaviors" wasn't explicitly used (specs may jump straight to
-    # BEHAVIOR blocks).
-    if doc.behaviors:
+    # Behaviors/Procedures can also be detected via doc.behaviors/doc.procedures
+    # even if the section keyword "Behaviors" wasn't explicitly used (specs may
+    # jump straight to BEHAVIOR/PROCEDURE blocks).
+    if doc.behaviors or doc.procedures:
         present_sections.add("behaviors")
 
     for sec in sorted(required):
@@ -625,18 +764,23 @@ def check_structural_completeness(doc: SESFDocument) -> list:
                 message=f"Meta field '{mf}' missing or empty",
             ))
 
-    # 4. At least one BEHAVIOR block
-    if doc.behaviors:
+    # 4. At least one BEHAVIOR or PROCEDURE block
+    if doc.behaviors or doc.procedures:
+        parts = []
+        if doc.behaviors:
+            parts.append(f"{len(doc.behaviors)} BEHAVIOR block(s)")
+        if doc.procedures:
+            parts.append(f"{len(doc.procedures)} PROCEDURE block(s)")
         results.append(ValidationResult(
             category="behaviors",
             status="PASS",
-            message=f"Found {len(doc.behaviors)} BEHAVIOR block(s)",
+            message=f"Found {', '.join(parts)}",
         ))
     else:
         results.append(ValidationResult(
             category="behaviors",
             status="FAIL",
-            message="No BEHAVIOR blocks found",
+            message="No BEHAVIOR or PROCEDURE blocks found",
         ))
 
     # 5. Each behavior has at least one RULE
@@ -654,6 +798,23 @@ def check_structural_completeness(doc: SESFDocument) -> list:
                 status="WARN",
                 message=f"BEHAVIOR '{beh.name}' has no rules",
                 line_number=beh.line_number,
+            ))
+
+    # 5b. Each procedure has at least one STEP
+    for proc in doc.procedures:
+        if proc.steps:
+            results.append(ValidationResult(
+                category="procedures",
+                status="PASS",
+                message=f"PROCEDURE '{proc.name}' has {len(proc.steps)} step(s)",
+                line_number=proc.line_number,
+            ))
+        else:
+            results.append(ValidationResult(
+                category="procedures",
+                status="WARN",
+                message=f"PROCEDURE '{proc.name}' has no steps",
+                line_number=proc.line_number,
             ))
 
     # 6. Requirement keyword capitalization check
@@ -728,7 +889,7 @@ def _pascal_to_snake(name: str) -> str:
 
 
 def _collect_all_text_lines(doc: SESFDocument) -> list[str]:
-    """Collect all textual content from behaviors (rules, errors, examples)."""
+    """Collect all textual content from behaviors and procedures."""
     lines: list[str] = []
     for beh in doc.behaviors:
         for rule in beh.rules:
@@ -746,6 +907,22 @@ def _collect_all_text_lines(doc: SESFDocument) -> list[str]:
             if err.message:
                 lines.append(err.message)
         for ex in beh.examples:
+            if ex.input_text:
+                lines.append(ex.input_text)
+            if ex.expected_text:
+                lines.append(ex.expected_text)
+    for proc in doc.procedures:
+        for step in proc.steps:
+            if step.raw_text:
+                lines.append(step.raw_text)
+            if step.description:
+                lines.append(step.description)
+        for err in proc.errors:
+            if err.when_clause:
+                lines.append(err.when_clause)
+            if err.message:
+                lines.append(err.message)
+        for ex in proc.examples:
             if ex.input_text:
                 lines.append(ex.input_text)
             if ex.expected_text:
@@ -975,78 +1152,99 @@ def check_rule_integrity(doc: SESFDocument) -> list:
 VALID_SEVERITIES = {"critical", "warning", "info"}
 
 
+def _check_errors_for_block(block_type: str, block_name: str, errors: list,
+                            has_rules_or_steps: bool, line_number: int) -> list:
+    """Check ERROR blocks within a BEHAVIOR or PROCEDURE.
+
+    Returns a list of ValidationResult objects.
+    """
+    results: list[ValidationResult] = []
+
+    if not errors:
+        return results
+
+    # Check for orphaned errors (errors without rules/steps)
+    if not has_rules_or_steps:
+        child_label = "rules" if block_type == "BEHAVIOR" else "steps"
+        results.append(ValidationResult(
+            category="error_consistency",
+            status="WARN",
+            message=f"{block_type} '{block_name}' has {len(errors)} error(s) "
+                    f"but no {child_label} (orphaned errors)",
+            line_number=line_number,
+        ))
+
+    well_defined_count = 0
+
+    for err in errors:
+        issues: list[str] = []
+
+        # Check severity
+        if err.severity is None:
+            issues.append("SEVERITY")
+        elif err.severity.lower() not in VALID_SEVERITIES:
+            results.append(ValidationResult(
+                category="error_consistency",
+                status="WARN",
+                message=f"ERROR '{err.name}' in {block_type} '{block_name}' has "
+                        f"invalid severity '{err.severity}' "
+                        f"(expected: critical, warning, info)",
+                line_number=err.line_number,
+            ))
+
+        # Check ACTION
+        if err.action is None:
+            issues.append("ACTION")
+
+        # Check MESSAGE
+        if err.message is None:
+            issues.append("MESSAGE")
+
+        if issues:
+            results.append(ValidationResult(
+                category="error_consistency",
+                status="WARN",
+                message=f"ERROR '{err.name}' in {block_type} '{block_name}' "
+                        f"missing: {', '.join(issues)}",
+                line_number=err.line_number,
+            ))
+        else:
+            well_defined_count += 1
+
+    if well_defined_count > 0:
+        results.append(ValidationResult(
+            category="error_consistency",
+            status="PASS",
+            message=f"{block_type} '{block_name}' has {well_defined_count} "
+                    f"well-defined error(s)",
+            line_number=line_number,
+        ))
+
+    return results
+
+
 def check_error_consistency(doc: SESFDocument) -> list:
     """Check that ERROR blocks are well-formed and consistent.
 
     Checks:
-    - Each ERROR has a valid severity (critical, warning, info) — WARN if missing
-    - Each ERROR has ACTION and MESSAGE fields — WARN if missing
-    - Warn on behaviors with errors but no rules (orphaned errors)
-    - PASS summary for behaviors with properly-defined errors
+    - Each ERROR has a valid severity (critical, warning, info) -- WARN if missing
+    - Each ERROR has ACTION and MESSAGE fields -- WARN if missing
+    - Warn on behaviors/procedures with errors but no rules/steps (orphaned errors)
+    - PASS summary for blocks with properly-defined errors
 
     Returns a list of ValidationResult objects.
     """
     results: list[ValidationResult] = []
 
     for beh in doc.behaviors:
-        if not beh.errors:
-            continue
+        results.extend(_check_errors_for_block(
+            "BEHAVIOR", beh.name, beh.errors, bool(beh.rules), beh.line_number
+        ))
 
-        # Check for orphaned errors (errors without rules)
-        if not beh.rules:
-            results.append(ValidationResult(
-                category="error_consistency",
-                status="WARN",
-                message=f"BEHAVIOR '{beh.name}' has {len(beh.errors)} error(s) "
-                        f"but no rules (orphaned errors)",
-                line_number=beh.line_number,
-            ))
-
-        well_defined_count = 0
-
-        for err in beh.errors:
-            issues: list[str] = []
-
-            # Check severity
-            if err.severity is None:
-                issues.append("SEVERITY")
-            elif err.severity.lower() not in VALID_SEVERITIES:
-                results.append(ValidationResult(
-                    category="error_consistency",
-                    status="WARN",
-                    message=f"ERROR '{err.name}' in BEHAVIOR '{beh.name}' has "
-                            f"invalid severity '{err.severity}' "
-                            f"(expected: critical, warning, info)",
-                    line_number=err.line_number,
-                ))
-
-            # Check ACTION
-            if err.action is None:
-                issues.append("ACTION")
-
-            # Check MESSAGE
-            if err.message is None:
-                issues.append("MESSAGE")
-
-            if issues:
-                results.append(ValidationResult(
-                    category="error_consistency",
-                    status="WARN",
-                    message=f"ERROR '{err.name}' in BEHAVIOR '{beh.name}' "
-                            f"missing: {', '.join(issues)}",
-                    line_number=err.line_number,
-                ))
-            else:
-                well_defined_count += 1
-
-        if well_defined_count > 0:
-            results.append(ValidationResult(
-                category="error_consistency",
-                status="PASS",
-                message=f"BEHAVIOR '{beh.name}' has {well_defined_count} "
-                        f"well-defined error(s)",
-                line_number=beh.line_number,
-            ))
+    for proc in doc.procedures:
+        results.extend(_check_errors_for_block(
+            "PROCEDURE", proc.name, proc.errors, bool(proc.steps), proc.line_number
+        ))
 
     return results
 
@@ -1056,14 +1254,14 @@ def check_error_consistency(doc: SESFDocument) -> list:
 # ---------------------------------------------------------------------------
 
 def check_example_consistency(doc: SESFDocument) -> list:
-    """Check that behaviors have adequate example coverage.
+    """Check that behaviors and procedures have adequate example coverage.
 
     Checks:
-    - Each behavior has at least one EXAMPLE — WARN if no examples
+    - Each behavior/procedure has at least one EXAMPLE -- WARN if no examples
     - Warn on behaviors where the number of examples is less than the
       number of rules (heuristic: each rule should ideally have a
       demonstrating example)
-    - PASS summary for behaviors with good example coverage
+    - PASS summary for blocks with good example coverage
 
     Returns a list of ValidationResult objects.
     """
@@ -1082,7 +1280,7 @@ def check_example_consistency(doc: SESFDocument) -> list:
             ))
             continue
 
-        # Has at least one example — PASS
+        # Has at least one example -- PASS
         results.append(ValidationResult(
             category="example_consistency",
             status="PASS",
@@ -1099,6 +1297,26 @@ def check_example_consistency(doc: SESFDocument) -> list:
                         f"({num_examples}) than rules ({num_rules})",
                 line_number=beh.line_number,
             ))
+
+    for proc in doc.procedures:
+        num_examples = len(proc.examples)
+
+        if num_examples == 0:
+            results.append(ValidationResult(
+                category="example_consistency",
+                status="WARN",
+                message=f"PROCEDURE '{proc.name}' has no examples",
+                line_number=proc.line_number,
+            ))
+            continue
+
+        # Has at least one example -- PASS
+        results.append(ValidationResult(
+            category="example_consistency",
+            status="PASS",
+            message=f"PROCEDURE '{proc.name}' has {num_examples} example(s)",
+            line_number=proc.line_number,
+        ))
 
     return results
 
