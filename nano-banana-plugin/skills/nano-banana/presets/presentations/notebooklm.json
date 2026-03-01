@@ -1,0 +1,44 @@
+{
+  "name": "notebooklm",
+  "description": "Architectural engineering aesthetic - structural, blueprint-inspired, institutional investor quality",
+  "default_aspect": "16:9",
+  "default_size": "2K",
+  "default_model": "flash",
+  "color_palette": "engineering cream (#F2F1ED), blueprint navy (#0F1F2C), structural copper (#C27C56), technical teal (#4A8B88), steel blue (#2C4A68)",
+  "typography_hint": "geometric sans-serif (Inter/SF Pro), Swiss-style hierarchy, heavy titles, medium subheads, regular body",
+  "global_prompt_prefix": "Professional corporate presentation slide, architectural engineering aesthetic, 16:9 widescreen format. Background is off-white bone color (#F2F1ED) with a faint technical grid pattern. Color palette uses deep navy blue (#0F1F2C) text, with accents of muted copper (#C27C56) and teal green (#4A8B88). Clean geometric sans-serif typography (Inter). Flat slightly illustrative outlined iconography with partial color fill, not generic clip art. Blocky flat arrows, not thin lines. Layouts use geometric containers with chamfered angled corners and thin dark borders. Minimalist, data-driven, high-end real estate consulting style, ",
+  "layouts": [
+    "left-visual-right-text",
+    "full-bleed-image",
+    "split-horizontal",
+    "centered-statement",
+    "grid-2x2",
+    "grid-3-column"
+  ],
+  "slide_types": {
+    "title": {
+      "prompt_prefix": "Presentation title slide, 16:9 widescreen: large bold geometric sans-serif title in blueprint navy centered in upper third, subtitle below in steel blue (#2C4A68) lighter weight, engineering cream (#F2F1ED) background with faint technical grid lines, subtle architectural blueprint motif in corners, copper (#C27C56) thin accent bar beneath title, institutional investor report quality, no slide number, generous whitespace, ",
+      "default_layout": "centered-statement"
+    },
+    "section-divider": {
+      "prompt_prefix": "Section divider slide, 16:9 widescreen: bold section title left-aligned in blueprint navy with oversized geometric sans-serif font, thin copper (#C27C56) accent bar below the title, abstract structural or engineering visual on right side using teal (#4A8B88) and steel blue (#2C4A68) tones, engineering cream background with faint grid pattern, clean transition aesthetic, ",
+      "default_layout": "left-visual-right-text"
+    },
+    "content": {
+      "prompt_prefix": "Content slide, 16:9 widescreen: clear heading at top in bold geometric sans-serif blueprint navy, organized body content in light grey card containers (#E8E8E8) with chamfered corners and thin dark outlines, key data highlighted in copper (#C27C56) or teal (#4A8B88), important numbers displayed oversized in heavy weight copper or navy, flat slightly illustrative outlined icons with partial color fill, engineering cream (#F2F1ED) background with faint grid, single key message per slide, small slide number in lower-right, ",
+      "default_layout": "left-visual-right-text"
+    },
+    "data-chart": {
+      "prompt_prefix": "Data visualization slide, 16:9 widescreen: prominent professional chart or graph as hero element occupying 60-70% of slide area, clear axis labels in blueprint navy, teal (#4A8B88) for primary data series and copper (#C27C56) for highlighted or warning data, oversized key metric numbers in heavy black weight copper or navy, faint technical grid background (#DCDCDC), insight callout annotation with leader line, blocky flat arrows for flow indicators, engineering cream background, publication-quality data aesthetic with chamfered-corner container, ",
+      "default_layout": "full-bleed-image"
+    },
+    "quote": {
+      "prompt_prefix": "Quote slide, 16:9 widescreen: large quotation in elegant font centered vertically and horizontally on engineering cream background, oversized opening quotation mark as decorative element in steel blue (#2C4A68), attribution line below in smaller geometric sans-serif with copper (#C27C56) accent dash, heavy colored plinth bar at bottom in blueprint navy (#0F1F2C) containing a key insight in cream text, faint grid pattern background, editorial quality, ",
+      "default_layout": "centered-statement"
+    },
+    "closing": {
+      "prompt_prefix": "Closing slide, 16:9 widescreen: prominent summary statement or recommendations in large geometric sans-serif blueprint navy, contact information block below in steel blue (#2C4A68), heavy copper (#C27C56) plinth bar at bottom with key takeaway in cream text, engineering cream (#F2F1ED) background with faint grid, consistent architectural brand identity matching title slide, chamfered-corner card containers for action items, ",
+      "default_layout": "centered-statement"
+    }
+  }
+}

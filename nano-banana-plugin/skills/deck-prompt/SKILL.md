@@ -40,6 +40,7 @@ $BASE_DIR/../nano-banana/presets/presentations/{preset}.json
 | `workshop` | Educational, warm, accessible | Warm teal, soft amber, cream, charcoal |
 | `pitch` | Startup/VC, bold, high-contrast | Pure black, electric blue, white, neon green |
 | `creative` | Portfolio/agency, editorial | Warm cream, matte black, terracotta, sage green |
+| `notebooklm` | Architectural engineering, blueprint-inspired | Engineering cream, blueprint navy, copper, teal, steel blue |
 
 If the user does not specify a preset, default to `consulting`.
 
@@ -253,7 +254,7 @@ A 6-slide consulting deck generated from a hypothetical market analysis report:
 | Argument | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `<report_path>` | Yes | -- | Path to the source markdown or PDF report |
-| `--preset <name>` | No | `consulting` | Presentation config to use: `consulting`, `workshop`, `pitch`, `creative` |
+| `--preset <name>` | No | `consulting` | Presentation config to use: `consulting`, `workshop`, `pitch`, `creative`, `notebooklm` |
 | `--slides <count>` | No | auto | Target number of slides; if omitted, derive from report length |
 
 ## Error Handling

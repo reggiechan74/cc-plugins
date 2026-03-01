@@ -129,7 +129,7 @@ Tell Claude: *"/deck-prompt path/to/report.md --preset consulting"*
 
 ### Presentation presets
 
-4 presets for slide deck generation via `/deck-prompt`. Each defines a color palette, typography style, and per-slide-type prompt prefixes that are automatically applied.
+5 presets for slide deck generation via `/deck-prompt`. Each defines a color palette, typography style, and per-slide-type prompt prefixes that are automatically applied.
 
 | Preset | Style | Color Palette | Best for |
 |--------|-------|---------------|----------|
@@ -137,6 +137,7 @@ Tell Claude: *"/deck-prompt path/to/report.md --preset consulting"*
 | `workshop` | Educational, warm, accessible | Warm teal, soft amber, cream, charcoal | Training sessions, classroom materials, onboarding decks |
 | `pitch` | Startup/VC, bold, high-contrast | Pure black, electric blue, white, neon green | Investor pitches, product launches, demo days |
 | `creative` | Portfolio/agency, editorial | Warm cream, matte black, terracotta, sage green | Design portfolios, creative briefs, agency proposals |
+| `notebooklm` | Architectural engineering, blueprint-inspired | Engineering cream, blueprint navy, copper, teal, steel blue | Institutional investor reports, real estate consulting, technical analyses |
 
 ## Skills
 
