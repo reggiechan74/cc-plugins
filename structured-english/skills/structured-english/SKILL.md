@@ -1,9 +1,9 @@
 ---
 name: structured-english
-description: Write specifications using Structured English Specification Format (SESF v2), a behavior-centric format for defining instructions, rules, and behaviors for AI systems. Features 3-tier scaling (Micro/Standard/Complex), rule precedence, and integrated validation. Use when you need clear, unambiguous, machine-readable specifications. Triggers include "write a spec", "create a specification", "define requirements", "specify the behavior".
+description: Write specifications using Structured English Specification Format (SESF v3), a natural-language format for defining declarative specifications (BEHAVIOR) and procedural pseudocode (PROCEDURE) for AI systems. Features 3-tier scaling (Micro/Standard/Complex), rule precedence, ACTION/FUNCTION distinction, and integrated validation. Use when you need clear, unambiguous, machine-readable specifications. Triggers include "write a spec", "create a specification", "define requirements", "specify the behavior", "write a procedure".
 ---
 
-# Structured English Specification Format (SESF v2)
+# Structured English Specification Format (SESF v3)
 
 Meta
 * Version: 3.0.0
@@ -13,10 +13,10 @@ Meta
 * Tier: standard
 
 Purpose
-Generate well-structured SESF v2 specifications from user requests. Given a domain, complexity indicators, and user intent, produce a specification that follows the correct tier format, groups rules/errors/examples by behavior, and passes structural validation.
+Generate well-structured SESF v3 specifications from user requests. Given a domain, complexity indicators, and user intent, produce a specification that uses BEHAVIOR blocks for declarative rules and PROCEDURE blocks for step-by-step workflows. Follows the correct tier format, groups rules/errors/examples by concern, and passes structural validation.
 
 Scope
-* IN SCOPE: tier selection, document structuring, behavior composition, type and function placement, quality assurance, reference extraction
+* IN SCOPE: tier selection, document structuring, behavior composition, PROCEDURE composition, ACTION placement, type and function placement, natural-English phrasing validation, quality assurance, reference extraction
 * OUT OF SCOPE: executing the generated specs, providing domain expertise for spec content, maintaining the validator script, runtime interpretation of specs
 
 Inputs
@@ -26,7 +26,7 @@ Inputs
 * target_tier: enum [micro, standard, complex] - explicit tier override - optional
 
 Outputs
-* specification: string - the complete SESF v2 specification document
+* specification: string - the complete SESF v3 specification document
 * validation_result: ValidationSummary - output from running the validator
 * extracted_assets: string - reference material extracted to assets/ if applicable
 
@@ -233,24 +233,91 @@ BEHAVIOR write_behaviors: Compose BEHAVIOR blocks with rules, errors, and exampl
     NOTES: Must specify each error case explicitly
 
 
-BEHAVIOR write_shared_definitions: Place types, functions, and precedence rules correctly
+BEHAVIOR write_procedures: Compose PROCEDURE blocks with ordered steps written in natural English
+
+  RULE procedure_naming:
+    procedure names MUST use snake_case and describe the workflow, not the implementation
+    -- "onboard_new_customer" not "step_sequence_1"; "generate_monthly_report" not "report_proc"
+
+  RULE step_ordering:
+    each STEP MUST have what it needs from prior steps
+    -- a step that uses a result MUST come after the step that produces it
+    AND steps MUST be ordered so a reader CAN follow the workflow top to bottom without jumping ahead
+
+  RULE natural_english_phrasing:
+    steps MUST be written in natural English, not programming syntax
+    -- "Look up the customer record by email" not "SET customer = db.query(email)"
+    -- "For each item in the order" not "FOR i = 0 TO items.length"
+    -- "If the payment succeeds" not "IF result == SUCCESS THEN"
+    AND steps SHOULD read as instructions a non-programmer CAN follow
+
+  RULE side_effect_placement:
+    side effects (sending emails, writing files, updating databases) belong in PROCEDURE STEPs or ACTION blocks
+    AND side effects MUST NOT appear in FUNCTION bodies
+    -- FUNCTIONs are pure: inputs in, outputs out, no side effects
+
+  RULE error_recovery_pattern:
+    WHEN a step CAN fail
+    THEN use the pattern: "Attempt to <action>. If it fails, <recovery>."
+    -- "Attempt to charge the card. If it fails, notify the customer and pause the order."
+
+  RULE state_transitions:
+    WHEN a step changes the state of an entity
+    THEN use the pattern: "Move <entity> from <old_state> to <new_state>"
+    -- "Move the order from pending to confirmed"
+
+  ERROR programming_syntax_detected:
+    WHEN a step uses programming-style syntax (SET, FOR i=0, END IF, RETURN, assignment operators)
+    SEVERITY critical
+    ACTION rewrite the step in natural English
+    MESSAGE "Step '<step_name>' uses programming syntax. Rewrite in natural English."
+
+  ERROR steps_out_of_order:
+    WHEN a step references a result that has not been produced by a prior step
+    SEVERITY critical
+    ACTION reorder steps so each step has what it needs from prior steps
+    MESSAGE "Step '<step_name>' references '<dependency>' which has not been produced yet."
+
+  EXAMPLE well_ordered_procedure:
+    INPUT: { "procedure": "process_refund", "steps": ["Look up the original transaction by order ID", "Calculate the refund amount based on the return policy", "Attempt to credit the customer account. If it fails, escalate to finance.", "Move the order from active to refunded", "Send a confirmation email to the customer"] }
+    EXPECTED: { "valid": true }
+    NOTES: Each step builds on the previous -- lookup, calculate, act, transition, notify
+
+  EXAMPLE programming_syntax_rejected:
+    INPUT: { "step_text": "SET total = SUM(line_items) * (1 + tax_rate)" }
+    EXPECTED: { "valid": false, "error": "Uses programming syntax" }
+    NOTES: Should be "Calculate the total by summing all line items and adding the applicable tax"
+
+  EXAMPLE natural_english_accepted:
+    INPUT: { "step_text": "For each line item in the invoice, verify that the quantity matches the shipment record" }
+    EXPECTED: { "valid": true }
+    NOTES: Natural English iteration -- no index variables or loop syntax
+
+
+BEHAVIOR write_shared_definitions: Place types, functions, actions, and precedence rules correctly
 
   RULE type_placement:
-    WHEN a data structure is referenced by multiple behaviors
+    WHEN a data structure is referenced by multiple behaviors or procedures
     THEN define it in the Types section
-    ELSE inline it within the single behavior that uses it
+    ELSE inline it within the single behavior or procedure that uses it
 
   RULE function_purity:
     functions MUST be pure -- inputs in, outputs out, no side effects
 
+  RULE action_side_effects:
+    ACTIONs are the counterpart to FUNCTIONs for operations with side effects
+    -- ACTION for sending emails, writing files, calling APIs
+    -- FUNCTION for calculations, transformations, lookups
+    AND ACTIONs MUST be named with a verb phrase describing the side effect
+
   RULE function_placement:
-    WHEN a calculation is used by multiple behaviors
+    WHEN a calculation is used by multiple behaviors or procedures
     THEN define it in the Functions section
-    ELSE inline it within the single behavior that uses it
+    ELSE inline it within the single behavior or procedure that uses it
 
   RULE no_orphan_definitions:
-    every Type and Function defined in the shared sections
-    MUST be referenced by at least one BEHAVIOR
+    every Type, Function, and ACTION defined in the shared sections
+    MUST be referenced by at least one BEHAVIOR or PROCEDURE
     -- unreferenced definitions are dead weight; remove them or add references
 
   RULE precedence_required:
@@ -270,10 +337,16 @@ BEHAVIOR write_shared_definitions: Place types, functions, and precedence rules 
     MESSAGE "Type '<type_name>' is defined but never referenced by any behavior."
 
   ERROR orphan_function:
-    WHEN a Function is defined but no BEHAVIOR references it
+    WHEN a Function is defined but no BEHAVIOR or PROCEDURE references it
     SEVERITY warning
-    ACTION remove the function or add a reference in a behavior rule
-    MESSAGE "Function '<function_name>' is defined but never referenced by any behavior."
+    ACTION remove the function or add a reference in a behavior or procedure
+    MESSAGE "Function '<function_name>' is defined but never referenced by any behavior or procedure."
+
+  ERROR orphan_action:
+    WHEN an ACTION is defined but no BEHAVIOR or PROCEDURE references it
+    SEVERITY warning
+    ACTION remove the action or add a reference in a behavior or procedure
+    MESSAGE "ACTION '<action_name>' is defined but never referenced by any behavior or procedure."
 
   EXAMPLE shared_type_correct:
     INPUT: { "type": "Order", "referenced_by": ["validate_order", "process_order"] }
@@ -305,15 +378,18 @@ BEHAVIOR ensure_quality: Validate the completed specification against SESF stand
     micro specs SHOULD stay within 20-40 lines
     AND standard specs SHOULD stay within 100-300 lines
     AND complex specs SHOULD stay within 300-600 lines
+    -- PROCEDURE blocks count the same as BEHAVIOR blocks for line budgeting
 
   RULE keyword_capitalization:
-    requirement keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY)
+    requirement keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY, CAN)
     MUST be capitalized when used with their RFC 2119 meanings
+    -- CAN indicates ability or permission in natural-English phrasing
 
   RULE run_validator:
     WHEN specification is complete
     THEN run `python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <spec.md>`
          and fix all failures
+    -- the SESF v3 validator checks BEHAVIOR blocks, PROCEDURE blocks, ACTION declarations, and section structure
     -- warnings are acceptable when example count < rule count in some behaviors
 
   RULE yaml_frontmatter:
