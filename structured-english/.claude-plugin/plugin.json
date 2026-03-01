@@ -1,0 +1,17 @@
+{
+  "name": "structured-english",
+  "version": "3.0.0",
+  "description": "Write specifications using Structured English Specification Format (SESF) — a behavior-centric format for defining instructions, rules, and behaviors for AI systems.",
+  "author": {
+    "name": "Reggie Chan"
+  },
+  "license": "MIT",
+  "keywords": [
+    "specifications",
+    "structured-english",
+    "SESF",
+    "requirements",
+    "behavior-driven",
+    "ai-agents"
+  ]
+}
