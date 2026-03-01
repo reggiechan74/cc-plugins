@@ -75,6 +75,12 @@
       "source": "./spinnerverbs-plugin",
       "description": "Generate and apply themed spinner verbs for Claude Code status messages. Includes pre-built themes (Star Trek, Game of Thrones, Mandalorian) with optional humor and cynic modifiers.",
       "version": "1.0.0"
+    },
+    {
+      "name": "structured-english",
+      "source": "./structured-english",
+      "description": "Write specifications using Structured English Specification Format (SESF) — a behavior-centric format for defining instructions, rules, and behaviors for AI systems.",
+      "version": "3.0.0"
     }
   ]
 }

@@ -1,7 +1,7 @@
 # Reggie Chan's Claude Code Plugins
 
 <!-- badges-start -->
-[![Plugins](https://img.shields.io/badge/plugins-12-blue)](https://github.com/reggiechan74/cc-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-13-blue)](https://github.com/reggiechan74/cc-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-marketplace-blueviolet)](https://claude.ai/claude-code)
 [![GitHub Stars](https://img.shields.io/github/stars/reggiechan74/cc-plugins?style=flat&color=yellow)](https://github.com/reggiechan74/cc-plugins/stargazers)
@@ -325,6 +325,26 @@ Generate and apply themed spinner verbs for Claude Code status messages. Include
 **Commands:**
 - `/spinnerverbs:create [theme]` - Generate new themed spinner verbs from a description
 - `/spinnerverbs:apply [template-name]` - Apply a pre-built theme template (startrek, gameofthrones, mandalorian)
+
+---
+
+### structured-english
+
+Write specifications using Structured English Specification Format (SESF) — a behavior-centric format for defining instructions, rules, and behaviors for AI systems.
+
+**Install:**
+```bash
+/plugin install structured-english@cc-plugins
+```
+
+**Features:**
+- 3-tier scaling: Micro (20-40 lines), Standard (100-300 lines), Complex (300-600 lines)
+- Behavior-centric grouping: Rules, errors, and examples grouped by concern
+- Structural validator: Python script that checks section completeness, behavior structure, and tier compliance
+- Templates and examples: Fill-in-the-blank templates for all tiers, plus complete working examples
+
+**Commands:**
+- `/write-spec <domain>` - Guided SESF specification creation with tier selection, authoring, and validation
 
 ---
 
