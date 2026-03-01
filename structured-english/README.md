@@ -18,8 +18,11 @@ Write specifications using **Structured English Specification Format (SESF)** â€
 
 ## Installation
 
+Add the marketplace, then install the plugin:
+
 ```bash
-claude plugin add /path/to/structured-english
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install structured-english@cc-plugins
 ```
 
 ## Usage
