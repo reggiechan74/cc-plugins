@@ -1,7 +1,7 @@
 {
   "name": "structured-english",
-  "version": "3.0.0",
-  "description": "Write specifications using Structured English Specification Format (SESF) — a behavior-centric format for defining instructions, rules, and behaviors for AI systems.",
+  "version": "4.0.0",
+  "description": "Write specifications and procedural pseudocode using Structured English Specification Format (SESF v3) — a natural-language format for defining declarative rules (BEHAVIOR), step-by-step workflows (PROCEDURE), and reusable logic (FUNCTION/ACTION) for AI systems.",
   "author": {
     "name": "Reggie Chan"
   },
@@ -12,6 +12,9 @@
     "SESF",
     "requirements",
     "behavior-driven",
-    "ai-agents"
+    "ai-agents",
+    "pseudocode",
+    "procedures",
+    "natural-language"
   ]
 }
