@@ -6,7 +6,7 @@ allowed-tools: ["Read", "Bash", "AskUserQuestion"]
 
 # Assess Document for SESF Conversion
 
-Evaluate an existing markdown document against SESF v3 suitability criteria and offer conversion if appropriate. SESF v3 handles both declarative rules (BEHAVIOR) and step-by-step workflows (PROCEDURE).
+Evaluate an existing markdown document against SESF v4 suitability criteria and offer conversion if appropriate. SESF v4 handles both declarative rules (BEHAVIOR) and step-by-step workflows (PROCEDURE).
 
 ## Workflow
 
@@ -41,6 +41,13 @@ Analyze the content for signals that indicate whether SESF would add value.
 - State machines or lifecycle transitions
 - Onboarding flows, approval chains, or multi-stage processes
 - Steps that reference outputs of prior steps
+
+**Signals FOR hybrid elements** (v4 features that reduce boilerplate):
+
+- Document has scattered configuration values (thresholds, limits, feature flags repeated in multiple places) → `@config` centralizes them in one block
+- Document has multi-branch conditional logic (3+ branches for the same decision point) → `@route` provides compact routing tables instead of nested IF/ELSE IF
+- Document describes workflows with intermediate results (step outputs feed into later steps) → `$variable` threading names and passes results between PROCEDURE steps
+- Document has many error cases (validation failures, edge cases, severity levels) → compact `ERRORS` table format keeps them organized without verbose prose
 
 **Signals AGAINST conversion** (purely narrative or trivial content):
 
