@@ -1,7 +1,7 @@
 ---
 description: Assess whether a markdown document would benefit from SESF conversion
 argument-hint: <path to markdown file>
-allowed-tools: ["Read", "Bash", "AskUserQuestion"]
+allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
 # Assess Document for SESF Conversion
@@ -78,8 +78,22 @@ Report your findings clearly:
 
 ### Step 4: Offer Conversion
 
-If the document would benefit from SESF, use `AskUserQuestion` to ask:
+If the document would benefit from SESF, use `AskUserQuestion` to ask two questions:
+
+**Question 1** — Confirm conversion:
 
 - "Would you like me to convert this document to SESF format?"
+- Options:
+  - "Yes, convert it" — proceed to file handling question
+  - "No, keep as-is" — stop, do not convert
 
-If the user says yes, invoke the `structured-english` skill to perform the conversion, using the original document content as context for requirements gathering.
+If the user declines, stop here.
+
+**Question 2** — File handling:
+
+- "How should I save the converted specification?"
+- Options:
+  - "Overwrite the original file" — replace the source file in place (original recoverable via git history)
+  - "Save as a new file" — write to `<original-name>-sesf.md` alongside the original
+
+After the user answers both questions, invoke the `structured-english` skill to perform the conversion, using the original document content as context for requirements gathering. Save the result according to the user's file handling choice.
