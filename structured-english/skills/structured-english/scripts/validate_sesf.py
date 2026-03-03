@@ -1078,7 +1078,7 @@ def check_structural_completeness(doc: SESFDocument) -> list:
                 message=f"Required section '{sec.capitalize()}' missing (required for {tier} tier)",
             ))
 
-    # 3. Meta field completeness
+    # 3. Meta field completeness (FAIL for missing — these are mandatory)
     for mf in sorted(EXPECTED_META_FIELDS):
         if mf in doc.meta and doc.meta[mf]:
             results.append(ValidationResult(
@@ -1089,7 +1089,7 @@ def check_structural_completeness(doc: SESFDocument) -> list:
         else:
             results.append(ValidationResult(
                 category="meta",
-                status="WARN",
+                status="FAIL",
                 message=f"Meta field '{mf}' missing or empty",
             ))
 
@@ -1112,20 +1112,28 @@ def check_structural_completeness(doc: SESFDocument) -> list:
             message="No BEHAVIOR or PROCEDURE blocks found",
         ))
 
-    # 5. Each behavior has at least one RULE
+    # 5. Each behavior has at least one RULE (or @route table)
     for beh in doc.behaviors:
-        if beh.rules:
+        rule_count = len(beh.rules)
+        route_count = len(beh.routes)
+        total_logic = rule_count + route_count
+        if total_logic > 0:
+            parts = []
+            if rule_count:
+                parts.append(f"{rule_count} rule(s)")
+            if route_count:
+                parts.append(f"{route_count} @route table(s)")
             results.append(ValidationResult(
                 category="behaviors",
                 status="PASS",
-                message=f"BEHAVIOR '{beh.name}' has {len(beh.rules)} rule(s)",
+                message=f"BEHAVIOR '{beh.name}' has {', '.join(parts)}",
                 line_number=beh.line_number,
             ))
         else:
             results.append(ValidationResult(
                 category="behaviors",
                 status="WARN",
-                message=f"BEHAVIOR '{beh.name}' has no rules",
+                message=f"BEHAVIOR '{beh.name}' has no rules or @route tables",
                 line_number=beh.line_number,
             ))
 
@@ -1256,6 +1264,92 @@ def _collect_all_text_lines(doc: SESFDocument) -> list[str]:
                 lines.append(ex.input_text)
             if ex.expected_text:
                 lines.append(ex.expected_text)
+    return lines
+
+
+def _collect_all_text_lines_numbered(doc: SESFDocument) -> list[tuple[int, str]]:
+    """Collect all textual content with line numbers from behaviors and procedures.
+
+    Returns a list of (line_number, text) tuples. Used by validation checks
+    that need to report the line location of an issue.
+    """
+    lines: list[tuple[int, str]] = []
+    for beh in doc.behaviors:
+        for rule in beh.rules:
+            ln = rule.line_number
+            if rule.when_clause:
+                lines.append((ln, rule.when_clause))
+            if rule.then_clause:
+                lines.append((ln, rule.then_clause))
+            if rule.else_clause:
+                lines.append((ln, rule.else_clause))
+            if rule.raw_text:
+                for text_line in rule.raw_text.split("\n"):
+                    if text_line.strip():
+                        lines.append((ln, text_line))
+        for err in beh.errors:
+            ln = err.line_number
+            if err.when_clause:
+                lines.append((ln, err.when_clause))
+            if err.message:
+                lines.append((ln, err.message))
+            if err.action:
+                lines.append((ln, err.action))
+        for ex in beh.examples:
+            ln = ex.line_number
+            if ex.input_text:
+                lines.append((ln, ex.input_text))
+            if ex.expected_text:
+                lines.append((ln, ex.expected_text))
+        # Include compact error/example text
+        for ce in beh.compact_errors:
+            lines.append((ce.line_number, ce.when))
+            lines.append((ce.line_number, ce.action))
+            lines.append((ce.line_number, ce.message))
+        for cx in beh.compact_examples:
+            lines.append((cx.line_number, cx.input_desc))
+            lines.append((cx.line_number, cx.expected))
+        # Include route rows
+        for route in beh.routes:
+            for row in route.rows:
+                lines.append((row.line_number, row.condition))
+                lines.append((row.line_number, row.outcome))
+    for proc in doc.procedures:
+        for step in proc.steps:
+            ln = step.line_number
+            if step.raw_text:
+                for text_line in step.raw_text.split("\n"):
+                    if text_line.strip():
+                        lines.append((ln, text_line))
+            if step.description:
+                lines.append((ln, step.description))
+        for err in proc.errors:
+            ln = err.line_number
+            if err.when_clause:
+                lines.append((ln, err.when_clause))
+            if err.message:
+                lines.append((ln, err.message))
+            if err.action:
+                lines.append((ln, err.action))
+        for ex in proc.examples:
+            ln = ex.line_number
+            if ex.input_text:
+                lines.append((ln, ex.input_text))
+            if ex.expected_text:
+                lines.append((ln, ex.expected_text))
+        # Include compact error/example text
+        for ce in proc.compact_errors:
+            lines.append((ce.line_number, ce.when))
+            lines.append((ce.line_number, ce.action))
+            lines.append((ce.line_number, ce.message))
+        for cx in proc.compact_examples:
+            lines.append((cx.line_number, cx.input_desc))
+            lines.append((cx.line_number, cx.expected))
+    # Also include section content (for $config refs in prose sections)
+    for sec_name, sec_lines in doc.sections.items():
+        for sl in sec_lines:
+            if sl.strip():
+                lines.append((0, sl))
     return lines
 
 
@@ -1508,6 +1602,10 @@ def _check_errors_for_block(block_type: str, block_name: str, errors: list,
     for err in errors:
         issues: list[str] = []
 
+        # Check WHEN clause
+        if err.when_clause is None:
+            issues.append("WHEN")
+
         # Check severity
         if err.severity is None:
             issues.append("SEVERITY")
@@ -1566,8 +1664,9 @@ def check_error_consistency(doc: SESFDocument) -> list:
     results: list[ValidationResult] = []
 
     for beh in doc.behaviors:
+        has_logic = bool(beh.rules) or bool(beh.routes)
         results.extend(_check_errors_for_block(
-            "BEHAVIOR", beh.name, beh.errors, bool(beh.rules), beh.line_number
+            "BEHAVIOR", beh.name, beh.errors, has_logic, beh.line_number
         ))
 
     for proc in doc.procedures:
@@ -1597,8 +1696,8 @@ def check_example_consistency(doc: SESFDocument) -> list:
     results: list[ValidationResult] = []
 
     for beh in doc.behaviors:
-        num_examples = len(beh.examples)
-        num_rules = len(beh.rules)
+        num_examples = len(beh.examples) + len(beh.compact_examples)
+        num_rules = len(beh.rules) + len(beh.routes)
 
         if num_examples == 0:
             results.append(ValidationResult(
@@ -1628,7 +1727,7 @@ def check_example_consistency(doc: SESFDocument) -> list:
             ))
 
     for proc in doc.procedures:
-        num_examples = len(proc.examples)
+        num_examples = len(proc.examples) + len(proc.compact_examples)
 
         if num_examples == 0:
             results.append(ValidationResult(
@@ -1743,6 +1842,239 @@ def check_cross_behavior(doc: SESFDocument) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Config reference check (v4)
+# ---------------------------------------------------------------------------
+
+def check_config_references(doc: SESFDocument) -> list:
+    """Check that all $config.key references resolve to @config entries.
+
+    Scans all text lines in the spec for $config.key references. For each
+    reference, verifies the key exists in doc.config.entries.
+
+    Returns a list of ValidationResult objects.
+    """
+    results: list[ValidationResult] = []
+    if not doc.config:
+        return results
+
+    config_ref_pattern = re.compile(r'\$config\.(\w+(?:\.\w+)*)')
+    all_text = _collect_all_text_lines_numbered(doc)
+    for line_num, line in all_text:
+        for match in config_ref_pattern.finditer(line):
+            key = match.group(1)
+            if key not in doc.config.entries:
+                results.append(ValidationResult(
+                    category="config_references",
+                    status="WARN",
+                    message=f"$config.{key} referenced but not defined in @config block",
+                    line_number=line_num if line_num else None,
+                ))
+    if not results:
+        results.append(ValidationResult(
+            category="config_references",
+            status="PASS",
+            message="All $config references resolve to @config entries",
+        ))
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Variable threading check (v4)
+# ---------------------------------------------------------------------------
+
+def check_variable_threading(doc: SESFDocument) -> list:
+    """Check that all $var references have producing STEP declarations.
+
+    Collects all $var declarations from STEP output_variables across all
+    procedures into a set. Scans all text for $var references (excluding
+    $config.). Warns on references to unproduced variables.
+
+    Returns a list of ValidationResult objects.
+    """
+    results: list[ValidationResult] = []
+
+    produced: set[str] = set()
+    for proc in doc.procedures:
+        for step in proc.steps:
+            for v in step.output_variables:
+                # output_variables stores them as "$varname", strip the $
+                produced.add(v.lstrip("$"))
+
+    var_ref_pattern = re.compile(r'\$(\w+)')
+    all_text = _collect_all_text_lines_numbered(doc)
+    warned_vars: set[str] = set()  # avoid duplicate warnings for same var
+
+    for line_num, line in all_text:
+        for match in var_ref_pattern.finditer(line):
+            var_name = match.group(1)
+            if var_name.startswith("config"):
+                continue
+            if var_name not in produced and var_name not in warned_vars:
+                warned_vars.add(var_name)
+                results.append(ValidationResult(
+                    category="variable_threading",
+                    status="WARN",
+                    message=f"${var_name} referenced but not produced by any STEP \u2192 declaration",
+                    line_number=line_num if line_num else None,
+                ))
+    if not results:
+        results.append(ValidationResult(
+            category="variable_threading",
+            status="PASS",
+            message="All $variable references have producing steps",
+        ))
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Route completeness check (v4)
+# ---------------------------------------------------------------------------
+
+def check_route_completeness(doc: SESFDocument) -> list:
+    """Check @route tables for completeness.
+
+    For each @route table in each BEHAVIOR:
+    - Warn if no wildcard (*) default row
+    - Warn if fewer than 3 rows
+
+    Returns a list of ValidationResult objects.
+    """
+    results: list[ValidationResult] = []
+
+    for behavior in doc.behaviors:
+        for route in behavior.routes:
+            has_wildcard = any(row.condition.strip() == "*" for row in route.rows)
+            if not has_wildcard:
+                results.append(ValidationResult(
+                    category="route_completeness",
+                    status="WARN",
+                    message=f"@route '{route.name}' has no wildcard (*) default row",
+                    line_number=route.line_number,
+                ))
+            if len(route.rows) < 3:
+                results.append(ValidationResult(
+                    category="route_completeness",
+                    status="WARN",
+                    message=f"@route '{route.name}' has {len(route.rows)} branches "
+                            f"(recommend 3+ for @route; use WHEN/THEN for fewer)",
+                    line_number=route.line_number,
+                ))
+    if not results:
+        results.append(ValidationResult(
+            category="route_completeness",
+            status="PASS",
+            message="All @route tables are complete",
+        ))
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Error table structure check (v4)
+# ---------------------------------------------------------------------------
+
+VALID_COMPACT_SEVERITIES = {"critical", "warning", "info"}
+
+
+def check_error_table_structure(doc: SESFDocument) -> list:
+    """Check compact error table structure.
+
+    For each compact error table row, verifies:
+    - All 5 columns are present (name, when, severity, action, message)
+    - Severity values are valid (critical, warning, info)
+
+    Returns a list of ValidationResult objects.
+    """
+    results: list[ValidationResult] = []
+
+    all_compact_errors: list[tuple[str, str, SESFCompactError]] = []
+    for beh in doc.behaviors:
+        for ce in beh.compact_errors:
+            all_compact_errors.append(("BEHAVIOR", beh.name, ce))
+    for proc in doc.procedures:
+        for ce in proc.compact_errors:
+            all_compact_errors.append(("PROCEDURE", proc.name, ce))
+
+    if not all_compact_errors:
+        return results
+
+    for block_type, block_name, ce in all_compact_errors:
+        # Check for missing columns
+        missing_cols: list[str] = []
+        if not ce.name:
+            missing_cols.append("name")
+        if not ce.when:
+            missing_cols.append("when")
+        if not ce.severity:
+            missing_cols.append("severity")
+        if not ce.action:
+            missing_cols.append("action")
+        if not ce.message:
+            missing_cols.append("message")
+
+        if missing_cols:
+            results.append(ValidationResult(
+                category="error_table_structure",
+                status="WARN",
+                message=f"Compact error '{ce.name or '(unnamed)'}' in {block_type} "
+                        f"'{block_name}' missing columns: {', '.join(missing_cols)}",
+                line_number=ce.line_number,
+            ))
+
+        # Check severity validity
+        if ce.severity and ce.severity.lower() not in VALID_COMPACT_SEVERITIES:
+            results.append(ValidationResult(
+                category="error_table_structure",
+                status="WARN",
+                message=f"Compact error '{ce.name}' in {block_type} '{block_name}' "
+                        f"has invalid severity '{ce.severity}' "
+                        f"(expected: critical, warning, info)",
+                line_number=ce.line_number,
+            ))
+
+    # If no issues found for any compact error, emit a PASS
+    if not results:
+        results.append(ValidationResult(
+            category="error_table_structure",
+            status="PASS",
+            message=f"All {len(all_compact_errors)} compact error row(s) are well-formed",
+        ))
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Notation section check (v4)
+# ---------------------------------------------------------------------------
+
+def check_notation_section(doc: SESFDocument) -> list:
+    """Check that standard and complex tiers have a Notation section.
+
+    For Standard and Complex tiers, warns if doc.has_notation_section is False.
+
+    Returns a list of ValidationResult objects.
+    """
+    results: list[ValidationResult] = []
+
+    tier = doc.meta.get("tier", "").lower().strip()
+
+    if tier in ("standard", "complex"):
+        if doc.has_notation_section:
+            results.append(ValidationResult(
+                category="notation",
+                status="PASS",
+                message="Notation section present",
+            ))
+        else:
+            results.append(ValidationResult(
+                category="notation",
+                status="WARN",
+                message=f"Notation section missing (recommended for {tier} tier)",
+            ))
+
+    return results
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -1769,6 +2101,11 @@ def main():
     results.extend(check_error_consistency(doc))
     results.extend(check_example_consistency(doc))
     results.extend(check_cross_behavior(doc))
+    results.extend(check_config_references(doc))
+    results.extend(check_variable_threading(doc))
+    results.extend(check_route_completeness(doc))
+    results.extend(check_error_table_structure(doc))
+    results.extend(check_notation_section(doc))
 
     # Print results grouped by category
     has_fail = False
@@ -1783,7 +2120,8 @@ def main():
             "PASS": "\u2713",
             "WARN": "\u26a0",
             "FAIL": "\u2717",
-        }[r.status]
+            "INFO": "\u2139",
+        }.get(r.status, "?")
         line_ref = f" (line {r.line_number})" if r.line_number else ""
         print(f"  [{r.status}] {symbol} {r.message}{line_ref}")
         if r.status == "FAIL":
