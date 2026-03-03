@@ -719,41 +719,30 @@ Generate a daily summary of sales transactions and distribute it to the manageme
 
 PROCEDURE generate_daily_report: Compile sales data and produce a summary report
 
-  STEP gather_data: Collect the day's transactions
-    Read all sales transactions for the current date from the database
-    Start with total_revenue at 0 and transaction_count at 0
+  STEP gather_data → $transactions, $total_revenue, $transaction_count:
+    Read all sales transactions for the current date from the database → $transactions
+    Set $total_revenue to 0
+    Set $transaction_count to 0
 
-  STEP calculate_totals: Sum up the day's numbers
-    For each transaction in the day's sales:
-      Add transaction.amount to total_revenue
-      Add 1 to transaction_count
-    Calculate average_sale as total_revenue divided by transaction_count
+  STEP calculate_totals → $average_sale:
+    For each transaction in $transactions:
+      Add transaction.amount to $total_revenue
+      Add 1 to $transaction_count
+    Calculate $average_sale as $total_revenue divided by $transaction_count
 
-  STEP generate_report: Build and distribute the report
-    Write the summary to /reports/daily/YYYY-MM-DD.pdf
+  STEP generate_report → $report_path:
+    Write the summary to /reports/daily/YYYY-MM-DD.pdf → $report_path
     Send the report to the management distribution list
 
-  ERROR no_transactions:
-    WHEN the day's sales list is empty
-    SEVERITY warning
-    ACTION generate an empty report noting "No transactions recorded"
-    MESSAGE "No sales transactions found for {date}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | no_transactions | the day's sales list is empty | warning | generate an empty report noting "No transactions recorded" | "No sales transactions found for {date}" |
+  | database_unavailable | the database connection fails | critical | notify the on-call engineer and skip report generation | "Cannot generate daily report: database connection failed" |
 
-  ERROR database_unavailable:
-    WHEN the database connection fails
-    SEVERITY critical
-    ACTION notify the on-call engineer and skip report generation
-    MESSAGE "Cannot generate daily report: database connection failed"
-
-  EXAMPLE typical_day:
-    INPUT: { "date": "2026-03-01" }
-    EXPECTED: { "total_revenue": 15420.50, "transaction_count": 47, "average_sale": 328.10, "report_path": "/reports/daily/2026-03-01.pdf" }
-    NOTES: 47 transactions totaling $15,420.50. Average sale = $15,420.50 / 47 = $328.10.
-
-  EXAMPLE no_sales:
-    INPUT: { "date": "2026-01-01" }
-    EXPECTED: { "total_revenue": 0, "transaction_count": 0, "report_path": "/reports/daily/2026-01-01.pdf", "warning": "No sales transactions found for 2026-01-01" }
-    NOTES: New Year's Day -- store was closed. Empty report generated with warning.
+  EXAMPLES:
+    typical_day: date="2026-03-01" → { "total_revenue": 15420.50, "transaction_count": 47, "average_sale": 328.10, "report_path": "/reports/daily/2026-03-01.pdf" }
+    no_sales: date="2026-01-01" → { "total_revenue": 0, "transaction_count": 0, "report_path": "/reports/daily/2026-01-01.pdf", "warning": "No sales transactions found for 2026-01-01" }
 
 Constraints
 * Report generation SHOULD complete within 60 seconds
@@ -765,14 +754,25 @@ Constraints
 ## Example 5: Standard Tier -- Customer Onboarding Workflow (mixed BEHAVIOR + PROCEDURE)
 
 ```
-Customer Onboarding Workflow
+---
+name: customer-onboarding
+description: "Validate customer data, provision account, send welcome package, and schedule follow-up"
+---
+
+# Customer Onboarding Workflow
 
 Meta
-* Version: 1.0.0
+* Version: 2.0.0
 * Date: 2026-03-01
 * Domain: Customer Success
 * Status: active
 * Tier: standard
+
+Notation
+* $ -- references a variable or config value (e.g., $config.scoring.personalized_threshold)
+* @ -- marks a structured block (@config for parameters)
+* → -- means "produces" (in steps) or "yields" (in examples)
+* MUST/SHOULD/MAY/CAN -- requirement strength keywords
 
 Purpose
 Validate incoming customer data, provision a new account, send a welcome package,
@@ -793,6 +793,27 @@ Inputs
 Outputs
 * result: OnboardingResult - summary of the onboarding outcome
 * notifications: list of Notification - all messages sent during onboarding
+
+@config
+  scoring:
+    base_score: 50
+    phone_bonus: 10
+    large_company_bonus: 15
+    large_company_threshold: 50
+    enterprise_bonus: 25
+    professional_bonus: 15
+    personalized_threshold: 75
+  templates:
+    welcome_email: "/templates/welcome_email.html"
+    followup_reminder: "/templates/followup_reminder.html"
+    internal_alert: "/templates/internal_alert.html"
+  provisioning:
+    timeout_seconds: 30
+    email_deadline_minutes: 5
+  followup:
+    enterprise_days: 2
+    professional_days: 5
+    starter_days: 10
 
 Types
 
@@ -832,26 +853,34 @@ Account {
 Functions
 
 FUNCTION calculate_onboarding_score(customer, plan):
-  Start with score at 50
-  IF customer.phone is present THEN add 10 to score
-  IF customer.employee_count is at least 50 THEN add 15 to score
-  IF plan = "enterprise" THEN add 25 to score
-  ELSE IF plan = "professional" THEN add 15 to score
-  RETURNS score
+  Start with $score at $config.scoring.base_score
+  IF customer.phone is present THEN add $config.scoring.phone_bonus to $score
+  IF customer.employee_count is at least $config.scoring.large_company_threshold THEN add $config.scoring.large_company_bonus to $score
+  IF plan = "enterprise" THEN add $config.scoring.enterprise_bonus to $score
+  ELSE IF plan = "professional" THEN add $config.scoring.professional_bonus to $score
+  RETURNS $score
   -- Score ranges: 50 (bare minimum) to 100 (enterprise with phone and 50+ employees)
 
 FUNCTION determine_region(customer):
   IF customer.industry = "Healthcare" or customer.industry = "Finance"
-    THEN region = "us-east-1"
+    THEN $region = "us-east-1"
     -- regulated industries default to US East for compliance
-  ELSE region = "us-west-2"
-  RETURNS region
+  ELSE $region = "us-west-2"
+  RETURNS $region
 
 FUNCTION calculate_followup_date(plan):
-  IF plan = "enterprise" THEN followup = 2 business days from today
-  ELSE IF plan = "professional" THEN followup = 5 business days from today
-  ELSE followup = 10 business days from today
-  RETURNS followup
+  IF plan = "enterprise" THEN $followup = $config.followup.enterprise_days business days from today
+  ELSE IF plan = "professional" THEN $followup = $config.followup.professional_days business days from today
+  ELSE $followup = $config.followup.starter_days business days from today
+  RETURNS $followup
+
+ACTION send_welcome_package(customer, account, onboarding_score):
+  Generate the welcome email from $config.templates.welcome_email
+  If onboarding_score is at least $config.scoring.personalized_threshold:
+    Append a personalized note from the account manager
+  Send the email to customer.email
+  Log: "Welcome package sent to {customer.email} for account {account.id}"
+  RETURNS the delivery confirmation
 
 
 BEHAVIOR validate_customer_data: Ensure the customer record is complete
@@ -872,78 +901,49 @@ BEHAVIOR validate_customer_data: Ensure the customer record is complete
     THEN customer.phone MUST be present
     -- enterprise customers require a phone number for dedicated support
 
-  ERROR invalid_email:
-    WHEN customer.email fails email_format
-    SEVERITY critical
-    ACTION reject onboarding and return the error to the submitter
-    MESSAGE "Invalid email address: {customer.email}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | invalid_email | customer.email fails email_format | critical | reject onboarding and return the error to the submitter | "Invalid email address: {customer.email}" |
+  | missing_company | customer.company is empty | critical | reject onboarding | "Company name is required for all customers" |
+  | enterprise_missing_phone | plan = "enterprise" and customer.phone is missing | critical | reject onboarding | "Enterprise customers must provide a phone number" |
 
-  ERROR missing_company:
-    WHEN customer.company is empty
-    SEVERITY critical
-    ACTION reject onboarding
-    MESSAGE "Company name is required for all customers"
-
-  ERROR enterprise_missing_phone:
-    WHEN plan = "enterprise" and customer.phone is missing
-    SEVERITY critical
-    ACTION reject onboarding
-    MESSAGE "Enterprise customers must provide a phone number"
-
-  EXAMPLE valid_professional_customer:
-    INPUT: {
-      "customer": { "name": "Alicia Torres", "email": "alicia@brightpath.io", "company": "Brightpath Solutions", "phone": "+1-416-555-0199", "industry": "Technology", "employee_count": 120 },
-      "plan": "professional"
-    }
-    EXPECTED: { "validation": "passed" }
-    NOTES: All fields present and valid. Phone is optional for professional plan but provided.
-
-  EXAMPLE enterprise_missing_phone:
-    INPUT: {
-      "customer": { "name": "James Whitfield", "email": "j.whitfield@meridian.com", "company": "Meridian Health Group", "industry": "Healthcare", "employee_count": 500 },
-      "plan": "enterprise"
-    }
-    EXPECTED: { "validation": "failed", "error": "Enterprise customers must provide a phone number" }
-    NOTES: Enterprise plan requires phone. Onboarding cannot proceed.
+  EXAMPLES:
+    valid_professional_customer: customer={ "name": "Alicia Torres", "email": "alicia@brightpath.io", "company": "Brightpath Solutions", "phone": "+1-416-555-0199", "industry": "Technology", "employee_count": 120 }, plan="professional" → { "validation": "passed" }
+    enterprise_missing_phone: customer={ "name": "James Whitfield", "email": "j.whitfield@meridian.com", "company": "Meridian Health Group", "industry": "Healthcare", "employee_count": 500 }, plan="enterprise" → rejected with "Enterprise customers must provide a phone number"
 
 
 PROCEDURE onboard_customer: Walk through each onboarding step in order,
   from account creation to follow-up scheduling
 
-  STEP validate: Run the validation rules first
-    Validate the customer data using the validate_customer_data behavior
-    Stop processing if validation fails
+  STEP validate → $validation_result:
+    Validate the customer data using the validate_customer_data behavior → $validation_result
+    Stop processing if $validation_result indicates failure
 
-  STEP provision_account: Create the customer's account
-    Calculate the region using determine_region(customer)
-    Create a new account with the customer's name, email, selected plan, and region
-    Record the account_id for the remaining steps
+  STEP provision_account → $account, $account_id:
+    Calculate the region using determine_region(customer) → $region
+    Create a new account with the customer's name, email, selected plan, and $region → $account
+    Record $account.id as $account_id for the remaining steps
 
-  STEP score: Assess onboarding completeness
-    Calculate onboarding_score using calculate_onboarding_score(customer, plan)
+  STEP score → $onboarding_score:
+    Calculate $onboarding_score using calculate_onboarding_score(customer, plan)
 
-  STEP send_welcome: Dispatch the welcome package
-    Send a welcome email to the customer using send_welcome_package
-    Record that welcome_sent is true
-    If the onboarding_score is at least 75:
+  STEP send_welcome → $welcome_sent:
+    Send a welcome email to the customer using send_welcome_package(customer, $account, $onboarding_score)
+    Set $welcome_sent to true
+    If $onboarding_score is at least $config.scoring.personalized_threshold:
       Include a personalized note from the account manager in the welcome email
 
-  STEP schedule_followup: Set up the follow-up call
-    Calculate the followup_date using calculate_followup_date(plan)
+  STEP schedule_followup → $followup_date:
+    Calculate $followup_date using calculate_followup_date(plan)
     Send a follow-up reminder to the assigned account manager
     Send an internal alert to the customer success team with the onboarding summary
 
-  ERROR account_provisioning_failure:
-    WHEN account creation fails
-    SEVERITY critical
-    ACTION notify the infrastructure team and mark onboarding as failed
-    MESSAGE "Account provisioning failed for {customer.email}. Infrastructure team notified."
-
-  ERROR welcome_email_failure:
-    WHEN the welcome email cannot be delivered after 3 attempts
-    SEVERITY warning
-    ACTION log the failure, continue onboarding, and flag for manual follow-up
-    MESSAGE "Welcome email delivery failed for {customer.email}. Manual follow-up required."
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | account_provisioning_failure | account creation fails | critical | notify the infrastructure team and mark onboarding as failed | "Account provisioning failed for {customer.email}. Infrastructure team notified." |
+  | welcome_email_failure | the welcome email cannot be delivered after 3 attempts | warning | log the failure, continue onboarding, and flag for manual follow-up | "Welcome email delivery failed for {customer.email}. Manual follow-up required." |
 
   EXAMPLE successful_professional_onboarding:
     INPUT: {
@@ -965,46 +965,16 @@ PROCEDURE onboard_customer: Walk through each onboarding step in order,
       ]
     }
     NOTES: Score = 50 base + 10 (phone) + 15 (120 employees >= 50) + 15 (professional) = 90.
-           Score >= 75 so welcome email includes personalized note.
-           Professional plan follow-up = 5 business days from Mar 1 = Mar 8.
+           Score >= $config.scoring.personalized_threshold (75) so welcome email includes personalized note.
+           Professional plan follow-up = $config.followup.professional_days (5) business days from Mar 1 = Mar 8.
            Technology industry -> us-west-2 region.
 
-  EXAMPLE starter_minimal_customer:
-    INPUT: {
-      "customer": { "name": "Sam Nguyen", "email": "sam@tinycorp.io", "company": "TinyCorp", "industry": "Retail", "employee_count": 3 },
-      "plan": "starter"
-    }
-    EXPECTED: {
-      "result": {
-        "account_id": "acct_20260301_00143",
-        "status": "active",
-        "onboarding_score": 50,
-        "welcome_sent": true,
-        "followup_date": "2026-03-15"
-      },
-      "notifications": [
-        { "recipient": "sam@tinycorp.io", "type": "welcome_email" },
-        { "recipient": "csm-team@company.ca", "type": "internal_alert" },
-        { "recipient": "account-manager@company.ca", "type": "followup_reminder" }
-      ]
-    }
-    NOTES: Score = 50 base only (no phone, 3 employees < 50, starter plan adds 0).
-           Score < 75 so no personalized note in welcome email.
-           Starter plan follow-up = 10 business days from Mar 1 = Mar 15.
-           Retail industry -> us-west-2 region.
-
-
-ACTION send_welcome_package(customer, account, onboarding_score):
-  Generate the welcome email from the onboarding template
-  If onboarding_score is at least 75:
-    Append a personalized note from the account manager
-  Send the email to customer.email
-  Log: "Welcome package sent to {customer.email} for account {account.id}"
-  RETURNS the delivery confirmation
+  EXAMPLES:
+    starter_minimal_customer: customer={ "name": "Sam Nguyen", "email": "sam@tinycorp.io", "company": "TinyCorp", "industry": "Retail", "employee_count": 3 }, plan="starter" → { "account_id": "acct_20260301_00143", "status": "active", "onboarding_score": 50, "welcome_sent": true, "followup_date": "2026-03-15" }
 
 Constraints
-* Account provisioning MUST complete within 30 seconds
-* Welcome email MUST be sent within 5 minutes of account creation
+* Account provisioning MUST complete within $config.provisioning.timeout_seconds seconds
+* Welcome email MUST be sent within $config.provisioning.email_deadline_minutes minutes of account creation
 * Follow-up date MUST be a business day (skip weekends and statutory holidays)
 * Onboarding score MUST be between 0 and 100
 
@@ -1020,14 +990,25 @@ Dependencies
 ## Example 6: Complex Tier -- Data Pipeline Processor (PROCEDURE-heavy)
 
 ```
-Data Pipeline Processor
+---
+name: data-pipeline
+description: "Ingest, validate, transform, and load data files into the warehouse with retry and recovery"
+---
+
+# Data Pipeline Processor
 
 Meta
-* Version: 3.0.0
+* Version: 4.0.0
 * Date: 2026-03-01
 * Domain: Data Engineering
 * Status: active
 * Tier: complex
+
+Notation
+* $ -- references a variable or config value (e.g., $config.file_size_limit)
+* @ -- marks a structured block (@config for parameters)
+* → -- means "produces" (in steps) or "yields" (in examples)
+* MUST/SHOULD/MAY/CAN -- requirement strength keywords
 
 Purpose
 Ingest data files from an upload directory, validate their structure, transform
@@ -1060,6 +1041,18 @@ Outputs
 * pipeline_result: PipelineResult - summary of the entire pipeline run
 * file_results: list of FileResult - per-file outcome details
 * audit_log: list of AuditEntry - chronological record of all pipeline actions
+
+@config
+  file_size_limit: 500000000
+  format_whitelist: [csv, json, parquet]
+  duplicate_window_hours: 24
+  column_match_threshold: 0.95
+  warehouse:
+    connection_retries: 3
+    batch_size_min: 1
+    batch_size_max: 10000
+  quarantine_directory: "/data/quarantine"
+  upload_directory: "/data/uploads"
 
 Types
 
@@ -1131,11 +1124,11 @@ AuditEntry {
 Functions
 
 FUNCTION detect_format(file_name):
-  IF file_name ends with ".csv" THEN format = "csv"
-  ELSE IF file_name ends with ".json" THEN format = "json"
-  ELSE IF file_name ends with ".parquet" THEN format = "parquet"
-  ELSE format = "unknown"
-  RETURNS format
+  IF file_name ends with ".csv" THEN $format = "csv"
+  ELSE IF file_name ends with ".json" THEN $format = "json"
+  ELSE IF file_name ends with ".parquet" THEN $format = "parquet"
+  ELSE $format = "unknown"
+  RETURNS $format
 
 FUNCTION select_schema(format, header_row):
   Look up the schema registry for a schema matching the format and header_row columns
@@ -1143,115 +1136,91 @@ FUNCTION select_schema(format, header_row):
   ELSE RETURNS nothing
 
 FUNCTION calculate_batch_count(total_records, batch_size):
-  Calculate count as total_records divided by batch_size, rounded up to the nearest whole number
-  RETURNS count
+  Calculate $count as total_records divided by batch_size, rounded up to the nearest whole number
+  RETURNS $count
 
 FUNCTION summarize_run(file_results):
-  Calculate files_succeeded as the number of items in file_results where state is "completed"
-  Calculate files_failed as the number of items in file_results where state is "failed" or state is "quarantined"
-  Calculate total_records_loaded as the sum of records_out across file_results where state is "completed"
-  IF files_failed is greater than 0 and files_succeeded is greater than 0
-    THEN status = "completed_with_errors"
-  ELSE IF files_failed equals the number of items in file_results
-    THEN status = "failed"
-  ELSE status = "completed"
-  RETURNS { files_processed, files_succeeded, files_failed, total_records_loaded, status }
+  Calculate $files_succeeded as the number of items in file_results where state is "completed"
+  Calculate $files_failed as the number of items in file_results where state is "failed" or state is "quarantined"
+  Calculate $total_records_loaded as the sum of records_out across file_results where state is "completed"
+  IF $files_failed is greater than 0 and $files_succeeded is greater than 0
+    THEN $status = "completed_with_errors"
+  ELSE IF $files_failed equals the number of items in file_results
+    THEN $status = "failed"
+  ELSE $status = "completed"
+  RETURNS { files_processed, $files_succeeded, $files_failed, $total_records_loaded, $status }
 
 
 BEHAVIOR quarantine_check: Determine whether a file should be quarantined
   before any processing begins
 
   RULE file_too_large:
-    WHEN file.size exceeds 500000000
+    WHEN file.size exceeds $config.file_size_limit
     THEN quarantine the file
     -- 500 MB limit protects against runaway resource consumption
-    PRIORITY 1
 
   RULE unsupported_format:
-    WHEN detect_format(file.name) equals "unknown"
+    WHEN detect_format(file.name) returns a value not in $config.format_whitelist
     THEN quarantine the file
-    PRIORITY 2
 
   RULE duplicate_file:
     WHEN a record exists in the audit log where file_name equals file.name
-         and action equals "completed" and the entry is from the last 24 hours
+         and action equals "completed" and the entry is from the last $config.duplicate_window_hours hours
     THEN quarantine the file
     -- prevent reprocessing of recently completed files
-    PRIORITY 3
 
-  ERROR quarantined_file:
-    WHEN any quarantine rule matches
-    SEVERITY warning
-    ACTION move the file to the quarantine directory, log the reason, notify the data team
-    MESSAGE "File {file.name} quarantined: {reason}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | quarantined_file | any quarantine rule matches | warning | move the file to $config.quarantine_directory, log the reason, notify the data team | "File {file.name} quarantined: {reason}" |
 
-  EXAMPLE oversized_file:
-    INPUT: { "file": { "name": "huge_export.csv", "size": 750000000 } }
-    EXPECTED: { "state": "quarantined", "reason": "File size 750000000 exceeds 500 MB limit" }
-    NOTES: 750 MB file triggers file_too_large rule. Moved to quarantine without further processing.
-
-  EXAMPLE unknown_format:
-    INPUT: { "file": { "name": "data.xlsx", "size": 1024000 } }
-    EXPECTED: { "state": "quarantined", "reason": "Unsupported file format: unknown" }
-    NOTES: .xlsx is not in the supported format list. File quarantined.
-
-  EXAMPLE duplicate_recent:
-    INPUT: { "file": { "name": "daily_sales.csv", "size": 2048000 }, "audit_log": [{ "file_name": "daily_sales.csv", "action": "completed", "timestamp": "2026-03-01T06:00:00Z" }] }
-    EXPECTED: { "state": "quarantined", "reason": "Duplicate of file completed within last 24 hours" }
-    NOTES: Same file name was successfully processed 4 hours ago. Quarantined to prevent double-load.
+  EXAMPLES:
+    oversized_file: file={ "name": "huge_export.csv", "size": 750000000 } → { "state": "quarantined", "reason": "File size 750000000 exceeds 500 MB limit" }
+    unknown_format: file={ "name": "data.xlsx", "size": 1024000 } → { "state": "quarantined", "reason": "Unsupported file format: unknown" }
+    duplicate_recent: file={ "name": "daily_sales.csv", "size": 2048000 }, recent_completion=true → { "state": "quarantined", "reason": "Duplicate of file completed within last 24 hours" }
 
 
 PROCEDURE validate_file: Check that a file's structure matches the expected
   schema before transformation
 
-  STEP detect: Identify the file format
-    Determine the format using detect_format(file.name)
+  STEP detect → $format:
+    Determine the format using detect_format(file.name) → $format
     Move the file from "queued" to "validating"
     Log an audit entry: "Validation started for {file.name}"
 
-  STEP read_header: Read the file header to identify columns
-    Read the first row of the file to extract the column names
+  STEP read_header → $header_row:
+    Read the first row of the file to extract the column names → $header_row
     If the file is empty:
       Stop processing and raise empty_file error
 
-  STEP match_schema: Find the appropriate schema
-    Look up the schema using select_schema(format, header_row)
+  STEP match_schema → $schema:
+    Look up the schema using select_schema($format, $header_row) → $schema
     If no schema is found:
       Stop processing and raise schema_not_found error
 
-  STEP validate_columns: Verify each column against the schema
-    For each column defined in the schema:
-      If the column is marked as required and is missing from the file header:
-        Add "Missing required column: {column.name}" to the error list
+  STEP validate_columns → $error_list:
+    Set $error_list to empty
+    For each column defined in $schema:
+      If the column is marked as required and is missing from $header_row:
+        Add "Missing required column: {column.name}" to $error_list
       If the column is present and has a pattern defined:
-        Check that at least 95% of values in that column match the pattern
-        If fewer than 95% match:
-          Add "Column {column.name}: {match_percentage}% of values match expected pattern (minimum 95%)" to the error list
-    If the error list is not empty:
+        Check that at least $config.column_match_threshold of values in that column match the pattern
+        If fewer than $config.column_match_threshold match:
+          Add "Column {column.name}: {match_percentage}% of values match expected pattern (minimum 95%)" to $error_list
+    If $error_list is not empty:
       Stop processing and raise validation_failed error
 
-  STEP record_stats: Capture file statistics
-    Count the total number of records in the file (excluding the header)
-    Record records_in on the file result
-    Log an audit entry: "Validation passed for {file.name}: {records_in} records found"
+  STEP record_stats → $records_in:
+    Count the total number of records in the file (excluding the header) → $records_in
+    Record $records_in on the file result
+    Log an audit entry: "Validation passed for {file.name}: {$records_in} records found"
 
-  ERROR empty_file:
-    WHEN the file contains no data rows
-    SEVERITY warning
-    ACTION move the file from "validating" to "failed", log the issue
-    MESSAGE "File {file.name} is empty -- no records to process"
-
-  ERROR schema_not_found:
-    WHEN no matching schema exists for the file's format and column structure
-    SEVERITY critical
-    ACTION move the file from "validating" to "failed", notify the data engineering team
-    MESSAGE "No schema found for {file.name} with format {format}. Manual schema registration required."
-
-  ERROR validation_failed:
-    WHEN one or more columns fail validation
-    SEVERITY critical
-    ACTION move the file from "validating" to "failed", attach the error list to the file result
-    MESSAGE "Validation failed for {file.name}: {error_count} column issues found"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | empty_file | the file contains no data rows | warning | move the file from "validating" to "failed", log the issue | "File {file.name} is empty -- no records to process" |
+  | schema_not_found | no matching schema exists for the file's format and column structure | critical | move the file from "validating" to "failed", notify the data engineering team | "No schema found for {file.name} with format {$format}. Manual schema registration required." |
+  | validation_failed | one or more columns fail validation | critical | move the file from "validating" to "failed", attach $error_list to the file result | "Validation failed for {file.name}: {error_count} column issues found" |
 
   EXAMPLE valid_csv_file:
     INPUT: {
@@ -1265,29 +1234,21 @@ PROCEDURE validate_file: Check that a file's structure matches the expected
     }
     NOTES: All 5 columns match the orders schema. 1250 data rows found.
 
-  EXAMPLE missing_required_column:
-    INPUT: {
-      "file": { "name": "orders_broken.csv", "path": "/uploads/orders_broken.csv", "format": "csv" },
-      "header_row": ["order_id", "amount", "order_date"]
-    }
-    EXPECTED: {
-      "state": "failed",
-      "errors": ["Missing required column: customer_id", "Missing required column: status"]
-    }
-    NOTES: customer_id and status columns are required by the orders schema but missing from the file.
+  EXAMPLES:
+    missing_required_column: file={ "name": "orders_broken.csv", "format": "csv" }, header_row=["order_id", "amount", "order_date"] → { "state": "failed", "errors": ["Missing required column: customer_id", "Missing required column: status"] }
 
 
 PROCEDURE transform_records: Apply data transformations to validated records
   before loading them into the warehouse
 
-  STEP prepare: Set up transformation context
+  STEP prepare → $batch_count, $records_out, $current_batch:
     Move the file from "validating" to "transforming"
-    Calculate the number of batches using calculate_batch_count(records_in, batch_size)
-    Start with records_out at 0 and current_batch at 1
-    Log an audit entry: "Transformation started for {file.name}: {batch_count} batches"
+    Calculate the number of batches using calculate_batch_count($records_in, batch_size) → $batch_count
+    Set $records_out to 0 and $current_batch to 1
+    Log an audit entry: "Transformation started for {file.name}: {$batch_count} batches"
 
-  STEP process_batches: Transform records in batches
-    While current_batch is at most batch_count:
+  STEP process_batches → $records_out:
+    While $current_batch is at most $batch_count:
       Read the next batch of records from the file
       For each record in the batch:
         Trim whitespace from all string fields
@@ -1297,25 +1258,24 @@ PROCEDURE transform_records: Apply data transformations to validated records
           Skip this record and add a warning to the audit log:
             "Skipped record {record.row_number}: missing required field {field.name}"
         Otherwise:
-          Add 1 to records_out
-      Add 1 to current_batch
+          Add 1 to $records_out
+      Add 1 to $current_batch
 
-  STEP deduplicate: Remove duplicate records
+  STEP deduplicate → $records_out:
     Sort the transformed records by record.id
     Group the records by record.id
     For each group with more than one record:
       Keep only the first record in the group
-      Subtract the number of removed duplicates from records_out
+      Subtract the number of removed duplicates from $records_out
       Log an audit entry: "Removed {duplicate_count} duplicate records from {file.name}"
 
-  STEP finalize: Record transformation outcome
-    Log an audit entry: "Transformation complete for {file.name}: {records_out} of {records_in} records ready to load"
+  STEP finalize:
+    Log an audit entry: "Transformation complete for {file.name}: {$records_out} of {$records_in} records ready to load"
 
-  ERROR batch_read_failure:
-    WHEN a batch cannot be read from the file
-    SEVERITY critical
-    ACTION move the file from "transforming" to "failed", log the error with the batch number
-    MESSAGE "Failed to read batch {current_batch} of {batch_count} from {file.name}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | batch_read_failure | a batch cannot be read from the file | critical | move the file from "transforming" to "failed", log the error with the batch number | "Failed to read batch {$current_batch} of {$batch_count} from {file.name}" |
 
   EXAMPLE successful_transformation:
     INPUT: {
@@ -1337,75 +1297,52 @@ PROCEDURE transform_records: Apply data transformations to validated records
     NOTES: 3 batches (500 + 500 + 250). Two records skipped for missing fields,
            one duplicate removed. 1250 - 2 skipped - 1 duplicate = 1247 records out.
 
-  EXAMPLE all_records_skipped:
-    INPUT: {
-      "file": { "name": "corrupt_data.json", "records_in": 15 },
-      "batch_size": 500
-    }
-    EXPECTED: {
-      "state": "transforming",
-      "batch_count": 1,
-      "records_out": 0,
-      "audit_entries": [
-        "Transformation started for corrupt_data.json: 1 batch",
-        "Skipped record 1: missing required field id",
-        "... (all 15 records skipped)",
-        "Transformation complete for corrupt_data.json: 0 of 15 records ready to load"
-      ]
-    }
-    NOTES: Every record was missing required fields. records_out = 0.
-           The load step will handle the zero-record case.
+  EXAMPLES:
+    all_records_skipped: file={ "name": "corrupt_data.json", "records_in": 15 }, batch_size=500 → { "state": "transforming", "batch_count": 1, "records_out": 0 }
 
 
 PROCEDURE load_to_warehouse: Load transformed records into the data warehouse
   with retry logic for transient failures
 
-  STEP check_records: Verify there are records to load
-    If records_out equals 0:
+  STEP check_records:
+    If $records_out equals 0:
       Log an audit entry: "No records to load for {file.name} -- skipping warehouse load"
       Move the file from "transforming" to "completed"
       Return the result
       -- Zero records is not an error -- transformation may have filtered everything out
 
-  STEP connect: Establish the warehouse connection
+  STEP connect → $connection:
     Move the file from "transforming" to "loading"
-    Attempt to connect to the warehouse using warehouse_connection:
-      If it fails:
-        Log the error and raise connection_failed error
+    Attempt to connect to the warehouse using warehouse_connection → $connection
+    If $connection fails:
+      Log the error and raise connection_failed error
 
-  STEP load_batches: Insert records in batches
-    Calculate the number of load batches using calculate_batch_count(records_out, batch_size)
-    Start with loaded_count at 0 and current_batch at 1
-    While current_batch is at most load_batch_count:
+  STEP load_batches → $loaded_count:
+    Calculate the number of load batches using calculate_batch_count($records_out, batch_size) → $load_batch_count
+    Set $loaded_count to 0 and $current_batch to 1
+    While $current_batch is at most $load_batch_count:
       Take the next batch of transformed records
       Attempt to insert the batch into the warehouse:
         If it succeeds:
-          Add the number of records in the batch to loaded_count
+          Add the number of records in the batch to $loaded_count
         If it fails:
           Attempt the insert again up to max_retries times
           If all retries fail:
             Log the error with the batch number and raise load_failed error
-      Add 1 to current_batch
+      Add 1 to $current_batch
 
-  STEP verify: Confirm the load
-    Query the warehouse to count the records just inserted for this file
-    If the warehouse count does not equal loaded_count:
-      Log a warning: "Record count mismatch: expected {loaded_count}, found {warehouse_count}"
+  STEP verify:
+    Query the warehouse to count the records just inserted for this file → $warehouse_count
+    If $warehouse_count does not equal $loaded_count:
+      Log a warning: "Record count mismatch: expected {$loaded_count}, found {$warehouse_count}"
     Move the file from "loading" to "completed"
-    Log an audit entry: "Load complete for {file.name}: {loaded_count} records inserted"
+    Log an audit entry: "Load complete for {file.name}: {$loaded_count} records inserted"
 
-  ERROR connection_failed:
-    WHEN the warehouse connection cannot be established after 3 attempts
-    SEVERITY critical
-    ACTION move the file from "loading" to "failed", notify the infrastructure team
-    MESSAGE "Cannot connect to warehouse: {connection_error}. File {file.name} load aborted."
-
-  ERROR load_failed:
-    WHEN a batch insert fails after max_retries attempts
-    SEVERITY critical
-    ACTION move the file from "loading" to "failed", record which batch failed,
-           roll back any partially inserted records for this file
-    MESSAGE "Batch {current_batch} failed after {max_retries} retries for {file.name}. Partial load rolled back."
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | connection_failed | the warehouse connection cannot be established after $config.warehouse.connection_retries attempts | critical | move the file from "loading" to "failed", notify the infrastructure team | "Cannot connect to warehouse: {connection_error}. File {file.name} load aborted." |
+  | load_failed | a batch insert fails after max_retries attempts | critical | move the file from "loading" to "failed", record which batch failed, roll back any partially inserted records for this file | "Batch {$current_batch} failed after {max_retries} retries for {file.name}. Partial load rolled back." |
 
   EXAMPLE successful_load:
     INPUT: {
@@ -1420,83 +1357,53 @@ PROCEDURE load_to_warehouse: Load transformed records into the data warehouse
     }
     NOTES: 3 load batches (500 + 500 + 247). All inserted successfully on first attempt.
 
-  EXAMPLE retry_then_success:
-    INPUT: {
-      "file": { "name": "products_20260301.json", "records_out": 800 },
-      "batch_size": 500,
-      "max_retries": 3
-    }
-    EXPECTED: {
-      "state": "completed",
-      "loaded_count": 800,
-      "retry_count": 1,
-      "audit_entries": [
-        "Batch 1: insert failed (timeout), retrying (attempt 1 of 3)",
-        "Batch 1: insert succeeded on retry",
-        "Load complete for products_20260301.json: 800 records inserted"
-      ]
-    }
-    NOTES: First batch failed once with a timeout, succeeded on first retry.
-           Second batch (300 records) succeeded on first attempt.
-
-  EXAMPLE permanent_failure:
-    INPUT: {
-      "file": { "name": "events_20260301.parquet", "records_out": 5000 },
-      "batch_size": 500,
-      "max_retries": 3
-    }
-    EXPECTED: {
-      "state": "failed",
-      "loaded_count": 0,
-      "retry_count": 3,
-      "error": "Batch 1 failed after 3 retries for events_20260301.parquet. Partial load rolled back."
-    }
-    NOTES: First batch failed on all 3 retry attempts. No records loaded.
-           Any partially inserted records are rolled back.
+  EXAMPLES:
+    retry_then_success: file={ "name": "products_20260301.json", "records_out": 800 }, batch_size=500, max_retries=3 → { "state": "completed", "loaded_count": 800, "retry_count": 1 }
+    permanent_failure: file={ "name": "events_20260301.parquet", "records_out": 5000 }, batch_size=500, max_retries=3 → { "state": "failed", "loaded_count": 0, "retry_count": 3 }
 
 
 PROCEDURE run_pipeline: Orchestrate the full ingestion pipeline from file
   discovery through warehouse loading
 
-  STEP discover: Find files waiting to be processed
-    Read the list of files in the upload_directory
+  STEP discover → $file_list:
+    Read the list of files in the upload_directory → $file_list
     Keep only the files that have not been processed before
       -- check the audit log for previous completions
-    Sort the files by uploaded_at, oldest first
-    If no files are found:
+    Sort $file_list by uploaded_at, oldest first
+    If $file_list is empty:
       Log an audit entry: "Pipeline run: no new files found"
       Return an empty result
 
-  STEP initialize: Set up the pipeline run
-    Generate a new run_id
-    Record the started_at timestamp
-    Start with files_processed at 0
+  STEP initialize → $run_id, $started_at, $files_processed:
+    Generate a new $run_id
+    Record the $started_at timestamp
+    Set $files_processed to 0
 
-  STEP process_files: Run each file through the pipeline
-    For each file in the discovery list:
-      Add 1 to files_processed
+  STEP process_files → $file_results:
+    Set $file_results to empty list
+    For each file in $file_list:
+      Add 1 to $files_processed
       Run quarantine_check on the file
       If the file is quarantined:
-        Record the file result with state "quarantined" and skip to the next file
+        Record the file result with state "quarantined" in $file_results and skip to the next file
       Run validate_file on the file
       If validation fails:
-        Record the file result with state "failed" and skip to the next file
+        Record the file result with state "failed" in $file_results and skip to the next file
       Run transform_records on the file
       If transformation produces zero records:
-        Record the file result with state "completed" and skip to the next file
+        Record the file result with state "completed" in $file_results and skip to the next file
       Run load_to_warehouse on the file
-      Record the file result
+      Record the file result in $file_results
 
-  STEP summarize: Produce the pipeline summary
-    Calculate the pipeline result using summarize_run(file_results)
-    Record the completed_at timestamp
-    Log an audit entry: "Pipeline run {run_id} complete: {files_succeeded} succeeded, {files_failed} failed, {total_records_loaded} records loaded"
+  STEP summarize → $pipeline_result:
+    Calculate $pipeline_result using summarize_run($file_results)
+    Record the $completed_at timestamp
+    Log an audit entry: "Pipeline run {$run_id} complete: {$pipeline_result.files_succeeded} succeeded, {$pipeline_result.files_failed} failed, {$pipeline_result.total_records_loaded} records loaded"
 
-  ERROR pipeline_interrupted:
-    WHEN an unexpected error halts the pipeline before all files are processed
-    SEVERITY critical
-    ACTION record partial results, log the interruption point, notify the data engineering team
-    MESSAGE "Pipeline run {run_id} interrupted after processing {files_processed} of {total_files} files"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | pipeline_interrupted | an unexpected error halts the pipeline before all files are processed | critical | record partial results, log the interruption point, notify the data engineering team | "Pipeline run {$run_id} interrupted after processing {$files_processed} of {total_files} files" |
 
   EXAMPLE full_pipeline_run:
     INPUT: {
@@ -1526,42 +1433,25 @@ PROCEDURE run_pipeline: Orchestrate the full ingestion pipeline from file
       ]
     }
     NOTES: Three files discovered. orders_20260301.csv processed successfully (1247 records).
-           huge_export.csv quarantined for exceeding 500 MB. products_20260301.json processed
+           huge_export.csv quarantined for exceeding $config.file_size_limit. products_20260301.json processed
            successfully (800 records after transformation). Total loaded = 1247 + 800 = 2047.
 
-  EXAMPLE empty_upload_directory:
-    INPUT: {
-      "upload_directory": "/data/uploads",
-      "warehouse_connection": "warehouse://prod-cluster:5439/analytics",
-      "files_in_directory": []
-    }
-    EXPECTED: {
-      "pipeline_result": {
-        "status": "completed",
-        "files_processed": 0,
-        "files_succeeded": 0,
-        "files_failed": 0,
-        "total_records_loaded": 0
-      },
-      "audit_entry": "Pipeline run: no new files found"
-    }
-    NOTES: No files to process. Pipeline exits early with an empty result.
+  EXAMPLES:
+    empty_upload_directory: upload_directory="/data/uploads", files_in_directory=[] → { "status": "completed", "files_processed": 0, "total_records_loaded": 0 }
+
+Precedence
 
 PRECEDENCE:
   1. file_too_large (from BEHAVIOR quarantine_check)
   2. unsupported_format (from BEHAVIOR quarantine_check)
   3. duplicate_file (from BEHAVIOR quarantine_check)
-  4. validate_file (PROCEDURE -- runs after quarantine clears)
-  5. transform_records (PROCEDURE -- runs after validation passes)
-  6. load_to_warehouse (PROCEDURE -- runs after transformation completes)
-  -- Quarantine checks always run first. If a file is quarantined,
-  -- no validation, transformation, or loading occurs.
+  -- Quarantine checks run first. Processing PROCEDUREs follow in document order.
 
 Constraints
 * File state transitions MUST follow the lifecycle: queued -> validating ->
   transforming -> loading -> completed (or failed/quarantined at any point)
 * A file MUST NOT move backward in the state lifecycle
-* Batch size MUST be between 1 and 10000
+* Batch size MUST be between $config.warehouse.batch_size_min and $config.warehouse.batch_size_max
 * All timestamps MUST use ISO 8601 format in UTC
 * Partial loads MUST be rolled back on failure -- no half-loaded files
 * The audit log MUST record every state transition for every file
@@ -1577,11 +1467,14 @@ Dependencies
 * Scheduling service for recurring pipeline runs
 
 Changelog
-* 3.0.0: 2026-03-01 - Rewrote in SESF v3 procedural format. Added PROCEDURE
+* 4.0.0: 2026-03-01 - Migrated to SESF v4 hybrid notation. Added @config,
+  $variable threading, compact ERRORS/EXAMPLES, Notation section, and fixed
+  PRECEDENCE to reference only BEHAVIOR rules.
+* 3.0.0: 2025-12-15 - Rewrote in SESF v3 procedural format. Added PROCEDURE
   blocks for validate_file, transform_records, load_to_warehouse, and
   run_pipeline. Added quarantine_check behavior with PRECEDENCE.
-* 2.0.0: 2025-12-15 - Added retry logic and batch processing. Introduced
+* 2.0.0: 2025-10-01 - Added retry logic and batch processing. Introduced
   state lifecycle tracking.
-* 1.1.0: 2025-10-01 - Added parquet format support and deduplication step
-* 1.0.0: 2025-08-01 - Initial version with CSV-only support
+* 1.1.0: 2025-08-01 - Added parquet format support and deduplication step
+* 1.0.0: 2025-06-01 - Initial version with CSV-only support
 ```
