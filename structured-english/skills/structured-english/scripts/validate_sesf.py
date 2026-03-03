@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""SESF v3 Structural Validator
+"""SESF v3/v4 Structural Validator
 
-Parses SESF v3 specification files (markdown) and validates them for
+Parses SESF v3/v4 specification files (markdown) and validates them for
 structural correctness. Checks section completeness based on the declared
 tier (micro, standard, complex) and validates behavior block structure,
-procedure block structure, and action declarations.
+procedure block structure, action declarations, and v4 hybrid elements
+(@config, @route, $variable threading, compact ERRORS/EXAMPLES tables).
 
 Usage:
     python3 validate_sesf.py <spec_file.md>
@@ -61,6 +62,9 @@ class SESFBehavior:
     rules: list = field(default_factory=list)   # list[SESFRule]
     errors: list = field(default_factory=list)   # list[SESFError]
     examples: list = field(default_factory=list)  # list[SESFExample]
+    routes: list = field(default_factory=list)   # list[SESFRoute]
+    compact_errors: list = field(default_factory=list)  # list[SESFCompactError]
+    compact_examples: list = field(default_factory=list)  # list[SESFCompactExample]
     line_number: int = 0
 
 
@@ -69,6 +73,7 @@ class SESFStep:
     name: str
     description: str = ""
     raw_text: str = ""
+    output_variables: list = field(default_factory=list)  # list[str]
     line_number: int = 0
 
 
@@ -78,6 +83,54 @@ class SESFProcedure:
     steps: list = field(default_factory=list)    # list[SESFStep]
     errors: list = field(default_factory=list)   # list[SESFError]
     examples: list = field(default_factory=list)  # list[SESFExample]
+    compact_errors: list = field(default_factory=list)  # list[SESFCompactError]
+    compact_examples: list = field(default_factory=list)  # list[SESFCompactExample]
+    line_number: int = 0
+
+
+@dataclass
+class SESFConfigEntry:
+    key: str = ""
+    value: str = ""
+    line_number: int = 0
+
+
+@dataclass
+class SESFConfig:
+    entries: dict = field(default_factory=dict)  # key -> value (flattened with dot notation)
+    line_number: int = 0
+
+
+@dataclass
+class SESFRouteRow:
+    condition: str = ""
+    outcome: str = ""
+    line_number: int = 0
+
+
+@dataclass
+class SESFRoute:
+    name: str = ""
+    mode: str = "first_match_wins"  # or "all_matches"
+    rows: list = field(default_factory=list)  # list[SESFRouteRow]
+    line_number: int = 0
+
+
+@dataclass
+class SESFCompactError:
+    name: str = ""
+    when: str = ""
+    severity: str = ""
+    action: str = ""
+    message: str = ""
+    line_number: int = 0
+
+
+@dataclass
+class SESFCompactExample:
+    name: str = ""
+    input_desc: str = ""
+    expected: str = ""
     line_number: int = 0
 
 
@@ -106,6 +159,8 @@ class SESFDocument:
     procedures: list = field(default_factory=list)  # list[SESFProcedure]
     actions: list = field(default_factory=list)     # list of action names
     precedence: list = field(default_factory=list)  # ordered list of rule names
+    config: Optional[SESFConfig] = None
+    has_notation_section: bool = False
 
 
 @dataclass
@@ -123,7 +178,7 @@ class ValidationResult:
 KNOWN_SECTIONS = {
     "meta", "purpose", "scope", "inputs", "outputs", "types", "functions",
     "behaviors", "precedence", "constraints", "dependencies", "changelog",
-    "audience",
+    "audience", "procedures", "notation",
 }
 
 # ---------------------------------------------------------------------------
@@ -230,6 +285,12 @@ def parse_sesf(filepath: str) -> SESFDocument:
     in_type_block = False
     current_type: Optional[SESFType] = None
     meta_started = False
+    in_config_block = False
+    config_prefix_stack: list[str] = []  # for nested dot-flattening
+    current_route: Optional[SESFRoute] = None
+    in_compact_errors = False  # inside a compact ERRORS: table
+    in_compact_examples = False  # inside a compact EXAMPLES: block
+    compact_errors_header_seen = False  # have we seen the table header row?
 
     def _finish_sub_block():
         """Flush the current rule/error/example into the current behavior."""
@@ -245,8 +306,16 @@ def parse_sesf(filepath: str) -> SESFDocument:
             current_example = None
 
     def _finish_behavior():
-        nonlocal current_behavior
+        nonlocal current_behavior, current_route
+        nonlocal in_compact_errors, in_compact_examples, compact_errors_header_seen
         _finish_sub_block()
+        # Flush any open route
+        if current_route and current_behavior:
+            current_behavior.routes.append(current_route)
+            current_route = None
+        in_compact_errors = False
+        in_compact_examples = False
+        compact_errors_header_seen = False
         if current_behavior:
             doc.behaviors.append(current_behavior)
             current_behavior = None
@@ -272,7 +341,11 @@ def parse_sesf(filepath: str) -> SESFDocument:
 
     def _finish_procedure():
         nonlocal current_procedure
+        nonlocal in_compact_errors, in_compact_examples, compact_errors_header_seen
         _finish_proc_sub_block()
+        in_compact_errors = False
+        in_compact_examples = False
+        compact_errors_header_seen = False
         if current_procedure:
             doc.procedures.append(current_procedure)
             current_procedure = None
@@ -354,7 +427,58 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 rest = stripped[len(section_match):].strip().lstrip(":").strip()
                 if "|" in rest:
                     doc.meta.update(_parse_meta_pipe(rest))
+
+            # Detect Notation section
+            if section_match == "notation":
+                doc.has_notation_section = True
+
+            # Exit any active config/route/compact block on section change
+            in_config_block = False
+            config_prefix_stack = []
+            current_route = None
+            in_compact_errors = False
+            in_compact_examples = False
+            compact_errors_header_seen = False
             continue
+
+        # --- @config block detection ---
+        if stripped.startswith("@config"):
+            _finish_behavior()
+            _finish_procedure()
+            _finish_type()
+            in_config_block = True
+            config_prefix_stack = []
+            doc.config = SESFConfig(line_number=line_num)
+            continue
+
+        # --- Inside @config block: parse key-value pairs ---
+        if in_config_block:
+            # Exit config on unindented non-config line (section header,
+            # BEHAVIOR, PROCEDURE, etc.)
+            if not raw_line.startswith((" ", "\t")):
+                in_config_block = False
+                config_prefix_stack = []
+                # Don't continue — fall through to process this line normally
+            else:
+                # Indented line inside @config
+                # Determine indent level (by counting leading spaces)
+                indent_level = len(raw_line) - len(raw_line.lstrip())
+                # Adjust prefix stack based on indent
+                while config_prefix_stack and len(config_prefix_stack) > indent_level // 2:
+                    config_prefix_stack.pop()
+
+                if ":" in stripped:
+                    key_part, _, val_part = stripped.partition(":")
+                    key_part = key_part.strip()
+                    val_part = val_part.strip()
+                    if val_part:
+                        # Simple key: value pair
+                        full_key = ".".join(config_prefix_stack + [key_part]) if config_prefix_stack else key_part
+                        doc.config.entries[full_key] = val_part
+                    else:
+                        # Nested key (no value) — push to prefix stack
+                        config_prefix_stack.append(key_part)
+                continue
 
         # --- BEHAVIOR detection (must come before section-specific handlers
         #     so that BEHAVIOR lines are not consumed by e.g. Functions) ---
@@ -474,6 +598,116 @@ def parse_sesf(filepath: str) -> SESFDocument:
             if "behaviors" in doc.sections:
                 doc.sections["behaviors"].append(stripped)
 
+            # --- @route detection inside behavior ---
+            if stripped.startswith("@route"):
+                _finish_sub_block()
+                current_route = None
+                in_compact_errors = False
+                in_compact_examples = False
+                # Parse: @route name [mode]
+                route_parts = stripped.split(None, 2)  # ["@route", "name", "[mode]"]
+                route_name = route_parts[1] if len(route_parts) > 1 else ""
+                route_mode = "first_match_wins"
+                if len(route_parts) > 2:
+                    mode_text = route_parts[2].strip().strip("[]")
+                    if mode_text:
+                        route_mode = mode_text
+                current_route = SESFRoute(
+                    name=route_name, mode=route_mode, line_number=line_num
+                )
+                continue
+
+            # Inside @route: parse condition -> outcome rows
+            if current_route is not None:
+                # Table separator lines (|---|) — skip
+                if stripped.startswith("|") and re.match(r"^\|[\s\-|]+\|$", stripped):
+                    continue
+                # Table header line — skip
+                if stripped.startswith("|") and ("condition" in stripped.lower() or "outcome" in stripped.lower()):
+                    continue
+                # Route row with arrow: condition → outcome or condition -> outcome
+                arrow_match = re.match(r"^(.+?)\s*(?:→|->)\s*(.+)$", stripped)
+                if arrow_match:
+                    condition = arrow_match.group(1).strip().strip("|").strip()
+                    outcome = arrow_match.group(2).strip().strip("|").strip()
+                    current_route.rows.append(SESFRouteRow(
+                        condition=condition, outcome=outcome, line_number=line_num
+                    ))
+                    continue
+                # Non-matching line ends the route block
+                current_behavior.routes.append(current_route)
+                current_route = None
+                # Fall through to process this line normally
+
+            # --- Compact ERRORS: table detection inside behavior ---
+            if stripped.upper().startswith("ERRORS:") and not re.match(r"^\s*ERROR\s+\w+\s*:", stripped):
+                _finish_sub_block()
+                in_compact_errors = True
+                compact_errors_header_seen = False
+                in_compact_examples = False
+                current_route = None
+                continue
+
+            # Inside compact ERRORS: table
+            if in_compact_errors:
+                # Separator line (|---|) — skip
+                if stripped.startswith("|") and re.match(r"^\|[\s\-|]+\|$", stripped):
+                    continue
+                # Header row — skip but mark as seen
+                if stripped.startswith("|") and not compact_errors_header_seen:
+                    compact_errors_header_seen = True
+                    continue
+                # Data row
+                if stripped.startswith("|") and compact_errors_header_seen:
+                    cells = [c.strip() for c in stripped.split("|")]
+                    # Remove empty first/last cells from leading/trailing |
+                    cells = [c for c in cells if c or c == ""]
+                    # Filter out truly empty strings from split artifacts
+                    while cells and cells[0] == "":
+                        cells.pop(0)
+                    while cells and cells[-1] == "":
+                        cells.pop()
+                    if len(cells) >= 4:
+                        current_behavior.compact_errors.append(SESFCompactError(
+                            name=cells[0],
+                            when=cells[1] if len(cells) > 1 else "",
+                            severity=cells[2] if len(cells) > 2 else "",
+                            action=cells[3] if len(cells) > 3 else "",
+                            message=cells[4] if len(cells) > 4 else "",
+                            line_number=line_num,
+                        ))
+                    continue
+                # Non-table line ends compact errors
+                in_compact_errors = False
+                compact_errors_header_seen = False
+                # Fall through to process this line normally
+
+            # --- Compact EXAMPLES: detection inside behavior ---
+            if stripped.upper().startswith("EXAMPLES:") and not re.match(r"^\s*EXAMPLE\s+\w+\s*:", stripped):
+                _finish_sub_block()
+                in_compact_examples = True
+                in_compact_errors = False
+                current_route = None
+                continue
+
+            # Inside compact EXAMPLES: block
+            if in_compact_examples:
+                # Format: name: input → expected  OR  name: input -> expected
+                compact_ex_match = re.match(
+                    r"^\s*(\w+)\s*:\s*(.+?)\s*(?:→|->)\s*(.+)$", stripped
+                )
+                if compact_ex_match:
+                    current_behavior.compact_examples.append(SESFCompactExample(
+                        name=compact_ex_match.group(1),
+                        input_desc=compact_ex_match.group(2).strip(),
+                        expected=compact_ex_match.group(3).strip(),
+                        line_number=line_num,
+                    ))
+                    continue
+                # Non-matching line ends compact examples
+                in_compact_examples = False
+                # Fall through to process this line normally
+
             # RULE detection
             rule_match = re.match(r"^\s*RULE\s+(\w+)\s*:", stripped)
             if rule_match:
@@ -487,7 +721,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                     current_rule.priority = int(pri.group(1))
                 continue
 
-            # ERROR detection
+            # ERROR detection (verbose form)
             error_match = re.match(r"^\s*ERROR\s+(\w+)\s*:", stripped)
             if error_match:
                 _finish_sub_block()
@@ -496,7 +730,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 )
                 continue
 
-            # EXAMPLE detection
+            # EXAMPLE detection (verbose form)
             example_match = re.match(r"^\s*EXAMPLE\s+(\w+)\s*:", stripped)
             if example_match:
                 _finish_sub_block()
@@ -563,16 +797,94 @@ def parse_sesf(filepath: str) -> SESFDocument:
             if "behaviors" in doc.sections:
                 doc.sections["behaviors"].append(stripped)
 
-            # STEP detection
+            # --- Compact ERRORS: table detection inside procedure ---
+            if stripped.upper().startswith("ERRORS:") and not re.match(r"^\s*ERROR\s+\w+\s*:", stripped):
+                _finish_proc_sub_block()
+                in_compact_errors = True
+                compact_errors_header_seen = False
+                in_compact_examples = False
+                continue
+
+            # Inside compact ERRORS: table (procedure)
+            if in_compact_errors:
+                # Separator line (|---|) — skip
+                if stripped.startswith("|") and re.match(r"^\|[\s\-|]+\|$", stripped):
+                    continue
+                # Header row — skip but mark as seen
+                if stripped.startswith("|") and not compact_errors_header_seen:
+                    compact_errors_header_seen = True
+                    continue
+                # Data row
+                if stripped.startswith("|") and compact_errors_header_seen:
+                    cells = [c.strip() for c in stripped.split("|")]
+                    cells = [c for c in cells if c or c == ""]
+                    while cells and cells[0] == "":
+                        cells.pop(0)
+                    while cells and cells[-1] == "":
+                        cells.pop()
+                    if len(cells) >= 4:
+                        current_procedure.compact_errors.append(SESFCompactError(
+                            name=cells[0],
+                            when=cells[1] if len(cells) > 1 else "",
+                            severity=cells[2] if len(cells) > 2 else "",
+                            action=cells[3] if len(cells) > 3 else "",
+                            message=cells[4] if len(cells) > 4 else "",
+                            line_number=line_num,
+                        ))
+                    continue
+                # Non-table line ends compact errors
+                in_compact_errors = False
+                compact_errors_header_seen = False
+                # Fall through to process this line normally
+
+            # --- Compact EXAMPLES: detection inside procedure ---
+            if stripped.upper().startswith("EXAMPLES:") and not re.match(r"^\s*EXAMPLE\s+\w+\s*:", stripped):
+                _finish_proc_sub_block()
+                in_compact_examples = True
+                in_compact_errors = False
+                continue
+
+            # Inside compact EXAMPLES: block (procedure)
+            if in_compact_examples:
+                compact_ex_match = re.match(
+                    r"^\s*(\w+)\s*:\s*(.+?)\s*(?:→|->)\s*(.+)$", stripped
+                )
+                if compact_ex_match:
+                    current_procedure.compact_examples.append(SESFCompactExample(
+                        name=compact_ex_match.group(1),
+                        input_desc=compact_ex_match.group(2).strip(),
+                        expected=compact_ex_match.group(3).strip(),
+                        line_number=line_num,
+                    ))
+                    continue
+                # Non-matching line ends compact examples
+                in_compact_examples = False
+                # Fall through to process this line normally
+
+            # STEP detection (with $variable threading)
             step_match = re.match(r"^\s*STEP\s+(\w+)\s*:", stripped)
             if step_match:
                 _finish_proc_sub_block()
+                step_name = step_match.group(1)
                 current_step = SESFStep(
-                    name=step_match.group(1), line_number=line_num
+                    name=step_name, line_number=line_num
                 )
+                # Check for output variables: STEP name → $var1, $var2
+                # or STEP name -> $var1, $var2
+                rest_of_step = stripped[step_match.end():]
+                arrow_idx = None
+                for arrow in ("\u2192", "->"):
+                    idx = rest_of_step.find(arrow)
+                    if idx >= 0:
+                        arrow_idx = idx + len(arrow)
+                        after_arrow = rest_of_step[arrow_idx:]
+                        # Extract $-prefixed tokens
+                        var_tokens = re.findall(r"\$\w+", after_arrow)
+                        current_step.output_variables.extend(var_tokens)
+                        break
                 continue
 
-            # ERROR detection
+            # ERROR detection (verbose form)
             error_match = re.match(r"^\s*ERROR\s+(\w+)\s*:", stripped)
             if error_match:
                 _finish_proc_sub_block()
@@ -581,7 +893,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 )
                 continue
 
-            # EXAMPLE detection
+            # EXAMPLE detection (verbose form)
             example_match = re.match(r"^\s*EXAMPLE\s+(\w+)\s*:", stripped)
             if example_match:
                 _finish_proc_sub_block()
@@ -596,6 +908,15 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 # First non-empty content line becomes the description
                 if not current_step.description:
                     current_step.description = stripped
+                # Check for $variable output on action lines within step
+                for arrow in ("\u2192", "->"):
+                    if arrow in stripped:
+                        after_arrow = stripped.split(arrow, 1)[1]
+                        var_tokens = re.findall(r"\$\w+", after_arrow)
+                        for v in var_tokens:
+                            if v not in current_step.output_variables:
+                                current_step.output_variables.append(v)
+                        break
                 continue
 
             if current_error:
