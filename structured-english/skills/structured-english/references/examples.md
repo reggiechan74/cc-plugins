@@ -1,6 +1,6 @@
-# SESF v3 Complete Examples
+# SESF v4 Complete Examples
 
-Six complete specifications demonstrating every SESF v3 tier and style. Examples 1-3 are declarative (BEHAVIOR-centric), showing rules about what must be true. Examples 4-6 are procedural (PROCEDURE-centric), showing step-by-step processes. Together they cover the full range of SESF v3. Each is a working spec with concrete data, suitable as a reference when writing new specifications.
+Seven complete specifications demonstrating every SESF v4 tier and style. Examples 1-3 are declarative (BEHAVIOR-centric), showing rules about what must be true. Examples 4-6 are procedural (PROCEDURE-centric), showing step-by-step processes. Example 7 is a real-world hybrid spec combining BEHAVIORs and PROCEDUREs. Together they cover the full range of SESF v4. Each is a working spec with concrete data, suitable as a reference when writing new specifications.
 
 ---
 
@@ -9,10 +9,12 @@ Six complete specifications demonstrating every SESF v3 tier and style. Examples
 ```
 Email Address Validator
 
-Meta: Version 1.0.0 | Date 2026-03-01 | Domain: Input Validation | Status: active | Tier: micro
+Meta: Version 1.0.0 | Date: 2026-03-01 | Domain: Input Validation | Status: active | Tier: micro
 
 Purpose
 Validate that a given string is a structurally valid email address before passing it to downstream systems.
+
+Behaviors
 
 BEHAVIOR validate_email: Check that an input string conforms to basic email address structure
 
@@ -24,22 +26,14 @@ BEHAVIOR validate_email: Check that an input string conforms to basic email addr
     THEN the portion after "@" MUST contain at least one "." character
          AND the portion after "@" MUST be at least 3 characters long
 
-  ERROR invalid_email:
-    WHEN input fails contains_at_sign OR has_domain
-    SEVERITY critical
-    ACTION reject input
-    MESSAGE "Invalid email address: does not meet structural requirements"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | invalid_email | input fails contains_at_sign OR has_domain | critical | reject input | "Invalid email address: does not meet structural requirements" |
 
-  EXAMPLE valid_email:
-    INPUT: "reggie.chan@tenebrus.ca"
-    EXPECTED: { "valid": true }
-    NOTES: Contains one @ with a valid domain portion (tenebrus.ca)
-
-  EXAMPLE missing_at_sign:
-    INPUT: "reggie.chan.tenebrus.ca"
-    EXPECTED: { "valid": false,
-                "error": "Invalid email address: does not meet structural requirements" }
-    NOTES: No @ character present — triggers contains_at_sign rule failure
+  EXAMPLES:
+    valid_email: input="reggie.chan@tenebrus.ca" → { "valid": true }
+    missing_at_sign: input="reggie.chan.tenebrus.ca" → rejected with "Invalid email address: does not meet structural requirements"
 
 Constraints
 * Validation is structural only — does not verify that the domain exists or accepts mail
@@ -50,14 +44,25 @@ Constraints
 ## Example 2: Standard Tier -- Commercial Lease Abstraction
 
 ```
-Commercial Lease Abstraction
+---
+name: lease-abstraction
+description: "Extract structured data from commercial lease PDFs"
+---
+
+# Commercial Lease Abstraction
 
 Meta
-* Version: 2.0.0
+* Version: 2.1.0
 * Date: 2026-03-01
 * Domain: Real Estate / Document Processing
 * Status: active
 * Tier: standard
+
+Notation
+* $ — references a variable or config value (e.g., $config.min_confidence)
+* @ — marks a structured block (@config for parameters, @route for decision tables)
+* → — means "produces" (in steps), "routes to" (in tables), or "yields" (in examples)
+* MUST/SHOULD/MAY/CAN — requirement strength keywords
 
 Purpose
 Extract structured data from commercial lease PDF documents to populate a standardized
@@ -78,6 +83,16 @@ Outputs
 * lease_data: LeaseData - structured lease information with all extracted fields
 * confidence: number - overall extraction confidence score (0.0 to 1.0)
 * warnings: list of string - issues encountered during extraction
+
+@config
+  min_confidence: 0.5
+  required_fields: [parties.landlord, parties.tenant, premises.address, premises.sqft, term.commencement, term.expiration, rent.base_amount]
+  sqft_range:
+    min: 100
+    max: 2000000
+  max_term_months: 300
+  output_format: json
+  currency_default: CAD
 
 Types
 
@@ -118,7 +133,7 @@ Term {
 Rent {
   base_amount: number, required
   period: enum [monthly, annual, psf_annual], required
-  currency: enum [CAD, USD], default: CAD
+  currency: enum [CAD, USD], default: $config.currency_default
   escalations: list of Escalation, optional
 }
 
@@ -149,6 +164,8 @@ FUNCTION confidence_score(extracted, required_fields):
   total = count of required_fields
   RETURNS found / total
 
+Behaviors
+
 BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease document
 
   RULE landlord_required:
@@ -159,21 +176,17 @@ BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease 
     parties.tenant MUST be present
     AND parties.tenant.name MUST NOT be empty
 
-  RULE entity_type_inference:
-    WHEN party name contains "Inc", "Corp", "Ltd", or "Limited"
-    THEN entity_type SHOULD be set to "Corporation"
+  @route entity_type_classification [first_match_wins]
+    party name contains "Inc", "Corp", "Ltd", or "Limited"  → set entity_type to "Corporation"
+    party name contains "LLC" or "L.L.C."                    → set entity_type to "LLC"
+    party name contains "LP" or "L.P." or "Partnership"      → set entity_type to "Partnership"
+    *                                                         → set entity_type to "Individual"
 
-  ERROR missing_landlord:
-    WHEN parties.landlord is null or parties.landlord.name is empty
-    SEVERITY critical
-    ACTION halt extraction
-    MESSAGE "Could not identify landlord in lease document"
-
-  ERROR missing_tenant:
-    WHEN parties.tenant is null or parties.tenant.name is empty
-    SEVERITY critical
-    ACTION halt extraction
-    MESSAGE "Could not identify tenant in lease document"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_landlord | parties.landlord is null or parties.landlord.name is empty | critical | halt extraction | "Could not identify landlord in lease document" |
+  | missing_tenant | parties.tenant is null or parties.tenant.name is empty | critical | halt extraction | "Could not identify tenant in lease document" |
 
   EXAMPLE successful_party_extraction:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -183,15 +196,10 @@ BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease 
         "tenant": { "name": "Northern Lights Coffee Inc.", "entity_type": "Corporation", "address": "456 Queen Street West, Toronto, ON M5V 2A8" }
       }
     }
-    NOTES: Both parties extracted with entity_type inferred from "Ltd." and "Inc."
+    NOTES: Both parties extracted with entity_type inferred from "Ltd." and "Inc." via @route entity_type_classification.
 
-  EXAMPLE missing_landlord_case:
-    INPUT: { "lease_pdf": "damaged_scan_lease.pdf" }
-    EXPECTED: {
-      "error": "Could not identify landlord in lease document",
-      "confidence": 0.0
-    }
-    NOTES: OCR damage obscured first page — landlord name unreadable. Extraction halts.
+  EXAMPLES:
+    missing_landlord_case: lease_pdf="damaged_scan_lease.pdf" → rejected with "Could not identify landlord in lease document"
 
 
 BEHAVIOR premises_extraction: Extract physical property details from the lease
@@ -204,14 +212,13 @@ BEHAVIOR premises_extraction: Extract physical property details from the lease
          AND premises.city MUST NOT be empty
 
   RULE sqft_reasonableness:
-    premises.sqft SHOULD be between 100 and 2000000
+    premises.sqft SHOULD be between $config.sqft_range.min and $config.sqft_range.max
     -- flag outliers for review
 
-  ERROR missing_sqft:
-    WHEN premises.sqft is null or premises.sqft = 0
-    SEVERITY warning
-    ACTION continue with flag
-    MESSAGE "Square footage not found -- may require manual review"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_sqft | premises.sqft is null or premises.sqft = 0 | warning | continue with flag | "Square footage not found -- may require manual review" |
 
   EXAMPLE complete_premises:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -219,18 +226,8 @@ BEHAVIOR premises_extraction: Extract physical property details from the lease
       "premises": { "address": "456 Queen Street West, Unit 2B", "city": "Toronto", "province_or_state": "ON", "postal_code": "M5V 2A8", "sqft": 3200, "unit": "2B", "permitted_use": "Retail food service and ancillary uses" }
     }
 
-  EXAMPLE missing_sqft_case:
-    INPUT: { "lease_pdf": "older_format_lease.pdf" }
-    EXPECTED: {
-      "premises": {
-        "address": "89 Wellington Street East",
-        "city": "Aurora",
-        "province_or_state": "ON",
-        "sqft": null
-      },
-      "warnings": ["Square footage not found -- may require manual review"]
-    }
-    NOTES: Older lease format did not include sqft. Extraction continues with warning.
+  EXAMPLES:
+    missing_sqft_case: lease_pdf="older_format_lease.pdf" → premises extracted with sqft=null and warning "Square footage not found -- may require manual review"
 
 
 BEHAVIOR term_extraction: Extract and validate lease commencement and expiration dates
@@ -242,14 +239,13 @@ BEHAVIOR term_extraction: Extract and validate lease commencement and expiration
     term.months MUST equal months_between(term.commencement, term.expiration)
 
   RULE term_reasonableness:
-    term.months SHOULD be between 1 and 300
+    term.months SHOULD be between 1 and $config.max_term_months
     -- flag unusual terms for review
 
-  ERROR date_parse_failure:
-    WHEN commencement or expiration date cannot be parsed from document text
-    SEVERITY critical
-    ACTION halt extraction
-    MESSAGE "Could not parse lease term dates from document"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | date_parse_failure | commencement or expiration date cannot be parsed from document text | critical | halt extraction | "Could not parse lease term dates from document" |
 
   EXAMPLE valid_five_year_term:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -262,12 +258,8 @@ BEHAVIOR term_extraction: Extract and validate lease commencement and expiration
     }
     NOTES: Standard 5-year commercial term. months_between(2026-07-01, 2031-06-30) = 60.
 
-  EXAMPLE invalid_dates_case:
-    INPUT: { "lease_pdf": "corrupted_dates_lease.pdf" }
-    EXPECTED: {
-      "error": "Could not parse lease term dates from document"
-    }
-    NOTES: Document contained handwritten date amendments that OCR could not resolve.
+  EXAMPLES:
+    invalid_dates_case: lease_pdf="corrupted_dates_lease.pdf" → rejected with "Could not parse lease term dates from document"
 
 
 BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation schedule
@@ -277,14 +269,13 @@ BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation sche
 
   RULE escalation_chronology:
     WHEN rent.escalations is present
-    THEN each escalation.effective_date MUST be after term.commencement
+    THEN EACH escalation.effective_date MUST be after term.commencement
     AND escalation dates MUST be in ascending order
 
-  ERROR missing_rent:
-    WHEN rent.base_amount is null or rent.base_amount <= 0
-    SEVERITY critical
-    ACTION halt extraction
-    MESSAGE "Could not extract base rent amount from document"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_rent | rent.base_amount is null or rent.base_amount <= 0 | critical | halt extraction | "Could not extract base rent amount from document" |
 
   EXAMPLE psf_rent_with_escalations:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -303,36 +294,21 @@ BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation sche
     }
     NOTES: $32.50 PSF with ~3% annual escalations. annual_rent(rent, 3200) = $104,000 in year one.
 
-  EXAMPLE monthly_rent_no_escalations:
-    INPUT: { "lease_pdf": "simple_retail_lease.pdf" }
-    EXPECTED: {
-      "rent": {
-        "base_amount": 4500.00,
-        "period": "monthly",
-        "currency": "CAD",
-        "escalations": []
-      }
-    }
-    NOTES: Flat $4,500/month with no escalations. annual_rent(rent, null) = $54,000.
+  EXAMPLES:
+    monthly_rent_no_escalations: lease_pdf="simple_retail_lease.pdf" → rent extracted with base_amount=4500.00, period="monthly", escalations=[]
 
 
 BEHAVIOR confidence_scoring: Compute overall extraction confidence based on field completeness
 
   RULE confidence_calculation:
-    confidence MUST equal confidence_score(lease_data, [parties.landlord, parties.tenant, premises.address, premises.sqft, term.commencement, term.expiration, rent.base_amount])
+    confidence MUST equal confidence_score(lease_data, $config.required_fields)
 
   RULE confidence_range:
     confidence MUST be between 0.0 and 1.0
 
-  EXAMPLE high_confidence:
-    INPUT: { "extracted_fields": ["parties.landlord", "parties.tenant", "premises.address", "premises.sqft", "term.commencement", "term.expiration", "rent.base_amount"] }
-    EXPECTED: { "confidence": 1.0 }
-    NOTES: All 7 required fields extracted. 7/7 = 1.0.
-
-  EXAMPLE low_confidence:
-    INPUT: { "extracted_fields": ["parties.tenant", "premises.address", "rent.base_amount"] }
-    EXPECTED: { "confidence": 0.43 }
-    NOTES: Only 3 of 7 required fields found. 3/7 = 0.43. Missing landlord, sqft, and both dates.
+  EXAMPLES:
+    high_confidence: all 7 required fields extracted → { "confidence": 1.0 }
+    low_confidence: only 3 of 7 required fields found → { "confidence": 0.43 }
 
 Constraints
 * Extraction MUST handle PDFs up to 200 pages
@@ -352,14 +328,25 @@ Dependencies
 ## Example 3: Complex Tier -- Purchase Order Approval Workflow
 
 ```
-Purchase Order Approval Workflow
+---
+name: po-approval
+description: "Route purchase orders through approval chains based on amount thresholds and urgency"
+---
+
+# Purchase Order Approval Workflow
 
 Meta
-* Version: 2.1.0
+* Version: 3.0.0
 * Date: 2026-03-01
 * Domain: Finance / Procurement
 * Status: active
 * Tier: complex
+
+Notation
+* $ — references a variable or config value (e.g., $config.thresholds.tier_1)
+* @ — marks a structured block (@config for parameters, @route for decision tables)
+* → — means "produces" (in steps), "routes to" (in tables), or "yields" (in examples)
+* MUST/SHOULD/MAY/CAN — requirement strength keywords
 
 Purpose
 Route purchase order requests through the appropriate approval chain based on dollar
@@ -367,19 +354,19 @@ thresholds, department policies, and urgency levels. Manage notification dispatc
 timeout escalation, and state transitions to ensure proper financial controls while
 allowing emergency overrides for time-critical needs.
 
-Scope
-* IN SCOPE: PO validation, approval routing by amount threshold, emergency override,
-  notification dispatch (sequential and parallel), timeout escalation, state management
-* OUT OF SCOPE: Purchase order creation UI, vendor management, payment processing,
-  budget tracking, three-way matching
-
 Audience
 * AI agents: This spec drives an automated workflow engine. Each behavior is
   self-contained. Process behaviors in PRECEDENCE order when a PO enters the system.
 * Human reviewers: Start with approval_routing to understand threshold logic,
   then read notification_dispatch and timeout_escalation for the async flow.
-* Administrators: Threshold amounts and timeout durations are defined as constants
-  in the rules. Adjust these values when corporate policy changes.
+* Administrators: Threshold amounts and timeout durations are in @config.
+  Adjust these values when corporate policy changes.
+
+Scope
+* IN SCOPE: PO validation, approval routing by amount threshold, emergency override,
+  notification dispatch (sequential and parallel), timeout escalation, state management
+* OUT OF SCOPE: Purchase order creation UI, vendor management, payment processing,
+  budget tracking, three-way matching
 
 Inputs
 * purchase_order: PurchaseOrder - the PO requiring approval - required
@@ -390,6 +377,24 @@ Outputs
 * approval_status: ApprovalStatus - current workflow state and next steps
 * approval_chain: list of Approver - ordered list of approvers with their decisions
 * notifications: list of Notification - all messages dispatched during the workflow
+
+@config
+  thresholds:
+    tier_1: 5000
+    tier_2: 25000
+    tier_3: 100000
+    emergency_max: 10000
+  timeouts:
+    standard_hours: 48
+    standard_reminder_hours: 24
+    urgent_hours: 4
+    emergency_hours: 2
+  notification:
+    max_retries: 3
+    dispatch_deadline_seconds: 60
+  escalation:
+    final_fallback: usr_cfo
+  budget_code_pattern: "[A-Z]{2}-[0-9]{4}-[0-9]{3}"
 
 Types
 
@@ -445,12 +450,14 @@ FUNCTION get_department_head(department):
 
 FUNCTION calculate_timeout(urgency):
   IF urgency = "standard" THEN
-    timeout = 48 hours
+    timeout = $config.timeouts.standard_hours hours
   ELSE IF urgency = "urgent" THEN
-    timeout = 4 hours
+    timeout = $config.timeouts.urgent_hours hours
   ELSE IF urgency = "emergency" THEN
-    timeout = 2 hours
+    timeout = $config.timeouts.emergency_hours hours
   RETURNS timeout
+
+Behaviors
 
 BEHAVIOR request_validation: Validate that a purchase order has all required fields
   and a valid budget code before entering the approval workflow
@@ -462,7 +469,7 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     AND purchase_order.amount MUST be greater than zero
 
   RULE budget_code_valid:
-    purchase_order.budget_code MUST match pattern "[A-Z]{2}-[0-9]{4}-[0-9]{3}"
+    purchase_order.budget_code MUST match pattern $config.budget_code_pattern
     -- Format: two-letter department prefix, four-digit cost center, three-digit account code
     -- Example: EN-4200-310 = Engineering, cost center 4200, account 310
 
@@ -470,19 +477,11 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     requester.manager_id MUST NOT be null
     -- Every PO needs at least one approver in the chain
 
-  ERROR missing_required_fields:
-    WHEN any of vendor, description, justification, or amount fails validation
-    SEVERITY critical
-    ACTION reject PO and return to requester
-    MESSAGE "Purchase order is incomplete.
-             All fields (vendor, description, justification, amount) are required."
-
-  ERROR invalid_budget_code:
-    WHEN purchase_order.budget_code does not match required pattern
-    SEVERITY critical
-    ACTION reject PO and return to requester
-    MESSAGE "Budget code format invalid.
-             Expected format: XX-0000-000 (e.g., EN-4200-310)."
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_required_fields | any of vendor, description, justification, or amount fails validation | critical | reject PO and return to requester | "Purchase order is incomplete. All fields (vendor, description, justification, amount) are required." |
+  | invalid_budget_code | purchase_order.budget_code does not match $config.budget_code_pattern | critical | reject PO and return to requester | "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)." |
 
   EXAMPLE valid_request:
     INPUT: {
@@ -496,62 +495,19 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     }
     EXPECTED: { "validation": "passed", "next": "approval_routing" }
 
-  EXAMPLE invalid_budget_code:
-    INPUT: {
-      "purchase_order": {
-        "id": "PO-2026-00848", "amount": 3200.00, "vendor": "Staples Business Advantage",
-        "description": "Office furniture for boardroom refresh",
-        "department": "Operations", "justification": "Boardroom chairs past useful life",
-        "budget_code": "OPS-42"
-      },
-      "requester": { "id": "usr_205", "name": "Marcus Chen", "email": "marcus.chen@company.ca", "department": "Operations", "manager_id": "usr_088" }
-    }
-    EXPECTED: { "validation": "failed", "error": "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)." }
-    NOTES: "OPS-42" does not match the required pattern [A-Z]{2}-[0-9]{4}-[0-9]{3}.
+  EXAMPLES:
+    invalid_budget_code_case: budget_code="OPS-42" → rejected with "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)."
 
 
 BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
   then route for review. Emergency purchases bypass the standard chain.
 
-  State: pending -> in_review -> approved | rejected | info_requested
-
-  RULE emergency_override:
-    WHEN urgency = "emergency"
-         AND purchase_order.amount <= 10000
-    THEN approval_chain = [get_department_head(purchase_order.department)]
-         AND approval_status.state = "in_review"
-    PRIORITY 1
-
-  RULE amount_threshold_1:
-    WHEN purchase_order.amount <= 5000
-    THEN approval_chain = [requester.manager_id]
-         AND approval_status.state = "in_review"
-    PRIORITY 5
-
-  RULE amount_threshold_2:
-    WHEN purchase_order.amount > 5000
-         AND purchase_order.amount <= 25000
-    THEN approval_chain = [requester.manager_id,
-                           get_department_head(purchase_order.department)]
-         AND approval_status.state = "in_review"
-    PRIORITY 6
-
-  RULE amount_threshold_3:
-    WHEN purchase_order.amount > 25000
-         AND purchase_order.amount <= 100000
-    THEN approval_chain = [requester.manager_id,
-                           get_department_head(purchase_order.department),
-                           "usr_finance_director"]
-         AND approval_status.state = "in_review"
-    PRIORITY 7
-
-  RULE amount_threshold_4:
-    WHEN purchase_order.amount > 100000
-    THEN approval_chain = [requester.manager_id,
-                           get_department_head(purchase_order.department),
-                           "usr_finance_director", "usr_cfo"]
-         AND approval_status.state = "in_review"
-    PRIORITY 8
+  @route approval_chain_assignment [first_match_wins]
+    urgency = "emergency" AND amount <= $config.thresholds.emergency_max  → chain = [department_head] (emergency override)
+    amount <= $config.thresholds.tier_1                                   → chain = [manager]
+    amount <= $config.thresholds.tier_2                                   → chain = [manager, department_head]
+    amount <= $config.thresholds.tier_3                                   → chain = [manager, department_head, finance_director]
+    *                                                                     → chain = [manager, department_head, finance_director, $config.escalation.final_fallback]
 
   RULE chain_progression:
     WHEN current approver decision = "approved" AND next approver exists in chain
@@ -562,15 +518,14 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
     THEN approval_status.state = "approved"
 
   RULE any_rejection:
-    WHEN any approver decision = "rejected"
+    WHEN ANY approver decision = "rejected"
     THEN approval_status.state = "rejected"
     AND remaining approvers are not consulted
 
-  ERROR missing_manager:
-    WHEN requester.manager_id is null AND urgency != "emergency"
-    SEVERITY critical
-    ACTION halt workflow
-    MESSAGE "Requester has no manager assigned. Cannot build approval chain."
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_manager | requester.manager_id is null AND urgency != "emergency" | critical | halt workflow | "Requester has no manager assigned. Cannot build approval chain." |
 
   EXAMPLE small_purchase_single_approver:
     INPUT: {
@@ -584,7 +539,7 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
         { "user_id": "usr_220", "role": "Direct Manager", "level": 1, "decision": "pending" }
       ]
     }
-    NOTES: $2,800 <= $5,000 threshold. Single approver: direct manager only.
+    NOTES: $2,800 <= $config.thresholds.tier_1 ($5,000). Single approver: direct manager only.
 
   EXAMPLE large_purchase_three_approvers:
     INPUT: {
@@ -600,7 +555,7 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
         { "user_id": "usr_finance_director", "role": "Finance Director", "level": 3, "decision": "pending" }
       ]
     }
-    NOTES: $67,000 falls in the $25K-$100K band. Three approvers required, processed sequentially.
+    NOTES: $67,000 falls in the $25K-$100K band via @route. Three approvers required, processed sequentially.
 
   EXAMPLE emergency_override_to_department_head:
     INPUT: {
@@ -614,39 +569,33 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
         { "user_id": "usr_ops_head", "role": "Department Head", "level": 1, "decision": "pending" }
       ]
     }
-    NOTES: Emergency + amount <= $10K triggers PRIORITY 1 override.
+    NOTES: Emergency + amount <= $config.thresholds.emergency_max ($10K) triggers first @route row.
            Bypasses manager, routes directly to department head. 2-hour timeout applies.
+
+  State/Flow
+    pending -> in_review: WHEN approval_chain_assignment matches and approver(s) notified
+    in_review -> approved: WHEN last approver in chain decision = "approved"
+    in_review -> rejected: WHEN ANY approver decision = "rejected"
+    in_review -> info_requested: WHEN ANY approver requests additional information
 
 
 BEHAVIOR notification_dispatch: Send approval request notifications to the
   appropriate approvers. Standard urgency uses sequential notification; urgent
   uses parallel.
 
-  RULE standard_sequential:
-    WHEN urgency = "standard"
-    THEN notify only the current approver in the chain
-         AND do not notify subsequent approvers until the current one decides
-
-  RULE urgent_parallel:
-    WHEN urgency = "urgent"
-    THEN notify all approvers in the chain simultaneously
-         AND all approvers MUST approve for the PO to be approved
-    PRIORITY 2
-
-  RULE emergency_immediate:
-    WHEN urgency = "emergency"
-    THEN notify the single approver immediately
-    AND include "EMERGENCY" prefix in message subject
+  @route notification_strategy [first_match_wins]
+    urgency = "standard"   → notify only the current approver; wait for decision before notifying next
+    urgency = "urgent"     → notify ALL approvers simultaneously; ALL MUST approve
+    urgency = "emergency"  → notify the single approver IMMEDIATELY with "EMERGENCY" prefix
+    *                      → notify only the current approver (fallback to sequential)
 
   RULE notification_content:
     notification.message MUST include PO id, amount, vendor, and requester name
 
-  ERROR notification_send_failure:
-    WHEN notification delivery fails after 3 retry attempts
-    SEVERITY warning
-    ACTION log failure, continue workflow, alert system administrator
-    MESSAGE "Failed to deliver notification to {recipient_email}
-             after 3 attempts"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | notification_send_failure | notification delivery fails after $config.notification.max_retries retry attempts | warning | log failure, continue workflow, alert system administrator | "Failed to deliver notification to {recipient_email} after {$config.notification.max_retries} attempts" |
 
   EXAMPLE standard_sequential_notification:
     INPUT: {
@@ -659,7 +608,7 @@ BEHAVIOR notification_dispatch: Send approval request notifications to the
         { "id": "ntf_90001", "recipient_email": "tom.park@company.ca", "type": "approval_request", "po_id": "PO-2026-00851", "sent_at": "2026-03-01T09:15:00-05:00", "message": "Approval required: PO-2026-00851 for $2,800.00 from Staples Business Advantage, submitted by Dana Williams." }
       ]
     }
-    NOTES: Standard urgency -- only the current approver is notified. Next approver waits.
+    NOTES: Standard urgency via @route notification_strategy -- only the current approver is notified. Next approver waits.
 
   EXAMPLE urgent_parallel_notification:
     INPUT: {
@@ -678,39 +627,23 @@ BEHAVIOR notification_dispatch: Send approval request notifications to the
         { "id": "ntf_90004", "recipient_email": "finance.director@company.ca", "type": "approval_request", "sent_at": "2026-03-01T09:15:01-05:00" }
       ]
     }
-    NOTES: Urgent — all three approvers notified simultaneously
-           with identical URGENT-prefixed messages. All must approve.
+    NOTES: Urgent via @route notification_strategy -- all three approvers notified
+           simultaneously with URGENT-prefixed messages. ALL MUST approve.
 
 
 BEHAVIOR timeout_escalation: Escalate to the next level of management when an
   approver does not respond within the timeout window defined by urgency level.
 
-  RULE standard_timeout:
-    WHEN urgency = "standard"
-         AND current approver has not responded within 48 hours
-    THEN send reminder notification to current approver
-         AND if no response within additional 24 hours,
-             escalate to current approver's manager
+  @route escalation_action [first_match_wins]
+    urgency = "standard" AND no response within $config.timeouts.standard_hours hours    → send reminder; if no response within additional $config.timeouts.standard_reminder_hours hours, escalate to approver's manager
+    urgency = "urgent" AND no response within $config.timeouts.urgent_hours hours        → escalate IMMEDIATELY to approver's manager
+    urgency = "emergency" AND no response within $config.timeouts.emergency_hours hours  → escalate to $config.escalation.final_fallback with "EMERGENCY ESCALATION" prefix
+    *                                                                                     → no action (timeout not yet reached)
 
-  RULE urgent_timeout:
-    WHEN urgency = "urgent"
-         AND any approver has not responded within 4 hours
-    THEN escalate immediately to that approver's manager
-         AND send escalation notification
-
-  RULE emergency_timeout:
-    WHEN urgency = "emergency"
-         AND approver has not responded within 2 hours
-    THEN escalate to CFO directly
-         AND send escalation notification with "EMERGENCY ESCALATION" prefix
-
-  ERROR approver_unavailable:
-    WHEN escalation target (approver's manager) is also unavailable
-         or has no manager_id
-    SEVERITY critical
-    ACTION escalate to CFO as final fallback, alert system administrator
-    MESSAGE "Approval chain broken: no available escalation target
-             for PO {po_id}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | approver_unavailable | escalation target (approver's manager) is also unavailable or has no manager_id | critical | escalate to $config.escalation.final_fallback as final fallback, alert system administrator | "Approval chain broken: no available escalation target for PO {po_id}" |
 
   EXAMPLE standard_timeout_escalation:
     INPUT: {
@@ -727,53 +660,44 @@ BEHAVIOR timeout_escalation: Escalate to the next level of management when an
         "message": "Reminder: PO-2026-00851 for $2,800.00 is awaiting your approval. Please respond within 24 hours to avoid escalation."
       }
     }
-    NOTES: 49 hours > 48-hour threshold. Reminder sent first. If no response by hour 72, escalation to usr_sales_head occurs.
+    NOTES: 49 hours > $config.timeouts.standard_hours (48). Reminder sent first.
+           If no response by hour 72, escalation to usr_sales_head occurs.
 
-  EXAMPLE urgent_escalation:
-    INPUT: {
-      "po_id": "PO-2026-00852",
-      "current_approver": { "user_id": "usr_102", "manager_id": "usr_eng_head" },
-      "urgency": "urgent",
-      "time_since_notification": "5 hours"
-    }
-    EXPECTED: {
-      "action": "escalated",
-      "escalated_to": "usr_eng_head",
-      "notification": {
-        "recipient_email": "engineering.head@company.ca",
-        "type": "escalation",
-        "message": "ESCALATION: PO-2026-00852 for $67,000.00 has not been actioned by Raj Kumar within the 4-hour urgent window. Your approval is required."
-      }
-    }
-    NOTES: 5 hours > 4-hour urgent threshold. Immediate escalation to approver's manager.
+  EXAMPLES:
+    urgent_escalation: po_id="PO-2026-00852", urgency="urgent", time_since_notification="5 hours" → escalated to usr_eng_head with "ESCALATION" prefix
+
+Precedence
 
 PRECEDENCE:
-  1. emergency_override (from BEHAVIOR approval_routing)
-  2. urgent_parallel (from BEHAVIOR notification_dispatch)
-  3. amount_threshold_4 (from BEHAVIOR approval_routing)
-  4. amount_threshold_3 (from BEHAVIOR approval_routing)
-  5. amount_threshold_2 (from BEHAVIOR approval_routing)
-  6. amount_threshold_1 (from BEHAVIOR approval_routing)
+  1. required_fields (from BEHAVIOR request_validation)
+  2. budget_code_valid (from BEHAVIOR request_validation)
+  3. approval_chain_assignment (from BEHAVIOR approval_routing)
+  4. notification_strategy (from BEHAVIOR notification_dispatch)
+  5. escalation_action (from BEHAVIOR timeout_escalation)
+  6. chain_progression (from BEHAVIOR approval_routing)
+  7. any_rejection (from BEHAVIOR approval_routing)
 
 Constraints
 * Approval decisions MUST be recorded with timestamp
   and persisted to survive system restarts
-* Notifications MUST be dispatched within 60 seconds of a state change
-* Timeout checks MUST run on a recurring schedule (every 15 minutes minimum)
+* Notifications MUST be dispatched within $config.notification.dispatch_deadline_seconds seconds of a state change
+* Timeout checks MUST run on a recurring schedule (EVERY 15 minutes at minimum)
 * All monetary amounts MUST be displayed with two decimal places and currency code
 * A user MUST NOT appear more than once in the same approval chain
-* Emergency override MUST NOT apply to POs exceeding $10,000
+* Emergency override MUST NOT apply to POs exceeding $config.thresholds.emergency_max
 
 Dependencies
 * org_directory service for manager lookups and department head resolution
-* budget_code registry for validation against pattern
-  [A-Z]{2}-[0-9]{4}-[0-9]{3}
+* budget_code registry for validation against $config.budget_code_pattern
 * notification service (email gateway) with retry capability
 * workflow state persistence store (database or durable queue)
 * scheduled job runner for timeout escalation checks
 
 Changelog
-* 2.1.0: 2026-03-01 - Migrated to SESF v2 behavior-centric format.
+* 3.0.0: 2026-03-01 - Migrated to SESF v4 hybrid notation. Added @config, @route
+  tables, compact ERRORS, Notation section, State/Flow subsections, and updated
+  PRECEDENCE to reference only BEHAVIOR rules.
+* 2.1.0: 2026-02-15 - Migrated to SESF v2 behavior-centric format.
   Added PRECEDENCE block and explicit PRIORITY tags to approval_routing rules.
 * 2.0.0: 2026-01-18 - Added emergency override rule for amounts under $10K.
   Added timeout escalation behavior.
@@ -795,41 +719,30 @@ Generate a daily summary of sales transactions and distribute it to the manageme
 
 PROCEDURE generate_daily_report: Compile sales data and produce a summary report
 
-  STEP gather_data: Collect the day's transactions
-    Read all sales transactions for the current date from the database
-    Start with total_revenue at 0 and transaction_count at 0
+  STEP gather_data → $transactions, $total_revenue, $transaction_count:
+    Read all sales transactions for the current date from the database → $transactions
+    Set $total_revenue to 0
+    Set $transaction_count to 0
 
-  STEP calculate_totals: Sum up the day's numbers
-    For each transaction in the day's sales:
-      Add transaction.amount to total_revenue
-      Add 1 to transaction_count
-    Calculate average_sale as total_revenue divided by transaction_count
+  STEP calculate_totals → $average_sale:
+    For each transaction in $transactions:
+      Add transaction.amount to $total_revenue
+      Add 1 to $transaction_count
+    Calculate $average_sale as $total_revenue divided by $transaction_count
 
-  STEP generate_report: Build and distribute the report
-    Write the summary to /reports/daily/YYYY-MM-DD.pdf
+  STEP generate_report → $report_path:
+    Write the summary to /reports/daily/YYYY-MM-DD.pdf → $report_path
     Send the report to the management distribution list
 
-  ERROR no_transactions:
-    WHEN the day's sales list is empty
-    SEVERITY warning
-    ACTION generate an empty report noting "No transactions recorded"
-    MESSAGE "No sales transactions found for {date}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | no_transactions | the day's sales list is empty | warning | generate an empty report noting "No transactions recorded" | "No sales transactions found for {date}" |
+  | database_unavailable | the database connection fails | critical | notify the on-call engineer and skip report generation | "Cannot generate daily report: database connection failed" |
 
-  ERROR database_unavailable:
-    WHEN the database connection fails
-    SEVERITY critical
-    ACTION notify the on-call engineer and skip report generation
-    MESSAGE "Cannot generate daily report: database connection failed"
-
-  EXAMPLE typical_day:
-    INPUT: { "date": "2026-03-01" }
-    EXPECTED: { "total_revenue": 15420.50, "transaction_count": 47, "average_sale": 328.10, "report_path": "/reports/daily/2026-03-01.pdf" }
-    NOTES: 47 transactions totaling $15,420.50. Average sale = $15,420.50 / 47 = $328.10.
-
-  EXAMPLE no_sales:
-    INPUT: { "date": "2026-01-01" }
-    EXPECTED: { "total_revenue": 0, "transaction_count": 0, "report_path": "/reports/daily/2026-01-01.pdf", "warning": "No sales transactions found for 2026-01-01" }
-    NOTES: New Year's Day -- store was closed. Empty report generated with warning.
+  EXAMPLES:
+    typical_day: date="2026-03-01" → { "total_revenue": 15420.50, "transaction_count": 47, "average_sale": 328.10, "report_path": "/reports/daily/2026-03-01.pdf" }
+    no_sales: date="2026-01-01" → { "total_revenue": 0, "transaction_count": 0, "report_path": "/reports/daily/2026-01-01.pdf", "warning": "No sales transactions found for 2026-01-01" }
 
 Constraints
 * Report generation SHOULD complete within 60 seconds
@@ -841,14 +754,25 @@ Constraints
 ## Example 5: Standard Tier -- Customer Onboarding Workflow (mixed BEHAVIOR + PROCEDURE)
 
 ```
-Customer Onboarding Workflow
+---
+name: customer-onboarding
+description: "Validate customer data, provision account, send welcome package, and schedule follow-up"
+---
+
+# Customer Onboarding Workflow
 
 Meta
-* Version: 1.0.0
+* Version: 2.0.0
 * Date: 2026-03-01
 * Domain: Customer Success
 * Status: active
 * Tier: standard
+
+Notation
+* $ -- references a variable or config value (e.g., $config.scoring.personalized_threshold)
+* @ -- marks a structured block (@config for parameters)
+* → -- means "produces" (in steps) or "yields" (in examples)
+* MUST/SHOULD/MAY/CAN -- requirement strength keywords
 
 Purpose
 Validate incoming customer data, provision a new account, send a welcome package,
@@ -869,6 +793,27 @@ Inputs
 Outputs
 * result: OnboardingResult - summary of the onboarding outcome
 * notifications: list of Notification - all messages sent during onboarding
+
+@config
+  scoring:
+    base_score: 50
+    phone_bonus: 10
+    large_company_bonus: 15
+    large_company_threshold: 50
+    enterprise_bonus: 25
+    professional_bonus: 15
+    personalized_threshold: 75
+  templates:
+    welcome_email: "/templates/welcome_email.html"
+    followup_reminder: "/templates/followup_reminder.html"
+    internal_alert: "/templates/internal_alert.html"
+  provisioning:
+    timeout_seconds: 30
+    email_deadline_minutes: 5
+  followup:
+    enterprise_days: 2
+    professional_days: 5
+    starter_days: 10
 
 Types
 
@@ -908,26 +853,34 @@ Account {
 Functions
 
 FUNCTION calculate_onboarding_score(customer, plan):
-  Start with score at 50
-  IF customer.phone is present THEN add 10 to score
-  IF customer.employee_count is at least 50 THEN add 15 to score
-  IF plan = "enterprise" THEN add 25 to score
-  ELSE IF plan = "professional" THEN add 15 to score
-  RETURNS score
+  Start with $score at $config.scoring.base_score
+  IF customer.phone is present THEN add $config.scoring.phone_bonus to $score
+  IF customer.employee_count is at least $config.scoring.large_company_threshold THEN add $config.scoring.large_company_bonus to $score
+  IF plan = "enterprise" THEN add $config.scoring.enterprise_bonus to $score
+  ELSE IF plan = "professional" THEN add $config.scoring.professional_bonus to $score
+  RETURNS $score
   -- Score ranges: 50 (bare minimum) to 100 (enterprise with phone and 50+ employees)
 
 FUNCTION determine_region(customer):
   IF customer.industry = "Healthcare" or customer.industry = "Finance"
-    THEN region = "us-east-1"
+    THEN $region = "us-east-1"
     -- regulated industries default to US East for compliance
-  ELSE region = "us-west-2"
-  RETURNS region
+  ELSE $region = "us-west-2"
+  RETURNS $region
 
 FUNCTION calculate_followup_date(plan):
-  IF plan = "enterprise" THEN followup = 2 business days from today
-  ELSE IF plan = "professional" THEN followup = 5 business days from today
-  ELSE followup = 10 business days from today
-  RETURNS followup
+  IF plan = "enterprise" THEN $followup = $config.followup.enterprise_days business days from today
+  ELSE IF plan = "professional" THEN $followup = $config.followup.professional_days business days from today
+  ELSE $followup = $config.followup.starter_days business days from today
+  RETURNS $followup
+
+ACTION send_welcome_package(customer, account, onboarding_score):
+  Generate the welcome email from $config.templates.welcome_email
+  If onboarding_score is at least $config.scoring.personalized_threshold:
+    Append a personalized note from the account manager
+  Send the email to customer.email
+  Log: "Welcome package sent to {customer.email} for account {account.id}"
+  RETURNS the delivery confirmation
 
 
 BEHAVIOR validate_customer_data: Ensure the customer record is complete
@@ -948,78 +901,49 @@ BEHAVIOR validate_customer_data: Ensure the customer record is complete
     THEN customer.phone MUST be present
     -- enterprise customers require a phone number for dedicated support
 
-  ERROR invalid_email:
-    WHEN customer.email fails email_format
-    SEVERITY critical
-    ACTION reject onboarding and return the error to the submitter
-    MESSAGE "Invalid email address: {customer.email}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | invalid_email | customer.email fails email_format | critical | reject onboarding and return the error to the submitter | "Invalid email address: {customer.email}" |
+  | missing_company | customer.company is empty | critical | reject onboarding | "Company name is required for all customers" |
+  | enterprise_missing_phone | plan = "enterprise" and customer.phone is missing | critical | reject onboarding | "Enterprise customers must provide a phone number" |
 
-  ERROR missing_company:
-    WHEN customer.company is empty
-    SEVERITY critical
-    ACTION reject onboarding
-    MESSAGE "Company name is required for all customers"
-
-  ERROR enterprise_missing_phone:
-    WHEN plan = "enterprise" and customer.phone is missing
-    SEVERITY critical
-    ACTION reject onboarding
-    MESSAGE "Enterprise customers must provide a phone number"
-
-  EXAMPLE valid_professional_customer:
-    INPUT: {
-      "customer": { "name": "Alicia Torres", "email": "alicia@brightpath.io", "company": "Brightpath Solutions", "phone": "+1-416-555-0199", "industry": "Technology", "employee_count": 120 },
-      "plan": "professional"
-    }
-    EXPECTED: { "validation": "passed" }
-    NOTES: All fields present and valid. Phone is optional for professional plan but provided.
-
-  EXAMPLE enterprise_missing_phone:
-    INPUT: {
-      "customer": { "name": "James Whitfield", "email": "j.whitfield@meridian.com", "company": "Meridian Health Group", "industry": "Healthcare", "employee_count": 500 },
-      "plan": "enterprise"
-    }
-    EXPECTED: { "validation": "failed", "error": "Enterprise customers must provide a phone number" }
-    NOTES: Enterprise plan requires phone. Onboarding cannot proceed.
+  EXAMPLES:
+    valid_professional_customer: customer={ "name": "Alicia Torres", "email": "alicia@brightpath.io", "company": "Brightpath Solutions", "phone": "+1-416-555-0199", "industry": "Technology", "employee_count": 120 }, plan="professional" → { "validation": "passed" }
+    enterprise_missing_phone: customer={ "name": "James Whitfield", "email": "j.whitfield@meridian.com", "company": "Meridian Health Group", "industry": "Healthcare", "employee_count": 500 }, plan="enterprise" → rejected with "Enterprise customers must provide a phone number"
 
 
 PROCEDURE onboard_customer: Walk through each onboarding step in order,
   from account creation to follow-up scheduling
 
-  STEP validate: Run the validation rules first
-    Validate the customer data using the validate_customer_data behavior
-    Stop processing if validation fails
+  STEP validate → $validation_result:
+    Validate the customer data using the validate_customer_data behavior → $validation_result
+    Stop processing if $validation_result indicates failure
 
-  STEP provision_account: Create the customer's account
-    Calculate the region using determine_region(customer)
-    Create a new account with the customer's name, email, selected plan, and region
-    Record the account_id for the remaining steps
+  STEP provision_account → $account, $account_id:
+    Calculate the region using determine_region(customer) → $region
+    Create a new account with the customer's name, email, selected plan, and $region → $account
+    Record $account.id as $account_id for the remaining steps
 
-  STEP score: Assess onboarding completeness
-    Calculate onboarding_score using calculate_onboarding_score(customer, plan)
+  STEP score → $onboarding_score:
+    Calculate $onboarding_score using calculate_onboarding_score(customer, plan)
 
-  STEP send_welcome: Dispatch the welcome package
-    Send a welcome email to the customer using send_welcome_package
-    Record that welcome_sent is true
-    If the onboarding_score is at least 75:
+  STEP send_welcome → $welcome_sent:
+    Send a welcome email to the customer using send_welcome_package(customer, $account, $onboarding_score)
+    Set $welcome_sent to true
+    If $onboarding_score is at least $config.scoring.personalized_threshold:
       Include a personalized note from the account manager in the welcome email
 
-  STEP schedule_followup: Set up the follow-up call
-    Calculate the followup_date using calculate_followup_date(plan)
+  STEP schedule_followup → $followup_date:
+    Calculate $followup_date using calculate_followup_date(plan)
     Send a follow-up reminder to the assigned account manager
     Send an internal alert to the customer success team with the onboarding summary
 
-  ERROR account_provisioning_failure:
-    WHEN account creation fails
-    SEVERITY critical
-    ACTION notify the infrastructure team and mark onboarding as failed
-    MESSAGE "Account provisioning failed for {customer.email}. Infrastructure team notified."
-
-  ERROR welcome_email_failure:
-    WHEN the welcome email cannot be delivered after 3 attempts
-    SEVERITY warning
-    ACTION log the failure, continue onboarding, and flag for manual follow-up
-    MESSAGE "Welcome email delivery failed for {customer.email}. Manual follow-up required."
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | account_provisioning_failure | account creation fails | critical | notify the infrastructure team and mark onboarding as failed | "Account provisioning failed for {customer.email}. Infrastructure team notified." |
+  | welcome_email_failure | the welcome email cannot be delivered after 3 attempts | warning | log the failure, continue onboarding, and flag for manual follow-up | "Welcome email delivery failed for {customer.email}. Manual follow-up required." |
 
   EXAMPLE successful_professional_onboarding:
     INPUT: {
@@ -1041,46 +965,16 @@ PROCEDURE onboard_customer: Walk through each onboarding step in order,
       ]
     }
     NOTES: Score = 50 base + 10 (phone) + 15 (120 employees >= 50) + 15 (professional) = 90.
-           Score >= 75 so welcome email includes personalized note.
-           Professional plan follow-up = 5 business days from Mar 1 = Mar 8.
+           Score >= $config.scoring.personalized_threshold (75) so welcome email includes personalized note.
+           Professional plan follow-up = $config.followup.professional_days (5) business days from Mar 1 = Mar 8.
            Technology industry -> us-west-2 region.
 
-  EXAMPLE starter_minimal_customer:
-    INPUT: {
-      "customer": { "name": "Sam Nguyen", "email": "sam@tinycorp.io", "company": "TinyCorp", "industry": "Retail", "employee_count": 3 },
-      "plan": "starter"
-    }
-    EXPECTED: {
-      "result": {
-        "account_id": "acct_20260301_00143",
-        "status": "active",
-        "onboarding_score": 50,
-        "welcome_sent": true,
-        "followup_date": "2026-03-15"
-      },
-      "notifications": [
-        { "recipient": "sam@tinycorp.io", "type": "welcome_email" },
-        { "recipient": "csm-team@company.ca", "type": "internal_alert" },
-        { "recipient": "account-manager@company.ca", "type": "followup_reminder" }
-      ]
-    }
-    NOTES: Score = 50 base only (no phone, 3 employees < 50, starter plan adds 0).
-           Score < 75 so no personalized note in welcome email.
-           Starter plan follow-up = 10 business days from Mar 1 = Mar 15.
-           Retail industry -> us-west-2 region.
-
-
-ACTION send_welcome_package(customer, account, onboarding_score):
-  Generate the welcome email from the onboarding template
-  If onboarding_score is at least 75:
-    Append a personalized note from the account manager
-  Send the email to customer.email
-  Log: "Welcome package sent to {customer.email} for account {account.id}"
-  RETURNS the delivery confirmation
+  EXAMPLES:
+    starter_minimal_customer: customer={ "name": "Sam Nguyen", "email": "sam@tinycorp.io", "company": "TinyCorp", "industry": "Retail", "employee_count": 3 }, plan="starter" → { "account_id": "acct_20260301_00143", "status": "active", "onboarding_score": 50, "welcome_sent": true, "followup_date": "2026-03-15" }
 
 Constraints
-* Account provisioning MUST complete within 30 seconds
-* Welcome email MUST be sent within 5 minutes of account creation
+* Account provisioning MUST complete within $config.provisioning.timeout_seconds seconds
+* Welcome email MUST be sent within $config.provisioning.email_deadline_minutes minutes of account creation
 * Follow-up date MUST be a business day (skip weekends and statutory holidays)
 * Onboarding score MUST be between 0 and 100
 
@@ -1096,14 +990,25 @@ Dependencies
 ## Example 6: Complex Tier -- Data Pipeline Processor (PROCEDURE-heavy)
 
 ```
-Data Pipeline Processor
+---
+name: data-pipeline
+description: "Ingest, validate, transform, and load data files into the warehouse with retry and recovery"
+---
+
+# Data Pipeline Processor
 
 Meta
-* Version: 3.0.0
+* Version: 4.0.0
 * Date: 2026-03-01
 * Domain: Data Engineering
 * Status: active
 * Tier: complex
+
+Notation
+* $ -- references a variable or config value (e.g., $config.file_size_limit)
+* @ -- marks a structured block (@config for parameters)
+* → -- means "produces" (in steps) or "yields" (in examples)
+* MUST/SHOULD/MAY/CAN -- requirement strength keywords
 
 Purpose
 Ingest data files from an upload directory, validate their structure, transform
@@ -1136,6 +1041,18 @@ Outputs
 * pipeline_result: PipelineResult - summary of the entire pipeline run
 * file_results: list of FileResult - per-file outcome details
 * audit_log: list of AuditEntry - chronological record of all pipeline actions
+
+@config
+  file_size_limit: 500000000
+  format_whitelist: [csv, json, parquet]
+  duplicate_window_hours: 24
+  column_match_threshold: 0.95
+  warehouse:
+    connection_retries: 3
+    batch_size_min: 1
+    batch_size_max: 10000
+  quarantine_directory: "/data/quarantine"
+  upload_directory: "/data/uploads"
 
 Types
 
@@ -1207,11 +1124,11 @@ AuditEntry {
 Functions
 
 FUNCTION detect_format(file_name):
-  IF file_name ends with ".csv" THEN format = "csv"
-  ELSE IF file_name ends with ".json" THEN format = "json"
-  ELSE IF file_name ends with ".parquet" THEN format = "parquet"
-  ELSE format = "unknown"
-  RETURNS format
+  IF file_name ends with ".csv" THEN $format = "csv"
+  ELSE IF file_name ends with ".json" THEN $format = "json"
+  ELSE IF file_name ends with ".parquet" THEN $format = "parquet"
+  ELSE $format = "unknown"
+  RETURNS $format
 
 FUNCTION select_schema(format, header_row):
   Look up the schema registry for a schema matching the format and header_row columns
@@ -1219,115 +1136,91 @@ FUNCTION select_schema(format, header_row):
   ELSE RETURNS nothing
 
 FUNCTION calculate_batch_count(total_records, batch_size):
-  Calculate count as total_records divided by batch_size, rounded up to the nearest whole number
-  RETURNS count
+  Calculate $count as total_records divided by batch_size, rounded up to the nearest whole number
+  RETURNS $count
 
 FUNCTION summarize_run(file_results):
-  Calculate files_succeeded as the number of items in file_results where state is "completed"
-  Calculate files_failed as the number of items in file_results where state is "failed" or state is "quarantined"
-  Calculate total_records_loaded as the sum of records_out across file_results where state is "completed"
-  IF files_failed is greater than 0 and files_succeeded is greater than 0
-    THEN status = "completed_with_errors"
-  ELSE IF files_failed equals the number of items in file_results
-    THEN status = "failed"
-  ELSE status = "completed"
-  RETURNS { files_processed, files_succeeded, files_failed, total_records_loaded, status }
+  Calculate $files_succeeded as the number of items in file_results where state is "completed"
+  Calculate $files_failed as the number of items in file_results where state is "failed" or state is "quarantined"
+  Calculate $total_records_loaded as the sum of records_out across file_results where state is "completed"
+  IF $files_failed is greater than 0 and $files_succeeded is greater than 0
+    THEN $status = "completed_with_errors"
+  ELSE IF $files_failed equals the number of items in file_results
+    THEN $status = "failed"
+  ELSE $status = "completed"
+  RETURNS { files_processed, $files_succeeded, $files_failed, $total_records_loaded, $status }
 
 
 BEHAVIOR quarantine_check: Determine whether a file should be quarantined
   before any processing begins
 
   RULE file_too_large:
-    WHEN file.size exceeds 500000000
+    WHEN file.size exceeds $config.file_size_limit
     THEN quarantine the file
     -- 500 MB limit protects against runaway resource consumption
-    PRIORITY 1
 
   RULE unsupported_format:
-    WHEN detect_format(file.name) equals "unknown"
+    WHEN detect_format(file.name) returns a value not in $config.format_whitelist
     THEN quarantine the file
-    PRIORITY 2
 
   RULE duplicate_file:
     WHEN a record exists in the audit log where file_name equals file.name
-         and action equals "completed" and the entry is from the last 24 hours
+         and action equals "completed" and the entry is from the last $config.duplicate_window_hours hours
     THEN quarantine the file
     -- prevent reprocessing of recently completed files
-    PRIORITY 3
 
-  ERROR quarantined_file:
-    WHEN any quarantine rule matches
-    SEVERITY warning
-    ACTION move the file to the quarantine directory, log the reason, notify the data team
-    MESSAGE "File {file.name} quarantined: {reason}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | quarantined_file | any quarantine rule matches | warning | move the file to $config.quarantine_directory, log the reason, notify the data team | "File {file.name} quarantined: {reason}" |
 
-  EXAMPLE oversized_file:
-    INPUT: { "file": { "name": "huge_export.csv", "size": 750000000 } }
-    EXPECTED: { "state": "quarantined", "reason": "File size 750000000 exceeds 500 MB limit" }
-    NOTES: 750 MB file triggers file_too_large rule. Moved to quarantine without further processing.
-
-  EXAMPLE unknown_format:
-    INPUT: { "file": { "name": "data.xlsx", "size": 1024000 } }
-    EXPECTED: { "state": "quarantined", "reason": "Unsupported file format: unknown" }
-    NOTES: .xlsx is not in the supported format list. File quarantined.
-
-  EXAMPLE duplicate_recent:
-    INPUT: { "file": { "name": "daily_sales.csv", "size": 2048000 }, "audit_log": [{ "file_name": "daily_sales.csv", "action": "completed", "timestamp": "2026-03-01T06:00:00Z" }] }
-    EXPECTED: { "state": "quarantined", "reason": "Duplicate of file completed within last 24 hours" }
-    NOTES: Same file name was successfully processed 4 hours ago. Quarantined to prevent double-load.
+  EXAMPLES:
+    oversized_file: file={ "name": "huge_export.csv", "size": 750000000 } → { "state": "quarantined", "reason": "File size 750000000 exceeds 500 MB limit" }
+    unknown_format: file={ "name": "data.xlsx", "size": 1024000 } → { "state": "quarantined", "reason": "Unsupported file format: unknown" }
+    duplicate_recent: file={ "name": "daily_sales.csv", "size": 2048000 }, recent_completion=true → { "state": "quarantined", "reason": "Duplicate of file completed within last 24 hours" }
 
 
 PROCEDURE validate_file: Check that a file's structure matches the expected
   schema before transformation
 
-  STEP detect: Identify the file format
-    Determine the format using detect_format(file.name)
+  STEP detect → $format:
+    Determine the format using detect_format(file.name) → $format
     Move the file from "queued" to "validating"
     Log an audit entry: "Validation started for {file.name}"
 
-  STEP read_header: Read the file header to identify columns
-    Read the first row of the file to extract the column names
+  STEP read_header → $header_row:
+    Read the first row of the file to extract the column names → $header_row
     If the file is empty:
       Stop processing and raise empty_file error
 
-  STEP match_schema: Find the appropriate schema
-    Look up the schema using select_schema(format, header_row)
+  STEP match_schema → $schema:
+    Look up the schema using select_schema($format, $header_row) → $schema
     If no schema is found:
       Stop processing and raise schema_not_found error
 
-  STEP validate_columns: Verify each column against the schema
-    For each column defined in the schema:
-      If the column is marked as required and is missing from the file header:
-        Add "Missing required column: {column.name}" to the error list
+  STEP validate_columns → $error_list:
+    Set $error_list to empty
+    For each column defined in $schema:
+      If the column is marked as required and is missing from $header_row:
+        Add "Missing required column: {column.name}" to $error_list
       If the column is present and has a pattern defined:
-        Check that at least 95% of values in that column match the pattern
-        If fewer than 95% match:
-          Add "Column {column.name}: {match_percentage}% of values match expected pattern (minimum 95%)" to the error list
-    If the error list is not empty:
+        Check that at least $config.column_match_threshold of values in that column match the pattern
+        If fewer than $config.column_match_threshold match:
+          Add "Column {column.name}: {match_percentage}% of values match expected pattern (minimum 95%)" to $error_list
+    If $error_list is not empty:
       Stop processing and raise validation_failed error
 
-  STEP record_stats: Capture file statistics
-    Count the total number of records in the file (excluding the header)
-    Record records_in on the file result
-    Log an audit entry: "Validation passed for {file.name}: {records_in} records found"
+  STEP record_stats → $records_in:
+    Count the total number of records in the file (excluding the header) → $records_in
+    Record $records_in on the file result
+    Log an audit entry: "Validation passed for {file.name}: {$records_in} records found"
 
-  ERROR empty_file:
-    WHEN the file contains no data rows
-    SEVERITY warning
-    ACTION move the file from "validating" to "failed", log the issue
-    MESSAGE "File {file.name} is empty -- no records to process"
-
-  ERROR schema_not_found:
-    WHEN no matching schema exists for the file's format and column structure
-    SEVERITY critical
-    ACTION move the file from "validating" to "failed", notify the data engineering team
-    MESSAGE "No schema found for {file.name} with format {format}. Manual schema registration required."
-
-  ERROR validation_failed:
-    WHEN one or more columns fail validation
-    SEVERITY critical
-    ACTION move the file from "validating" to "failed", attach the error list to the file result
-    MESSAGE "Validation failed for {file.name}: {error_count} column issues found"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | empty_file | the file contains no data rows | warning | move the file from "validating" to "failed", log the issue | "File {file.name} is empty -- no records to process" |
+  | schema_not_found | no matching schema exists for the file's format and column structure | critical | move the file from "validating" to "failed", notify the data engineering team | "No schema found for {file.name} with format {$format}. Manual schema registration required." |
+  | validation_failed | one or more columns fail validation | critical | move the file from "validating" to "failed", attach $error_list to the file result | "Validation failed for {file.name}: {error_count} column issues found" |
 
   EXAMPLE valid_csv_file:
     INPUT: {
@@ -1341,29 +1234,21 @@ PROCEDURE validate_file: Check that a file's structure matches the expected
     }
     NOTES: All 5 columns match the orders schema. 1250 data rows found.
 
-  EXAMPLE missing_required_column:
-    INPUT: {
-      "file": { "name": "orders_broken.csv", "path": "/uploads/orders_broken.csv", "format": "csv" },
-      "header_row": ["order_id", "amount", "order_date"]
-    }
-    EXPECTED: {
-      "state": "failed",
-      "errors": ["Missing required column: customer_id", "Missing required column: status"]
-    }
-    NOTES: customer_id and status columns are required by the orders schema but missing from the file.
+  EXAMPLES:
+    missing_required_column: file={ "name": "orders_broken.csv", "format": "csv" }, header_row=["order_id", "amount", "order_date"] → { "state": "failed", "errors": ["Missing required column: customer_id", "Missing required column: status"] }
 
 
 PROCEDURE transform_records: Apply data transformations to validated records
   before loading them into the warehouse
 
-  STEP prepare: Set up transformation context
+  STEP prepare → $batch_count, $records_out, $current_batch:
     Move the file from "validating" to "transforming"
-    Calculate the number of batches using calculate_batch_count(records_in, batch_size)
-    Start with records_out at 0 and current_batch at 1
-    Log an audit entry: "Transformation started for {file.name}: {batch_count} batches"
+    Calculate the number of batches using calculate_batch_count($records_in, batch_size) → $batch_count
+    Set $records_out to 0 and $current_batch to 1
+    Log an audit entry: "Transformation started for {file.name}: {$batch_count} batches"
 
-  STEP process_batches: Transform records in batches
-    While current_batch is at most batch_count:
+  STEP process_batches → $records_out:
+    While $current_batch is at most $batch_count:
       Read the next batch of records from the file
       For each record in the batch:
         Trim whitespace from all string fields
@@ -1373,25 +1258,24 @@ PROCEDURE transform_records: Apply data transformations to validated records
           Skip this record and add a warning to the audit log:
             "Skipped record {record.row_number}: missing required field {field.name}"
         Otherwise:
-          Add 1 to records_out
-      Add 1 to current_batch
+          Add 1 to $records_out
+      Add 1 to $current_batch
 
-  STEP deduplicate: Remove duplicate records
+  STEP deduplicate → $records_out:
     Sort the transformed records by record.id
     Group the records by record.id
     For each group with more than one record:
       Keep only the first record in the group
-      Subtract the number of removed duplicates from records_out
+      Subtract the number of removed duplicates from $records_out
       Log an audit entry: "Removed {duplicate_count} duplicate records from {file.name}"
 
-  STEP finalize: Record transformation outcome
-    Log an audit entry: "Transformation complete for {file.name}: {records_out} of {records_in} records ready to load"
+  STEP finalize:
+    Log an audit entry: "Transformation complete for {file.name}: {$records_out} of {$records_in} records ready to load"
 
-  ERROR batch_read_failure:
-    WHEN a batch cannot be read from the file
-    SEVERITY critical
-    ACTION move the file from "transforming" to "failed", log the error with the batch number
-    MESSAGE "Failed to read batch {current_batch} of {batch_count} from {file.name}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | batch_read_failure | a batch cannot be read from the file | critical | move the file from "transforming" to "failed", log the error with the batch number | "Failed to read batch {$current_batch} of {$batch_count} from {file.name}" |
 
   EXAMPLE successful_transformation:
     INPUT: {
@@ -1413,75 +1297,52 @@ PROCEDURE transform_records: Apply data transformations to validated records
     NOTES: 3 batches (500 + 500 + 250). Two records skipped for missing fields,
            one duplicate removed. 1250 - 2 skipped - 1 duplicate = 1247 records out.
 
-  EXAMPLE all_records_skipped:
-    INPUT: {
-      "file": { "name": "corrupt_data.json", "records_in": 15 },
-      "batch_size": 500
-    }
-    EXPECTED: {
-      "state": "transforming",
-      "batch_count": 1,
-      "records_out": 0,
-      "audit_entries": [
-        "Transformation started for corrupt_data.json: 1 batch",
-        "Skipped record 1: missing required field id",
-        "... (all 15 records skipped)",
-        "Transformation complete for corrupt_data.json: 0 of 15 records ready to load"
-      ]
-    }
-    NOTES: Every record was missing required fields. records_out = 0.
-           The load step will handle the zero-record case.
+  EXAMPLES:
+    all_records_skipped: file={ "name": "corrupt_data.json", "records_in": 15 }, batch_size=500 → { "state": "transforming", "batch_count": 1, "records_out": 0 }
 
 
 PROCEDURE load_to_warehouse: Load transformed records into the data warehouse
   with retry logic for transient failures
 
-  STEP check_records: Verify there are records to load
-    If records_out equals 0:
+  STEP check_records:
+    If $records_out equals 0:
       Log an audit entry: "No records to load for {file.name} -- skipping warehouse load"
       Move the file from "transforming" to "completed"
       Return the result
       -- Zero records is not an error -- transformation may have filtered everything out
 
-  STEP connect: Establish the warehouse connection
+  STEP connect → $connection:
     Move the file from "transforming" to "loading"
-    Attempt to connect to the warehouse using warehouse_connection:
-      If it fails:
-        Log the error and raise connection_failed error
+    Attempt to connect to the warehouse using warehouse_connection → $connection
+    If $connection fails:
+      Log the error and raise connection_failed error
 
-  STEP load_batches: Insert records in batches
-    Calculate the number of load batches using calculate_batch_count(records_out, batch_size)
-    Start with loaded_count at 0 and current_batch at 1
-    While current_batch is at most load_batch_count:
+  STEP load_batches → $loaded_count:
+    Calculate the number of load batches using calculate_batch_count($records_out, batch_size) → $load_batch_count
+    Set $loaded_count to 0 and $current_batch to 1
+    While $current_batch is at most $load_batch_count:
       Take the next batch of transformed records
       Attempt to insert the batch into the warehouse:
         If it succeeds:
-          Add the number of records in the batch to loaded_count
+          Add the number of records in the batch to $loaded_count
         If it fails:
           Attempt the insert again up to max_retries times
           If all retries fail:
             Log the error with the batch number and raise load_failed error
-      Add 1 to current_batch
+      Add 1 to $current_batch
 
-  STEP verify: Confirm the load
-    Query the warehouse to count the records just inserted for this file
-    If the warehouse count does not equal loaded_count:
-      Log a warning: "Record count mismatch: expected {loaded_count}, found {warehouse_count}"
+  STEP verify:
+    Query the warehouse to count the records just inserted for this file → $warehouse_count
+    If $warehouse_count does not equal $loaded_count:
+      Log a warning: "Record count mismatch: expected {$loaded_count}, found {$warehouse_count}"
     Move the file from "loading" to "completed"
-    Log an audit entry: "Load complete for {file.name}: {loaded_count} records inserted"
+    Log an audit entry: "Load complete for {file.name}: {$loaded_count} records inserted"
 
-  ERROR connection_failed:
-    WHEN the warehouse connection cannot be established after 3 attempts
-    SEVERITY critical
-    ACTION move the file from "loading" to "failed", notify the infrastructure team
-    MESSAGE "Cannot connect to warehouse: {connection_error}. File {file.name} load aborted."
-
-  ERROR load_failed:
-    WHEN a batch insert fails after max_retries attempts
-    SEVERITY critical
-    ACTION move the file from "loading" to "failed", record which batch failed,
-           roll back any partially inserted records for this file
-    MESSAGE "Batch {current_batch} failed after {max_retries} retries for {file.name}. Partial load rolled back."
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | connection_failed | the warehouse connection cannot be established after $config.warehouse.connection_retries attempts | critical | move the file from "loading" to "failed", notify the infrastructure team | "Cannot connect to warehouse: {connection_error}. File {file.name} load aborted." |
+  | load_failed | a batch insert fails after max_retries attempts | critical | move the file from "loading" to "failed", record which batch failed, roll back any partially inserted records for this file | "Batch {$current_batch} failed after {max_retries} retries for {file.name}. Partial load rolled back." |
 
   EXAMPLE successful_load:
     INPUT: {
@@ -1496,83 +1357,53 @@ PROCEDURE load_to_warehouse: Load transformed records into the data warehouse
     }
     NOTES: 3 load batches (500 + 500 + 247). All inserted successfully on first attempt.
 
-  EXAMPLE retry_then_success:
-    INPUT: {
-      "file": { "name": "products_20260301.json", "records_out": 800 },
-      "batch_size": 500,
-      "max_retries": 3
-    }
-    EXPECTED: {
-      "state": "completed",
-      "loaded_count": 800,
-      "retry_count": 1,
-      "audit_entries": [
-        "Batch 1: insert failed (timeout), retrying (attempt 1 of 3)",
-        "Batch 1: insert succeeded on retry",
-        "Load complete for products_20260301.json: 800 records inserted"
-      ]
-    }
-    NOTES: First batch failed once with a timeout, succeeded on first retry.
-           Second batch (300 records) succeeded on first attempt.
-
-  EXAMPLE permanent_failure:
-    INPUT: {
-      "file": { "name": "events_20260301.parquet", "records_out": 5000 },
-      "batch_size": 500,
-      "max_retries": 3
-    }
-    EXPECTED: {
-      "state": "failed",
-      "loaded_count": 0,
-      "retry_count": 3,
-      "error": "Batch 1 failed after 3 retries for events_20260301.parquet. Partial load rolled back."
-    }
-    NOTES: First batch failed on all 3 retry attempts. No records loaded.
-           Any partially inserted records are rolled back.
+  EXAMPLES:
+    retry_then_success: file={ "name": "products_20260301.json", "records_out": 800 }, batch_size=500, max_retries=3 → { "state": "completed", "loaded_count": 800, "retry_count": 1 }
+    permanent_failure: file={ "name": "events_20260301.parquet", "records_out": 5000 }, batch_size=500, max_retries=3 → { "state": "failed", "loaded_count": 0, "retry_count": 3 }
 
 
 PROCEDURE run_pipeline: Orchestrate the full ingestion pipeline from file
   discovery through warehouse loading
 
-  STEP discover: Find files waiting to be processed
-    Read the list of files in the upload_directory
+  STEP discover → $file_list:
+    Read the list of files in the upload_directory → $file_list
     Keep only the files that have not been processed before
       -- check the audit log for previous completions
-    Sort the files by uploaded_at, oldest first
-    If no files are found:
+    Sort $file_list by uploaded_at, oldest first
+    If $file_list is empty:
       Log an audit entry: "Pipeline run: no new files found"
       Return an empty result
 
-  STEP initialize: Set up the pipeline run
-    Generate a new run_id
-    Record the started_at timestamp
-    Start with files_processed at 0
+  STEP initialize → $run_id, $started_at, $files_processed:
+    Generate a new $run_id
+    Record the $started_at timestamp
+    Set $files_processed to 0
 
-  STEP process_files: Run each file through the pipeline
-    For each file in the discovery list:
-      Add 1 to files_processed
+  STEP process_files → $file_results:
+    Set $file_results to empty list
+    For each file in $file_list:
+      Add 1 to $files_processed
       Run quarantine_check on the file
       If the file is quarantined:
-        Record the file result with state "quarantined" and skip to the next file
+        Record the file result with state "quarantined" in $file_results and skip to the next file
       Run validate_file on the file
       If validation fails:
-        Record the file result with state "failed" and skip to the next file
+        Record the file result with state "failed" in $file_results and skip to the next file
       Run transform_records on the file
       If transformation produces zero records:
-        Record the file result with state "completed" and skip to the next file
+        Record the file result with state "completed" in $file_results and skip to the next file
       Run load_to_warehouse on the file
-      Record the file result
+      Record the file result in $file_results
 
-  STEP summarize: Produce the pipeline summary
-    Calculate the pipeline result using summarize_run(file_results)
-    Record the completed_at timestamp
-    Log an audit entry: "Pipeline run {run_id} complete: {files_succeeded} succeeded, {files_failed} failed, {total_records_loaded} records loaded"
+  STEP summarize → $pipeline_result:
+    Calculate $pipeline_result using summarize_run($file_results)
+    Record the $completed_at timestamp
+    Log an audit entry: "Pipeline run {$run_id} complete: {$pipeline_result.files_succeeded} succeeded, {$pipeline_result.files_failed} failed, {$pipeline_result.total_records_loaded} records loaded"
 
-  ERROR pipeline_interrupted:
-    WHEN an unexpected error halts the pipeline before all files are processed
-    SEVERITY critical
-    ACTION record partial results, log the interruption point, notify the data engineering team
-    MESSAGE "Pipeline run {run_id} interrupted after processing {files_processed} of {total_files} files"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | pipeline_interrupted | an unexpected error halts the pipeline before all files are processed | critical | record partial results, log the interruption point, notify the data engineering team | "Pipeline run {$run_id} interrupted after processing {$files_processed} of {total_files} files" |
 
   EXAMPLE full_pipeline_run:
     INPUT: {
@@ -1602,42 +1433,25 @@ PROCEDURE run_pipeline: Orchestrate the full ingestion pipeline from file
       ]
     }
     NOTES: Three files discovered. orders_20260301.csv processed successfully (1247 records).
-           huge_export.csv quarantined for exceeding 500 MB. products_20260301.json processed
+           huge_export.csv quarantined for exceeding $config.file_size_limit. products_20260301.json processed
            successfully (800 records after transformation). Total loaded = 1247 + 800 = 2047.
 
-  EXAMPLE empty_upload_directory:
-    INPUT: {
-      "upload_directory": "/data/uploads",
-      "warehouse_connection": "warehouse://prod-cluster:5439/analytics",
-      "files_in_directory": []
-    }
-    EXPECTED: {
-      "pipeline_result": {
-        "status": "completed",
-        "files_processed": 0,
-        "files_succeeded": 0,
-        "files_failed": 0,
-        "total_records_loaded": 0
-      },
-      "audit_entry": "Pipeline run: no new files found"
-    }
-    NOTES: No files to process. Pipeline exits early with an empty result.
+  EXAMPLES:
+    empty_upload_directory: upload_directory="/data/uploads", files_in_directory=[] → { "status": "completed", "files_processed": 0, "total_records_loaded": 0 }
+
+Precedence
 
 PRECEDENCE:
   1. file_too_large (from BEHAVIOR quarantine_check)
   2. unsupported_format (from BEHAVIOR quarantine_check)
   3. duplicate_file (from BEHAVIOR quarantine_check)
-  4. validate_file (PROCEDURE -- runs after quarantine clears)
-  5. transform_records (PROCEDURE -- runs after validation passes)
-  6. load_to_warehouse (PROCEDURE -- runs after transformation completes)
-  -- Quarantine checks always run first. If a file is quarantined,
-  -- no validation, transformation, or loading occurs.
+  -- Quarantine checks run first. Processing PROCEDUREs follow in document order.
 
 Constraints
 * File state transitions MUST follow the lifecycle: queued -> validating ->
   transforming -> loading -> completed (or failed/quarantined at any point)
 * A file MUST NOT move backward in the state lifecycle
-* Batch size MUST be between 1 and 10000
+* Batch size MUST be between $config.warehouse.batch_size_min and $config.warehouse.batch_size_max
 * All timestamps MUST use ISO 8601 format in UTC
 * Partial loads MUST be rolled back on failure -- no half-loaded files
 * The audit log MUST record every state transition for every file
@@ -1653,11 +1467,226 @@ Dependencies
 * Scheduling service for recurring pipeline runs
 
 Changelog
-* 3.0.0: 2026-03-01 - Rewrote in SESF v3 procedural format. Added PROCEDURE
+* 4.0.0: 2026-03-01 - Migrated to SESF v4 hybrid notation. Added @config,
+  $variable threading, compact ERRORS/EXAMPLES, Notation section, and fixed
+  PRECEDENCE to reference only BEHAVIOR rules.
+* 3.0.0: 2025-12-15 - Rewrote in SESF v3 procedural format. Added PROCEDURE
   blocks for validate_file, transform_records, load_to_warehouse, and
   run_pipeline. Added quarantine_check behavior with PRECEDENCE.
-* 2.0.0: 2025-12-15 - Added retry logic and batch processing. Introduced
+* 2.0.0: 2025-10-01 - Added retry logic and batch processing. Introduced
   state lifecycle tracking.
-* 1.1.0: 2025-10-01 - Added parquet format support and deduplication step
-* 1.0.0: 2025-08-01 - Initial version with CSV-only support
+* 1.1.0: 2025-08-01 - Added parquet format support and deduplication step
+* 1.0.0: 2025-06-01 - Initial version with CSV-only support
+```
+
+---
+
+## Example 7: Standard Tier — GIST Newsletter Briefing (mixed BEHAVIOR + PROCEDURE)
+
+```
+---
+name: GIST-update
+description: "Scan GIST newsletters from Gmail and update briefing file, GitHub issue, and email draft."
+allowed-tools: Bash, mcp__gmail__search_emails, mcp__gmail__read_email, mcp__gmail__draft_email, Read, Edit, Write
+model: sonnet
+---
+
+# GIST School Newsletter Briefing
+
+Meta
+* Version: 4.0.0
+* Date: 2026-03-03
+* Domain: Family — School Communications
+* Status: active
+* Tier: standard
+
+Notation
+* $ — references a variable or config value
+* @ — marks a structured block (@config, @route)
+* → — means "produces", "routes to", or "yields"
+* MUST/SHOULD/MAY/CAN — requirement strength keywords
+
+Purpose
+Scan recent GIST newsletters from Gmail, update a single-source-of-truth briefing file for Izzy's school, sync state to GitHub issue #28, and draft an HTML email summary for Janice.
+
+Scope
+* IN SCOPE: searching Gmail for new newsletters, extracting dates/actions/registrations/curriculum/financial info, updating GIST_news.md, maintaining GitHub issue #28, drafting email to Janice
+* OUT OF SCOPE: sending emails (draft only), calendar integrations, parent-teacher communication, non-GIST communications
+
+@config
+  briefing_path: /workspaces/reggie-life-plan/00_STRATEGIC_CORE/GIST_news.md
+  email_to: jnyarkomensah@gmail.com
+  email_subject_template: "GIST School Updates - Izzy ({today})"
+  github_issue: 28
+  gmail_sender: info@gistonline.ca
+  gmail_query_template: "from:info@gistonline.ca after:{lastUpdated}"
+  gmail_max_results: 10
+  completed_items_max_age_days: 30
+  section_order: [Action Items, Upcoming Dates, Registration Status, Curriculum & School Notes, Financial Notes, Completed Items]
+  student: Izzy, GermanFasttrack, Grade 1/Primary
+
+Inputs
+* trigger: string - user invocation (e.g., "GIST update", "check GIST") - required
+
+Outputs
+* updated_briefing: file - the updated GIST_news.md
+* github_issue_update: string - updated issue body + changelog comment
+* email_draft: draft - HTML email draft for Janice
+* completion_summary: string - user-facing summary of changes
+
+Types
+-- none: all data structures are inline within behavior and procedure blocks
+
+Functions
+-- none: all logic is expressed directly in behavior rules and procedure steps
+
+Behaviors
+
+BEHAVIOR place_content: Determine the correct section for each extracted newsletter item
+
+  RULE single_source_of_truth:
+    every piece of information MUST appear in exactly ONE section
+    -- see $config.section_order for the canonical section list
+
+  RULE section_order:
+    sections MUST appear in this order: $config.section_order
+    -- Action Items before Upcoming Dates is intentional: "what to decide" > "what's on the calendar"
+
+  @route classify_item [first_match_wins]
+    requires_parent_action (register, log in, decide, pay)  → Action Items (numbered, ordered by due date)
+    has_specific_date                                        → Upcoming Dates (table row, self-contained Notes)
+    is_registration_decision                                 → Registration Status (update row in-place; values: Registered, Not registered, Received, Pending, Not registering)
+    is_teacher_change OR club_structure OR program_detail    → Curriculum & School Notes (appropriate subsection)
+    is_tuition OR tax_receipt OR assistance_program           → Financial Notes
+
+  RULE no_strikethrough:
+    resolved items MUST be removed entirely — MUST NOT use strikethrough
+    -- Completed Items serves as the archive
+
+  RULE prefer_edit:
+    WHEN updating the file THEN use the Edit tool
+    ELSE WHEN file does not exist OR changes span > 50% THEN use the Write tool
+
+  ERRORS:
+  | name                | when                                    | severity | action                                   | message                                                         |
+  |---------------------|-----------------------------------------|----------|------------------------------------------|-----------------------------------------------------------------|
+  | duplicate_placement | item matches multiple sections          | critical | choose ONE section per classify_item table | "Item '{item}' matches multiple sections. Use single-source rule." |
+
+  EXAMPLES:
+    action_placed: item="Register for Code-It Hacks", type=parent_action → Action Items (numbered)
+    date_placed: item="March break", date="2026-03-16", type=event → Upcoming Dates (table row, NOT Action Items)
+    curriculum_placed: item="New German teacher starting after break", type=teacher_change → Curriculum & School Notes
+
+Procedures
+
+PROCEDURE scan_newsletters: Search Gmail for new GIST newsletters
+
+  STEP get_baseline → $today, $lastUpdated, $briefing
+    Run `TZ='America/New_York' date '+%Y-%m-%d'` → $today
+    Read $config.briefing_path → $briefing
+    Extract lastUpdated from YAML frontmatter of $briefing → $lastUpdated
+    If $briefing does not exist, set $lastUpdated to 30 days before $today
+    -- parallelizing the date command and file read saves a round trip
+
+  STEP search_gmail → $newsletters
+    Search Gmail: $config.gmail_query_template with $lastUpdated, maxResults=$config.gmail_max_results
+    -- Gmail after: uses slash format (2026/02/18), not dash format
+    If zero results: skip to maintain_briefing procedure, report "No new newsletters since $lastUpdated"
+
+  STEP filter_and_extract → $new_content
+    Skip any newsletter whose date appears in "Newsletters reviewed" footer of $briefing
+    For each remaining newsletter, extract: dates and deadlines, registration requirements, teacher and curriculum changes, parent action items, financial information
+
+  ERRORS:
+  | name                  | when                         | severity | action                    | message                                                  |
+  |-----------------------|------------------------------|----------|---------------------------|----------------------------------------------------------|
+  | gmail_search_failed   | Gmail MCP tool returns error | critical | halt and inform user      | "Gmail search failed. Check MCP server connection."      |
+  | newsletter_unreadable | newsletter cannot be parsed  | warning  | skip that one, continue   | "Could not read newsletter from {date}. Skipping."       |
+
+  EXAMPLES:
+    two_new: lastUpdated="2026-02-15", gmail_results=2 → read both, extract, proceed to place_content and maintain_briefing
+    none_found: lastUpdated="2026-02-28", gmail_results=0 → skip to maintain_briefing for maintenance only
+
+PROCEDURE maintain_briefing: Apply time-based maintenance to GIST_news.md
+
+  STEP move_past_events:
+    For each event in Upcoming Dates whose date is before $today:
+      Remove the row from Upcoming Dates
+      Add a one-line bullet to Completed Items with the date
+
+  STEP prune_completed:
+    Remove any Completed Items entries older than $config.completed_items_max_age_days
+
+  STEP prune_lunch_menu:
+    For each Wednesday Lunch Menu date that has passed, remove it from the lunch subtable
+
+  STEP update_metadata:
+    Update lastUpdated YAML field and "Last updated:" line to $today
+    Update footer with newsletters reviewed list and $today as generated date
+
+  EXAMPLES:
+    with_new_content: new_newsletters=2, past_events=1, stale_completed=3 → place new content, move 1 event, remove 3 stale, update metadata
+    maintenance_only: new_newsletters=0, past_events=2, stale_completed=1 → move 2 events, remove 1 stale, update metadata
+
+PROCEDURE sync_github_issue: Update GitHub issue #28 body and post changelog
+
+  STEP update_body:
+    Use `gh issue edit $config.github_issue --body` to replace the entire issue body
+    Body MUST mirror current GIST_news.md with: purpose + last synced date, Action Items as checkboxes (FIRST), Upcoming Dates (future only), Registration Status with emoji, condensed Curriculum notes, Financial Notes, Recent Completed (last 2 weeks only), footer
+    Body MUST NOT contain past events, resolved actions, or completed items > 2 weeks old
+
+  STEP post_changelog:
+    Post comment on issue $config.github_issue: newsletters scanned (count + date range), changes as bullet list, upcoming action items with near-term deadlines
+
+  ERRORS:
+  | name               | when                  | severity | action                    | message                                                      |
+  |--------------------|-----------------------|----------|---------------------------|--------------------------------------------------------------|
+  | github_unavailable | gh CLI returns error  | warning  | log error, continue       | "GitHub sync failed: {error}. Briefing file was updated."    |
+
+  EXAMPLES:
+    full_sync: scanned=2, changes=["added 3 dates", "moved 1 event", "updated registration"] → replace body + post changelog
+    github_down: gh_exit_code=1 → warn, continue (briefing file is priority)
+
+PROCEDURE draft_email: Draft HTML email to Janice
+
+  STEP load_template → $template
+    Read email-template.html from the skill directory → $template
+    If template cannot be read, proceed with basic HTML formatting
+
+  STEP populate_and_draft:
+    Populate $template with current data from updated $config.briefing_path
+    Action Items MUST appear before calendar dates in the email
+    Email MUST NOT include repo metadata (GitHub link, newsletters reviewed, generated date)
+    Address to $config.email_to with subject $config.email_subject_template
+    Email MUST include both body (plain text) and htmlBody (HTML) with mimeType "multipart/alternative"
+    -- Gmail MCP requires body even when htmlBody is provided; omitting causes validation error
+    Create draft using mcp__gmail__draft_email — MUST NOT send automatically
+
+  STEP report_completion:
+    Confirm to user: newsletters scanned (count + range), briefing file location, items changed, action items with deadlines, email draft created (remind to review before sending)
+
+  ERRORS:
+  | name             | when                            | severity | action                   | message                                                  |
+  |------------------|---------------------------------|----------|--------------------------|----------------------------------------------------------|
+  | template_missing | email-template.html not found   | warning  | use basic HTML formatting | "Email template not found. Using basic formatting."      |
+  | draft_failed     | draft_email MCP returns error   | warning  | inform user              | "Email draft failed: {error}. Briefing updated."        |
+
+  EXAMPLES:
+    full_draft: template_loaded=true, briefing_updated=true → draft HTML email, report completion
+    no_template: template_loaded=false → draft basic HTML, warn about missing template
+
+Constraints
+* Information appears in exactly ONE section — never duplicated
+* Action Items before Dates in all outputs (file, issue body, email)
+* Tables for structured data (dates, registrations); bullets for prose (curriculum, completed)
+* Never strikethrough — remove resolved items entirely
+* Focus on $config.student relevant information
+* Run weekly or before major school events
+
+Dependencies
+* Gmail MCP server (search_emails, read_email, draft_email)
+* GitHub CLI (gh issue edit, gh issue comment)
+* Briefing file: $config.briefing_path
+* Email template: email-template.html (in skill directory)
+* GitHub Issue: #$config.github_issue
 ```
