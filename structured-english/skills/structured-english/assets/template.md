@@ -169,16 +169,16 @@ Scope
 * IN SCOPE: [what this specification covers]
 * OUT OF SCOPE: [what this explicitly does not cover]
 
-@config
-  [key]: [value]
-  [key]: [value]
-
 Inputs
 * [input_name]: [type] - [description] - [required | optional]
 * [input_name]: [type] - [description] - [required | optional, default: value]
 
 Outputs
 * [output_name]: [type] - [description]
+
+@config
+  [key]: [value]
+  [key]: [value]
 
 Types
 
@@ -325,17 +325,17 @@ Scope
 * IN SCOPE: [what this specification covers]
 * OUT OF SCOPE: [what this explicitly does not cover]
 
-@config
-  [key]: [value]
-  [key]: [value]
-  [nested_group]:
-    [key]: [value]
-
 Inputs
 * [input_name]: [type] - [description] - [required | optional]
 
 Outputs
 * [output_name]: [type] - [description]
+
+@config
+  [key]: [value]
+  [key]: [value]
+  [nested_group]:
+    [key]: [value]
 
 Types
 
