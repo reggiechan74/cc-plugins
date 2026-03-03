@@ -80,7 +80,7 @@
       "name": "structured-english",
       "source": "./structured-english",
       "description": "Natural-language specification format with hybrid notation for declarative rules (BEHAVIOR), step-by-step workflows (PROCEDURE), decision tables (@route), and centralized configuration (@config).",
-      "version": "5.0.0"
+      "version": "5.1.0"
     }
   ]
 }
