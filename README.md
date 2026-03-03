@@ -349,6 +349,7 @@ Natural-language specification format with hybrid notation for declarative rules
 **Commands:**
 - `/write-spec <domain>` - Guided SESF specification creation with block type selection, authoring, and validation
 - `/assess-doc <path>` - Evaluate whether a document would benefit from SESF conversion
+- `/update-spec <path>` - Upgrade an existing SESF spec from any previous version to v4
 
 ---
 
