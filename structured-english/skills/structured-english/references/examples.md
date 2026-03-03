@@ -1,6 +1,6 @@
 # SESF v4 Complete Examples
 
-Six complete specifications demonstrating every SESF v4 tier and style. Examples 1-3 are declarative (BEHAVIOR-centric), showing rules about what must be true. Examples 4-6 are procedural (PROCEDURE-centric), showing step-by-step processes. Together they cover the full range of SESF v4. Each is a working spec with concrete data, suitable as a reference when writing new specifications.
+Seven complete specifications demonstrating every SESF v4 tier and style. Examples 1-3 are declarative (BEHAVIOR-centric), showing rules about what must be true. Examples 4-6 are procedural (PROCEDURE-centric), showing step-by-step processes. Example 7 is a real-world hybrid spec combining BEHAVIORs and PROCEDUREs. Together they cover the full range of SESF v4. Each is a working spec with concrete data, suitable as a reference when writing new specifications.
 
 ---
 
@@ -1477,4 +1477,216 @@ Changelog
   state lifecycle tracking.
 * 1.1.0: 2025-08-01 - Added parquet format support and deduplication step
 * 1.0.0: 2025-06-01 - Initial version with CSV-only support
+```
+
+---
+
+## Example 7: Standard Tier — GIST Newsletter Briefing (mixed BEHAVIOR + PROCEDURE)
+
+```
+---
+name: GIST-update
+description: "Scan GIST newsletters from Gmail and update briefing file, GitHub issue, and email draft."
+allowed-tools: Bash, mcp__gmail__search_emails, mcp__gmail__read_email, mcp__gmail__draft_email, Read, Edit, Write
+model: sonnet
+---
+
+# GIST School Newsletter Briefing
+
+Meta
+* Version: 4.0.0
+* Date: 2026-03-03
+* Domain: Family — School Communications
+* Status: active
+* Tier: standard
+
+Notation
+* $ — references a variable or config value
+* @ — marks a structured block (@config, @route)
+* → — means "produces", "routes to", or "yields"
+* MUST/SHOULD/MAY/CAN — requirement strength keywords
+
+Purpose
+Scan recent GIST newsletters from Gmail, update a single-source-of-truth briefing file for Izzy's school, sync state to GitHub issue #28, and draft an HTML email summary for Janice.
+
+Scope
+* IN SCOPE: searching Gmail for new newsletters, extracting dates/actions/registrations/curriculum/financial info, updating GIST_news.md, maintaining GitHub issue #28, drafting email to Janice
+* OUT OF SCOPE: sending emails (draft only), calendar integrations, parent-teacher communication, non-GIST communications
+
+@config
+  briefing_path: /workspaces/reggie-life-plan/00_STRATEGIC_CORE/GIST_news.md
+  email_to: jnyarkomensah@gmail.com
+  email_subject_template: "GIST School Updates - Izzy ({today})"
+  github_issue: 28
+  gmail_sender: info@gistonline.ca
+  gmail_query_template: "from:info@gistonline.ca after:{lastUpdated}"
+  gmail_max_results: 10
+  completed_items_max_age_days: 30
+  section_order: [Action Items, Upcoming Dates, Registration Status, Curriculum & School Notes, Financial Notes, Completed Items]
+  student: Izzy, GermanFasttrack, Grade 1/Primary
+
+Inputs
+* trigger: string - user invocation (e.g., "GIST update", "check GIST") - required
+
+Outputs
+* updated_briefing: file - the updated GIST_news.md
+* github_issue_update: string - updated issue body + changelog comment
+* email_draft: draft - HTML email draft for Janice
+* completion_summary: string - user-facing summary of changes
+
+Types
+-- none: all data structures are inline within behavior and procedure blocks
+
+Functions
+-- none: all logic is expressed directly in behavior rules and procedure steps
+
+Behaviors
+
+BEHAVIOR place_content: Determine the correct section for each extracted newsletter item
+
+  RULE single_source_of_truth:
+    every piece of information MUST appear in exactly ONE section
+    -- see $config.section_order for the canonical section list
+
+  RULE section_order:
+    sections MUST appear in this order: $config.section_order
+    -- Action Items before Upcoming Dates is intentional: "what to decide" > "what's on the calendar"
+
+  @route classify_item [first_match_wins]
+    requires_parent_action (register, log in, decide, pay)  → Action Items (numbered, ordered by due date)
+    has_specific_date                                        → Upcoming Dates (table row, self-contained Notes)
+    is_registration_decision                                 → Registration Status (update row in-place; values: Registered, Not registered, Received, Pending, Not registering)
+    is_teacher_change OR club_structure OR program_detail    → Curriculum & School Notes (appropriate subsection)
+    is_tuition OR tax_receipt OR assistance_program           → Financial Notes
+
+  RULE no_strikethrough:
+    resolved items MUST be removed entirely — MUST NOT use strikethrough
+    -- Completed Items serves as the archive
+
+  RULE prefer_edit:
+    WHEN updating the file THEN use the Edit tool
+    ELSE WHEN file does not exist OR changes span > 50% THEN use the Write tool
+
+  ERRORS:
+  | name                | when                                    | severity | action                                   | message                                                         |
+  |---------------------|-----------------------------------------|----------|------------------------------------------|-----------------------------------------------------------------|
+  | duplicate_placement | item matches multiple sections          | critical | choose ONE section per classify_item table | "Item '{item}' matches multiple sections. Use single-source rule." |
+
+  EXAMPLES:
+    action_placed: item="Register for Code-It Hacks", type=parent_action → Action Items (numbered)
+    date_placed: item="March break", date="2026-03-16", type=event → Upcoming Dates (table row, NOT Action Items)
+    curriculum_placed: item="New German teacher starting after break", type=teacher_change → Curriculum & School Notes
+
+Procedures
+
+PROCEDURE scan_newsletters: Search Gmail for new GIST newsletters
+
+  STEP get_baseline → $today, $lastUpdated, $briefing
+    Run `TZ='America/New_York' date '+%Y-%m-%d'` → $today
+    Read $config.briefing_path → $briefing
+    Extract lastUpdated from YAML frontmatter of $briefing → $lastUpdated
+    If $briefing does not exist, set $lastUpdated to 30 days before $today
+    -- parallelizing the date command and file read saves a round trip
+
+  STEP search_gmail → $newsletters
+    Search Gmail: $config.gmail_query_template with $lastUpdated, maxResults=$config.gmail_max_results
+    -- Gmail after: uses slash format (2026/02/18), not dash format
+    If zero results: skip to maintain_briefing procedure, report "No new newsletters since $lastUpdated"
+
+  STEP filter_and_extract → $new_content
+    Skip any newsletter whose date appears in "Newsletters reviewed" footer of $briefing
+    For each remaining newsletter, extract: dates and deadlines, registration requirements, teacher and curriculum changes, parent action items, financial information
+
+  ERRORS:
+  | name                  | when                         | severity | action                    | message                                                  |
+  |-----------------------|------------------------------|----------|---------------------------|----------------------------------------------------------|
+  | gmail_search_failed   | Gmail MCP tool returns error | critical | halt and inform user      | "Gmail search failed. Check MCP server connection."      |
+  | newsletter_unreadable | newsletter cannot be parsed  | warning  | skip that one, continue   | "Could not read newsletter from {date}. Skipping."       |
+
+  EXAMPLES:
+    two_new: lastUpdated="2026-02-15", gmail_results=2 → read both, extract, proceed to place_content and maintain_briefing
+    none_found: lastUpdated="2026-02-28", gmail_results=0 → skip to maintain_briefing for maintenance only
+
+PROCEDURE maintain_briefing: Apply time-based maintenance to GIST_news.md
+
+  STEP move_past_events:
+    For each event in Upcoming Dates whose date is before $today:
+      Remove the row from Upcoming Dates
+      Add a one-line bullet to Completed Items with the date
+
+  STEP prune_completed:
+    Remove any Completed Items entries older than $config.completed_items_max_age_days
+
+  STEP prune_lunch_menu:
+    For each Wednesday Lunch Menu date that has passed, remove it from the lunch subtable
+
+  STEP update_metadata:
+    Update lastUpdated YAML field and "Last updated:" line to $today
+    Update footer with newsletters reviewed list and $today as generated date
+
+  EXAMPLES:
+    with_new_content: new_newsletters=2, past_events=1, stale_completed=3 → place new content, move 1 event, remove 3 stale, update metadata
+    maintenance_only: new_newsletters=0, past_events=2, stale_completed=1 → move 2 events, remove 1 stale, update metadata
+
+PROCEDURE sync_github_issue: Update GitHub issue #28 body and post changelog
+
+  STEP update_body:
+    Use `gh issue edit $config.github_issue --body` to replace the entire issue body
+    Body MUST mirror current GIST_news.md with: purpose + last synced date, Action Items as checkboxes (FIRST), Upcoming Dates (future only), Registration Status with emoji, condensed Curriculum notes, Financial Notes, Recent Completed (last 2 weeks only), footer
+    Body MUST NOT contain past events, resolved actions, or completed items > 2 weeks old
+
+  STEP post_changelog:
+    Post comment on issue $config.github_issue: newsletters scanned (count + date range), changes as bullet list, upcoming action items with near-term deadlines
+
+  ERRORS:
+  | name               | when                  | severity | action                    | message                                                      |
+  |--------------------|-----------------------|----------|---------------------------|--------------------------------------------------------------|
+  | github_unavailable | gh CLI returns error  | warning  | log error, continue       | "GitHub sync failed: {error}. Briefing file was updated."    |
+
+  EXAMPLES:
+    full_sync: scanned=2, changes=["added 3 dates", "moved 1 event", "updated registration"] → replace body + post changelog
+    github_down: gh_exit_code=1 → warn, continue (briefing file is priority)
+
+PROCEDURE draft_email: Draft HTML email to Janice
+
+  STEP load_template → $template
+    Read email-template.html from the skill directory → $template
+    If template cannot be read, proceed with basic HTML formatting
+
+  STEP populate_and_draft:
+    Populate $template with current data from updated $config.briefing_path
+    Action Items MUST appear before calendar dates in the email
+    Email MUST NOT include repo metadata (GitHub link, newsletters reviewed, generated date)
+    Address to $config.email_to with subject $config.email_subject_template
+    Email MUST include both body (plain text) and htmlBody (HTML) with mimeType "multipart/alternative"
+    -- Gmail MCP requires body even when htmlBody is provided; omitting causes validation error
+    Create draft using mcp__gmail__draft_email — MUST NOT send automatically
+
+  STEP report_completion:
+    Confirm to user: newsletters scanned (count + range), briefing file location, items changed, action items with deadlines, email draft created (remind to review before sending)
+
+  ERRORS:
+  | name             | when                            | severity | action                   | message                                                  |
+  |------------------|---------------------------------|----------|--------------------------|----------------------------------------------------------|
+  | template_missing | email-template.html not found   | warning  | use basic HTML formatting | "Email template not found. Using basic formatting."      |
+  | draft_failed     | draft_email MCP returns error   | warning  | inform user              | "Email draft failed: {error}. Briefing updated."        |
+
+  EXAMPLES:
+    full_draft: template_loaded=true, briefing_updated=true → draft HTML email, report completion
+    no_template: template_loaded=false → draft basic HTML, warn about missing template
+
+Constraints
+* Information appears in exactly ONE section — never duplicated
+* Action Items before Dates in all outputs (file, issue body, email)
+* Tables for structured data (dates, registrations); bullets for prose (curriculum, completed)
+* Never strikethrough — remove resolved items entirely
+* Focus on $config.student relevant information
+* Run weekly or before major school events
+
+Dependencies
+* Gmail MCP server (search_emails, read_email, draft_email)
+* GitHub CLI (gh issue edit, gh issue comment)
+* Briefing file: $config.briefing_path
+* Email template: email-template.html (in skill directory)
+* GitHub Issue: #$config.github_issue
 ```
