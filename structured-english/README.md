@@ -8,14 +8,14 @@
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-blueviolet)](https://claude.ai/claude-code)
 <!-- badges-end -->
 
-Write specifications and procedural pseudocode using **Structured English Specification Format (SESF v4)** -- a natural-language format with hybrid notation for defining declarative rules, step-by-step workflows, decision tables, and centralized configuration for AI systems.
+Write specifications and procedural pseudocode using **Structured English Specification Format (SESF v4)** -- a natural-language format with hybrid notation for defining declarative rules, step-by-step workflows, decision tables, and centralized configuration. SESF specs are readable by both humans and AI systems -- use them to instruct an LLM, a junior analyst, or anyone who needs to follow branching logic precisely.
 
 ## Features
 
 - **Dual-mode blocks**: BEHAVIOR for declarative rules, PROCEDURE for step-by-step workflows
 - **Hybrid notation**: @config for centralized parameters, @route for multi-branch decision tables, $variable threading for explicit data flow between steps
-- **Compact tables**: ERRORS: and EXAMPLES: tables reduce verbosity for multi-case blocks while preserving structure
-- **Notation section**: Standard and Complex tier specs include a symbol glossary that bridges readability for non-technical readers
+- **Compact notation**: Inline ERROR format and single-line EXAMPLES reduce verbosity while preserving structure
+- **Notation section**: Optional symbol glossary that bridges readability for non-technical readers
 - **Natural English syntax**: Non-programmers can read and write specs without programming experience
 - **ACTION functions**: Distinguish pure calculations (FUNCTION) from side-effect operations (ACTION)
 - **3-tier scaling**: Micro (20-100 lines), Standard (100-300 lines), Complex (300-600 lines)
@@ -66,7 +66,7 @@ The skill activates automatically when you ask Claude to:
 
 | # | Name | Tier | Style | Description |
 |---|------|------|-------|-------------|
-| 1 | Email Address Validator | Micro | Declarative | Single BEHAVIOR with compact ERRORS/EXAMPLES tables |
+| 1 | Email Address Validator | Micro | Declarative | Single BEHAVIOR with inline ERROR and compact EXAMPLES |
 | 2 | Commercial Lease Abstraction | Standard | Declarative | Multi-BEHAVIOR spec with @config, @route, shared Types, and Notation section |
 | 3 | Purchase Order Approval Workflow | Complex | Declarative | @route decision tables, PRECEDENCE block, overlapping rules across behaviors |
 | 4 | Daily Sales Report Generator | Micro | Procedural | Single PROCEDURE with $variable threading and compact tables |
@@ -76,7 +76,7 @@ The skill activates automatically when you ask Claude to:
 
 ## When to use SESF (and when not to)
 
-SESF adds value when ambiguity causes real failures. The hybrid notation (@config, @route, $variable) makes conditional logic, configuration, and data flow explicit -- reducing the gap between what the spec says and what the AI builds.
+SESF adds value when ambiguity causes real failures -- whether the reader is an AI model, a junior team member, or a cross-functional stakeholder. The hybrid notation (@config, @route, $variable) makes conditional logic, configuration, and data flow explicit -- reducing the gap between what the spec says and what the reader does.
 
 ### Use SESF for
 
@@ -131,11 +131,8 @@ BEHAVIOR validate_payment: Check payment meets business rules
     payment.currency is empty                         -> reject with "Currency required"
     *                                                 -> reject with "Unsupported currency"
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | invalid_amount | payment.amount <= 0 | critical | reject payment | "Payment amount must be positive" |
-  | unsupported_currency | currency not in $config.supported_currencies | critical | reject payment | "Currency '{currency}' is not supported" |
+  ERROR invalid_amount: critical -> reject payment, "Payment amount must be positive"
+  ERROR unsupported_currency: critical -> reject payment, "Currency '{currency}' is not supported"
 
   EXAMPLES:
     valid_payment: amount=49.99, currency="CAD" -> accepted
@@ -164,15 +161,11 @@ PROCEDURE process_refund: Handle a customer refund request
   STEP notify:
     Send a confirmation email to customer.email
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | outside_window | order is older than 90 days | critical | reject refund | "Order outside refund window" |
-  | payment_failure | refund transaction fails | critical | retry once, then escalate to finance | "Refund failed for order {order.id}" |
+  ERROR outside_window: critical -> reject refund, "Order outside refund window"
+  ERROR payment_failure: critical -> retry once then escalate to finance, "Refund failed for order {order.id}"
 
-  EXAMPLE successful_refund:
-    INPUT: { "order": { "id": "ORD-1234", "total": 89.99, "date": "2026-01-15" }, "restocking_fee": 0 }
-    EXPECTED: { "refund_amount": 89.99, "status": "processed" }
+  EXAMPLES:
+    successful_refund: order="ORD-1234", total=89.99, restocking_fee=0 -> { "refund_amount": 89.99, "status": "processed" }
 ```
 
 ## Versioning
