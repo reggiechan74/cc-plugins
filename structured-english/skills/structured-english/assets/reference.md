@@ -2,13 +2,14 @@
 
 SESF v3 is a natural language for thinking programmatically. The precision comes from legal English conventions (MUST, SHOULD, MAY, CAN). Every line should read like an instruction to a competent human assistant. Non-programmers should be able to read or write SESF without programming experience.
 
-This reference is organized in five parts:
+This reference is organized in six parts:
 
 1. **Shared Foundations** -- concepts and syntax used by both BEHAVIOR and PROCEDURE blocks
 2. **Declarative Syntax** -- BEHAVIOR blocks for stating rules about what must be true
 3. **Procedural Syntax** -- PROCEDURE blocks for describing step-by-step processes
 4. **Function Syntax** -- FUNCTION and ACTION definitions
 5. **Quality** -- anti-patterns and completeness checklist
+6. **Hybrid Notation** -- @config, @route, $variable threading, compact tables, and precision keywords
 
 ---
 
@@ -532,3 +533,288 @@ Before finalizing a spec, verify:
 - [ ] PRECEDENCE declared if overlapping conditions exist (Complex)
 - [ ] State transitions explicitly name the from-state and to-state
 - [ ] Validator runs clean: `python3 scripts/validate_sesf.py <spec.md>`
+
+---
+
+## Part 6: Hybrid Notation
+
+SESF v4 adds five structured notations for cases where compact syntax is more precise
+than prose. Each element is optional — use it when it reduces ambiguity.
+
+### Notation Section (Required for Standard/Complex tiers)
+
+Every spec using hybrid elements MUST include a Notation section after the Meta block.
+This glossary bridges readability for non-technical readers.
+
+**Template:**
+
+```
+Notation
+* $ — references a variable or config value (e.g., $today, $config.path)
+* @ — marks a structured block (@config for parameters, @route for decision tables)
+* → — means "produces" (in steps), "routes to" (in tables), or "yields" (in examples)
+
+Requirement Strength
+* MUST / MUST NOT — mandatory / prohibited
+* SHOULD / SHOULD NOT — recommended / discouraged
+* MAY — optional (permission)
+* CAN — capability (ability)
+
+Quantifiers
+* EACH — one by one, sequentially
+* EVERY / ALL — universal (all must satisfy)
+* ANY — at least one
+* NONE — zero matches (use instead of "not any" or "no [items]")
+* EXACTLY N / AT MOST N / AT LEAST N — precise bounds
+* WHERE — filter qualifier (EACH item WHERE condition)
+
+Logical Connectives
+* AND — both conditions required
+* OR — at least one condition (inclusive: A or B or both)
+* EITHER A OR B — exactly one, not both (exclusive)
+* Compound grouping:
+  - "ALL of the following:" for grouped AND
+  - "ANY of the following:" for grouped OR
+
+Negation
+* Never combine NOT with EVERY/ALL/ANY — rewrite using NONE or UNLESS
+* "NONE of the files are processed" NOT "not any files are processed"
+* "SKIP invalid items" NOT "don't process invalid items"
+
+Temporal
+* BEFORE — prerequisite (must complete before this begins)
+* AFTER — postcondition (only begins after this completes)
+* IMMEDIATELY — next action, no intervening steps
+* EVENTUALLY — at some future point, not necessarily next
+* ALWAYS — invariant (condition holds continuously)
+* UNTIL — condition holds up to a specified event
+
+Conditions
+* UNLESS — exception to a rule
+* ONLY — exclusive restriction
+* ONLY WHEN — necessary condition (if and only if)
+* REGARDLESS OF — override a condition
+
+Flow
+* SKIP — bypass, continue with next
+* HALT — stop all processing
+* RETRY [UP TO N TIMES] — attempt again
+
+Collections
+* EXCLUDING — items in one set but not another (set difference)
+* EXCEPT — all items minus a specified subset (complement)
+* INCLUDES — membership test (item is in collection)
+
+Precision
+* VERBATIM — character-for-character, no paraphrasing
+* SILENTLY — perform without reporting to user
+* INDEPENDENTLY — no dependency between items
+```
+
+Micro tier specs MAY omit the Notation section. When included at micro tier,
+it MAY use an abbreviated form covering only the categories actually used in that spec.
+
+### @config — Centralized Parameters
+
+Declares all configurable values in a single block. Replaces scattered inline values.
+
+**Placement:** After Outputs, before Types (or before Behaviors in micro tier).
+
+**Syntax:**
+```
+@config
+  key: value
+  key: value
+  nested:
+    key: value
+```
+
+**Rules:**
+- @config MUST appear before any BEHAVIOR or PROCEDURE block
+- Keys use snake_case
+- Values are literals: strings, numbers, lists `[a, b, c]`, nested objects
+- Reference with `$config.key` anywhere in the spec
+- `$config.nested.key` for nested values
+- @config is for static values only — not for runtime variables (those use `$var` threading)
+
+**Example:**
+```
+@config
+  max_retries: 3
+  output_path: /reports/daily
+  recipients: [alice@example.com, bob@example.com]
+  thresholds:
+    warning: 80
+    critical: 95
+```
+
+### @route — Decision Tables
+
+Replaces WHEN/THEN/ELSE WHEN chains for multi-branch conditional routing.
+
+**Placement:** Inside a BEHAVIOR block, replacing multiple RULE blocks.
+
+**When to use:** Use @route when a conditional has **3 or more branches** mapping inputs
+to categories or destinations. Use WHEN/THEN rules for **binary constraints** (true/false,
+valid/invalid) or single-condition guards. The form is determined by branch count,
+not author preference.
+
+**Syntax:**
+```
+@route table_name [first_match_wins]
+  condition_1  → outcome_1
+  condition_2  → outcome_2
+  *            → default_outcome
+```
+
+**Modes:**
+- `first_match_wins` — stop at first matching row (default, can be omitted)
+- `all_matches` — apply all matching rows
+
+**Rules:**
+- @route MUST appear inside a BEHAVIOR block
+- `*` (wildcard) is the default case — it MUST be the last row
+- Each row is `condition → outcome` with `→` as separator
+- Conditions are natural English predicates (not code expressions)
+- A @route table replaces multiple RULE blocks for multi-branch routing
+- A BEHAVIOR MAY contain both @route (for 3+ branch routing) AND individual
+  RULE blocks (for binary constraints)
+
+**Example:**
+```
+BEHAVIOR classify_document: Route incoming documents to the correct handler
+
+  @route document_type [first_match_wins]
+    is_invoice AND has_PO_number     → Accounts Payable (auto-match to PO)
+    is_invoice AND no_PO_number      → Accounts Payable (manual review queue)
+    is_contract AND value > $50,000  → Legal Review
+    is_contract AND value <= $50,000 → Department Head Approval
+    is_expense_report                → Finance (reimburse within 5 business days)
+    *                                → General Inbox (manual triage)
+
+  RULE retention_policy:
+    all classified documents MUST be archived for 7 years
+    -- This binary constraint doesn't fit the routing table
+```
+
+### $variable Threading — Explicit Data Flow
+
+Replaces implicit data flow between PROCEDURE steps with explicit variable declarations.
+
+**Scope:** Document-global. Once a $variable is produced by any STEP in any PROCEDURE,
+it is visible everywhere in the spec. The validator checks that a variable is produced
+somewhere in the spec before it is referenced.
+
+**Syntax:**
+```
+STEP step_name → $output1, $output2
+  Action description → $output1
+  Action description → $output2
+```
+
+**Rules:**
+- `→ $var` after a STEP name declares output variables
+- `→ $var` after an action line within a step shows which action produces which variable
+- Variables use `$` prefix and snake_case naming
+- `$config.key` references the @config block; `$var` references a step output
+- Variable threading is optional — steps without outputs omit the `→` declaration
+- `$var` replaces "Record the result as X" or "Store the output for later use" prose
+
+**Example:**
+```
+PROCEDURE prepare_report: Generate and format the weekly sales report
+
+  STEP gather_data → $raw_sales, $date_range
+    Query the sales database for the current week → $raw_sales
+    Determine the Monday-to-Sunday date range → $date_range
+
+  STEP calculate_totals → $summary
+    Group $raw_sales by product category
+    Calculate subtotals and grand total → $summary
+
+  STEP format_output:
+    Render $summary into the report template
+    Include $date_range in the header
+    -- No output variable needed; this step produces the final file
+```
+
+### Compact Error Tables
+
+Replaces verbose 4-line ERROR blocks when a block has multiple error cases.
+
+**Syntax:**
+```
+ERRORS:
+| name | when | severity | action | message |
+|------|------|----------|--------|---------|
+| error_name | condition | critical/warning/info | recovery action | "user message" |
+```
+
+**Rules:**
+- All five columns are mandatory: name, when, severity, action, message
+- Severity values: `critical` (halt), `warning` (continue with degradation), `info` (log only)
+- Error tables can appear inside BEHAVIOR or PROCEDURE blocks
+- One row per error case
+- For complex recovery logic that needs multiple sentences, use a traditional ERROR block
+- `{variable}` in message strings indicates dynamic interpolation
+- Mixed usage allowed: a block can have both an error table AND individual ERROR blocks
+
+**Example:**
+```
+ERRORS:
+| name             | when                     | severity | action                | message                                    |
+|------------------|--------------------------|----------|-----------------------|--------------------------------------------|
+| file_not_found   | input file does not exist | critical | halt and inform user  | "File '{path}' not found."                 |
+| parse_error      | CSV has malformed rows    | warning  | skip bad rows         | "Skipped {count} malformed rows."          |
+| empty_result     | query returns zero rows   | info     | generate empty report | "No data for {date_range}. Empty report."  |
+```
+
+### Compact Examples
+
+Replaces multi-line EXAMPLE blocks for simple, self-evident test cases.
+
+**Syntax:**
+```
+EXAMPLES:
+  example_name: input_description → expected_outcome
+```
+
+**Rules:**
+- `→` separates input from expected output
+- Input side uses `key=value` pairs separated by commas
+- Compact examples are for simple, self-evident cases
+- For examples needing NOTES or multi-line INPUT/EXPECTED, use full EXAMPLE blocks
+- Mixed usage allowed: a block can have both compact EXAMPLES and full EXAMPLE blocks
+
+**Example:**
+```
+EXAMPLES:
+  valid_email: input="user@example.com" → accepted
+  missing_domain: input="user@" → rejected with "missing domain"
+  unicode_local: input="ü@example.com" → accepted (RFC 6531)
+```
+
+### Anti-Patterns for Hybrid Notation
+
+| Anti-pattern | Fix |
+|---|---|
+| @route with only 2 branches | Use WHEN/THEN instead (threshold: 3+ branches) |
+| $config for runtime values | Use $variable threading; @config is for static values only |
+| @route outside BEHAVIOR block | @route replaces RULE chains; it belongs in BEHAVIORs only |
+| Mixing $config.key and hardcoded values for same parameter | Move all instances to @config |
+| Error table with complex multi-sentence recovery | Use traditional ERROR block for that case |
+| $variable referenced but never produced | Every $var needs a STEP with → $var declaration |
+| Omitting Notation section in Standard/Complex tier | Required for human readability |
+| "Process the files" (no quantifier) | "Process EACH file" or "Process ALL files" |
+| "If there are errors" (ambiguous quantifier) | "If ANY error exists" or "If EVERY check fails" |
+| "Don't process any files" (NOT + ANY = ambiguous) | "Process NONE of the files" or "SKIP ALL files" |
+| "Not all files should be included" (NOT + ALL) | "SKIP files that match [condition]" |
+| "Update the file after scanning" (vague temporal) | "IMMEDIATELY AFTER scanning, update the file" |
+| "Do this eventually" (vague temporal) | "EVENTUALLY update the file (AFTER ALL scans complete)" |
+| "Don't do X if Y" (negated condition) | "SKIP X UNLESS Y is false" or "X UNLESS Y" |
+| "Try again if it fails" (unbounded retry) | "RETRY UP TO 3 TIMES" |
+| "Copy the text" (may paraphrase) | "Copy the text VERBATIM" |
+| "A AND B OR C" (ungrouped compound) | "ALL of the following: A, B" OR C separately |
+| "A or B" (ambiguous inclusive/exclusive) | "A OR B" (inclusive) or "EITHER A OR B" (exclusive) |
+| "The file must be locked" (when?) | "The file MUST ALWAYS be locked during processing" |
+| "Process files that are large" (vague filter) | "Process EACH file WHERE size > 100MB" |
