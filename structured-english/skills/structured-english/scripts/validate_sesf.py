@@ -65,6 +65,7 @@ class SESFBehavior:
     routes: list = field(default_factory=list)   # list[SESFRoute]
     compact_errors: list = field(default_factory=list)  # list[SESFCompactError]
     compact_examples: list = field(default_factory=list)  # list[SESFCompactExample]
+    inline_errors: list = field(default_factory=list)  # list[SESFInlineError]
     line_number: int = 0
 
 
@@ -85,6 +86,7 @@ class SESFProcedure:
     examples: list = field(default_factory=list)  # list[SESFExample]
     compact_errors: list = field(default_factory=list)  # list[SESFCompactError]
     compact_examples: list = field(default_factory=list)  # list[SESFCompactExample]
+    inline_errors: list = field(default_factory=list)  # list[SESFInlineError]
     line_number: int = 0
 
 
@@ -131,6 +133,16 @@ class SESFCompactExample:
     name: str = ""
     input_desc: str = ""
     expected: str = ""
+    line_number: int = 0
+
+
+@dataclass
+class SESFInlineError:
+    """Inline ERROR format: ERROR name: severity → action, "message" """
+    name: str = ""
+    severity: str = ""
+    action: str = ""
+    message: str = ""
     line_number: int = 0
 
 
@@ -708,6 +720,24 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 in_compact_examples = False
                 # Fall through to process this line normally
 
+            # --- Inline ERROR detection: ERROR name: severity → action, "message" ---
+            inline_err_match = re.match(
+                r'^\s*ERROR\s+(\w+)\s*:\s*(\w+)\s*(?:→|->)\s*(.+?),\s*"([^"]*)"',
+                stripped,
+            )
+            if inline_err_match:
+                _finish_sub_block()
+                in_compact_errors = False
+                in_compact_examples = False
+                current_behavior.inline_errors.append(SESFInlineError(
+                    name=inline_err_match.group(1),
+                    severity=inline_err_match.group(2).strip(),
+                    action=inline_err_match.group(3).strip(),
+                    message=inline_err_match.group(4).strip(),
+                    line_number=line_num,
+                ))
+                continue
+
             # RULE detection
             rule_match = re.match(r"^\s*RULE\s+(\w+)\s*:", stripped)
             if rule_match:
@@ -860,6 +890,24 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 # Non-matching line ends compact examples
                 in_compact_examples = False
                 # Fall through to process this line normally
+
+            # --- Inline ERROR detection: ERROR name: severity → action, "message" ---
+            inline_err_match = re.match(
+                r'^\s*ERROR\s+(\w+)\s*:\s*(\w+)\s*(?:→|->)\s*(.+?),\s*"([^"]*)"',
+                stripped,
+            )
+            if inline_err_match:
+                _finish_proc_sub_block()
+                in_compact_errors = False
+                in_compact_examples = False
+                current_procedure.inline_errors.append(SESFInlineError(
+                    name=inline_err_match.group(1),
+                    severity=inline_err_match.group(2).strip(),
+                    action=inline_err_match.group(3).strip(),
+                    message=inline_err_match.group(4).strip(),
+                    line_number=line_num,
+                ))
+                continue
 
             # STEP detection (with $variable threading)
             step_match = re.match(r"^\s*STEP\s+(\w+)\s*:", stripped)
@@ -1306,6 +1354,10 @@ def _collect_all_text_lines_numbered(doc: SESFDocument) -> list[tuple[int, str]]
             lines.append((ce.line_number, ce.when))
             lines.append((ce.line_number, ce.action))
             lines.append((ce.line_number, ce.message))
+        # Include inline error text
+        for ie in beh.inline_errors:
+            lines.append((ie.line_number, ie.action))
+            lines.append((ie.line_number, ie.message))
         for cx in beh.compact_examples:
             lines.append((cx.line_number, cx.input_desc))
             lines.append((cx.line_number, cx.expected))
@@ -1342,6 +1394,10 @@ def _collect_all_text_lines_numbered(doc: SESFDocument) -> list[tuple[int, str]]
             lines.append((ce.line_number, ce.when))
             lines.append((ce.line_number, ce.action))
             lines.append((ce.line_number, ce.message))
+        # Include inline error text
+        for ie in proc.inline_errors:
+            lines.append((ie.line_number, ie.action))
+            lines.append((ie.line_number, ie.message))
         for cx in proc.compact_examples:
             lines.append((cx.line_number, cx.input_desc))
             lines.append((cx.line_number, cx.expected))
@@ -1658,6 +1714,7 @@ def check_error_consistency(doc: SESFDocument) -> list:
     - Each ERROR has ACTION and MESSAGE fields -- WARN if missing
     - Warn on behaviors/procedures with errors but no rules/steps (orphaned errors)
     - PASS summary for blocks with properly-defined errors
+    - Inline errors (ERROR name: severity → action, "message") are also validated
 
     Returns a list of ValidationResult objects.
     """
@@ -1668,11 +1725,29 @@ def check_error_consistency(doc: SESFDocument) -> list:
         results.extend(_check_errors_for_block(
             "BEHAVIOR", beh.name, beh.errors, has_logic, beh.line_number
         ))
+        # Count inline errors as well-defined error handling
+        if beh.inline_errors and not beh.errors:
+            results.append(ValidationResult(
+                category="error_consistency",
+                status="PASS",
+                message=f"BEHAVIOR '{beh.name}' has {len(beh.inline_errors)} "
+                        f"inline error(s)",
+                line_number=beh.line_number,
+            ))
 
     for proc in doc.procedures:
         results.extend(_check_errors_for_block(
             "PROCEDURE", proc.name, proc.errors, bool(proc.steps), proc.line_number
         ))
+        # Count inline errors as well-defined error handling
+        if proc.inline_errors and not proc.errors:
+            results.append(ValidationResult(
+                category="error_consistency",
+                status="PASS",
+                message=f"PROCEDURE '{proc.name}' has {len(proc.inline_errors)} "
+                        f"inline error(s)",
+                line_number=proc.line_number,
+            ))
 
     return results
 
@@ -1976,11 +2051,15 @@ VALID_COMPACT_SEVERITIES = {"critical", "warning", "info"}
 
 
 def check_error_table_structure(doc: SESFDocument) -> list:
-    """Check compact error table structure.
+    """Check compact error table and inline error structure.
 
     For each compact error table row, verifies:
     - All 5 columns are present (name, when, severity, action, message)
     - Severity values are valid (critical, warning, info)
+
+    For each inline error, verifies:
+    - Severity is valid (critical, warning, info)
+    - Action and message are present
 
     Returns a list of ValidationResult objects.
     """
@@ -1993,9 +2072,6 @@ def check_error_table_structure(doc: SESFDocument) -> list:
     for proc in doc.procedures:
         for ce in proc.compact_errors:
             all_compact_errors.append(("PROCEDURE", proc.name, ce))
-
-    if not all_compact_errors:
-        return results
 
     for block_type, block_name, ce in all_compact_errors:
         # Check for missing columns
@@ -2031,12 +2107,33 @@ def check_error_table_structure(doc: SESFDocument) -> list:
                 line_number=ce.line_number,
             ))
 
-    # If no issues found for any compact error, emit a PASS
-    if not results:
+    # Check inline errors
+    all_inline_errors: list[tuple[str, str, SESFInlineError]] = []
+    for beh in doc.behaviors:
+        for ie in beh.inline_errors:
+            all_inline_errors.append(("BEHAVIOR", beh.name, ie))
+    for proc in doc.procedures:
+        for ie in proc.inline_errors:
+            all_inline_errors.append(("PROCEDURE", proc.name, ie))
+
+    for block_type, block_name, ie in all_inline_errors:
+        if ie.severity and ie.severity.lower() not in VALID_COMPACT_SEVERITIES:
+            results.append(ValidationResult(
+                category="error_table_structure",
+                status="WARN",
+                message=f"Inline error '{ie.name}' in {block_type} '{block_name}' "
+                        f"has invalid severity '{ie.severity}' "
+                        f"(expected: critical, warning, info)",
+                line_number=ie.line_number,
+            ))
+
+    total_errors = len(all_compact_errors) + len(all_inline_errors)
+    # If no issues found, emit a PASS
+    if total_errors > 0 and not results:
         results.append(ValidationResult(
             category="error_table_structure",
             status="PASS",
-            message=f"All {len(all_compact_errors)} compact error row(s) are well-formed",
+            message=f"All {total_errors} error definition(s) are well-formed",
         ))
 
     return results
@@ -2047,29 +2144,27 @@ def check_error_table_structure(doc: SESFDocument) -> list:
 # ---------------------------------------------------------------------------
 
 def check_notation_section(doc: SESFDocument) -> list:
-    """Check that standard and complex tiers have a Notation section.
+    """Check whether a Notation section is present.
 
-    For Standard and Complex tiers, warns if doc.has_notation_section is False.
+    Notation is optional at all tiers (v4.1). Reports presence as PASS,
+    absence as informational PASS (not a warning).
 
     Returns a list of ValidationResult objects.
     """
     results: list[ValidationResult] = []
 
-    tier = doc.meta.get("tier", "").lower().strip()
-
-    if tier in ("standard", "complex"):
-        if doc.has_notation_section:
-            results.append(ValidationResult(
-                category="notation",
-                status="PASS",
-                message="Notation section present",
-            ))
-        else:
-            results.append(ValidationResult(
-                category="notation",
-                status="WARN",
-                message=f"Notation section missing (recommended for {tier} tier)",
-            ))
+    if doc.has_notation_section:
+        results.append(ValidationResult(
+            category="notation",
+            status="PASS",
+            message="Notation section present",
+        ))
+    else:
+        results.append(ValidationResult(
+            category="notation",
+            status="PASS",
+            message="Notation section absent (optional)",
+        ))
 
     return results
 

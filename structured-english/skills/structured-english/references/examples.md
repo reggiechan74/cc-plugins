@@ -26,10 +26,7 @@ BEHAVIOR validate_email: Check that an input string conforms to basic email addr
     THEN the portion after "@" MUST contain at least one "." character
          AND the portion after "@" MUST be at least 3 characters long
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | invalid_email | input fails contains_at_sign OR has_domain | critical | reject input | "Invalid email address: does not meet structural requirements" |
+  ERROR invalid_email: critical → reject input, "Invalid email address: does not meet structural requirements"
 
   EXAMPLES:
     valid_email: input="reggie.chan@tenebrus.ca" → { "valid": true }
@@ -182,11 +179,8 @@ BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease 
     party name contains "LP" or "L.P." or "Partnership"      → set entity_type to "Partnership"
     *                                                         → set entity_type to "Individual"
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | missing_landlord | parties.landlord is null or parties.landlord.name is empty | critical | halt extraction | "Could not identify landlord in lease document" |
-  | missing_tenant | parties.tenant is null or parties.tenant.name is empty | critical | halt extraction | "Could not identify tenant in lease document" |
+  ERROR missing_landlord: critical → halt extraction, "Could not identify landlord in lease document"
+  ERROR missing_tenant: critical → halt extraction, "Could not identify tenant in lease document"
 
   EXAMPLE successful_party_extraction:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -215,10 +209,7 @@ BEHAVIOR premises_extraction: Extract physical property details from the lease
     premises.sqft SHOULD be between $config.sqft_range.min and $config.sqft_range.max
     -- flag outliers for review
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | missing_sqft | premises.sqft is null or premises.sqft = 0 | warning | continue with flag | "Square footage not found -- may require manual review" |
+  ERROR missing_sqft: warning → continue with flag, "Square footage not found -- may require manual review"
 
   EXAMPLE complete_premises:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -242,10 +233,7 @@ BEHAVIOR term_extraction: Extract and validate lease commencement and expiration
     term.months SHOULD be between 1 and $config.max_term_months
     -- flag unusual terms for review
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | date_parse_failure | commencement or expiration date cannot be parsed from document text | critical | halt extraction | "Could not parse lease term dates from document" |
+  ERROR date_parse_failure: critical → halt extraction, "Could not parse lease term dates from document"
 
   EXAMPLE valid_five_year_term:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -272,10 +260,7 @@ BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation sche
     THEN EACH escalation.effective_date MUST be after term.commencement
     AND escalation dates MUST be in ascending order
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | missing_rent | rent.base_amount is null or rent.base_amount <= 0 | critical | halt extraction | "Could not extract base rent amount from document" |
+  ERROR missing_rent: critical → halt extraction, "Could not extract base rent amount from document"
 
   EXAMPLE psf_rent_with_escalations:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -477,25 +462,11 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     requester.manager_id MUST NOT be null
     -- Every PO needs at least one approver in the chain
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | missing_required_fields | any of vendor, description, justification, or amount fails validation | critical | reject PO and return to requester | "Purchase order is incomplete. All fields (vendor, description, justification, amount) are required." |
-  | invalid_budget_code | purchase_order.budget_code does not match $config.budget_code_pattern | critical | reject PO and return to requester | "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)." |
-
-  EXAMPLE valid_request:
-    INPUT: {
-      "purchase_order": {
-        "id": "PO-2026-00847", "amount": 12500.00, "vendor": "Dell Technologies Canada",
-        "description": "15x Dell Latitude 5550 laptops for Q2 new hires",
-        "department": "Engineering", "justification": "Approved headcount expansion per Q2 hiring plan",
-        "budget_code": "EN-4200-310"
-      },
-      "requester": { "id": "usr_391", "name": "Priya Sharma", "email": "priya.sharma@company.ca", "department": "Engineering", "manager_id": "usr_102" }
-    }
-    EXPECTED: { "validation": "passed", "next": "approval_routing" }
+  ERROR missing_required_fields: critical → reject PO and return to requester, "Purchase order is incomplete. All fields (vendor, description, justification, amount) are required."
+  ERROR invalid_budget_code: critical → reject PO and return to requester, "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)."
 
   EXAMPLES:
+    valid_request: po with all required fields, budget_code="EN-4200-310" → { "validation": "passed", "next": "approval_routing" }
     invalid_budget_code_case: budget_code="OPS-42" → rejected with "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)."
 
 
@@ -522,10 +493,7 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
     THEN approval_status.state = "rejected"
     AND remaining approvers are not consulted
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | missing_manager | requester.manager_id is null AND urgency != "emergency" | critical | halt workflow | "Requester has no manager assigned. Cannot build approval chain." |
+  ERROR missing_manager: critical → halt workflow, "Requester has no manager assigned. Cannot build approval chain."
 
   EXAMPLE small_purchase_single_approver:
     INPUT: {
@@ -592,10 +560,7 @@ BEHAVIOR notification_dispatch: Send approval request notifications to the
   RULE notification_content:
     notification.message MUST include PO id, amount, vendor, and requester name
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | notification_send_failure | notification delivery fails after $config.notification.max_retries retry attempts | warning | log failure, continue workflow, alert system administrator | "Failed to deliver notification to {recipient_email} after {$config.notification.max_retries} attempts" |
+  ERROR notification_send_failure: warning → log failure, continue workflow, alert system administrator, "Failed to deliver notification to {recipient_email} after {$config.notification.max_retries} attempts"
 
   EXAMPLE standard_sequential_notification:
     INPUT: {
@@ -640,10 +605,7 @@ BEHAVIOR timeout_escalation: Escalate to the next level of management when an
     urgency = "emergency" AND no response within $config.timeouts.emergency_hours hours  → escalate to $config.escalation.final_fallback with "EMERGENCY ESCALATION" prefix
     *                                                                                     → no action (timeout not yet reached)
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | approver_unavailable | escalation target (approver's manager) is also unavailable or has no manager_id | critical | escalate to $config.escalation.final_fallback as final fallback, alert system administrator | "Approval chain broken: no available escalation target for PO {po_id}" |
+  ERROR approver_unavailable: critical → escalate to $config.escalation.final_fallback as final fallback, alert system administrator, "Approval chain broken: no available escalation target for PO {po_id}"
 
   EXAMPLE standard_timeout_escalation:
     INPUT: {
@@ -734,11 +696,8 @@ PROCEDURE generate_daily_report: Compile sales data and produce a summary report
     Write the summary to /reports/daily/YYYY-MM-DD.pdf → $report_path
     Send the report to the management distribution list
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | no_transactions | the day's sales list is empty | warning | generate an empty report noting "No transactions recorded" | "No sales transactions found for {date}" |
-  | database_unavailable | the database connection fails | critical | notify the on-call engineer and skip report generation | "Cannot generate daily report: database connection failed" |
+  ERROR no_transactions: warning → generate an empty report noting "No transactions recorded", "No sales transactions found for {date}"
+  ERROR database_unavailable: critical → notify the on-call engineer and skip report generation, "Cannot generate daily report: database connection failed"
 
   EXAMPLES:
     typical_day: date="2026-03-01" → { "total_revenue": 15420.50, "transaction_count": 47, "average_sale": 328.10, "report_path": "/reports/daily/2026-03-01.pdf" }
@@ -901,12 +860,9 @@ BEHAVIOR validate_customer_data: Ensure the customer record is complete
     THEN customer.phone MUST be present
     -- enterprise customers require a phone number for dedicated support
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | invalid_email | customer.email fails email_format | critical | reject onboarding and return the error to the submitter | "Invalid email address: {customer.email}" |
-  | missing_company | customer.company is empty | critical | reject onboarding | "Company name is required for all customers" |
-  | enterprise_missing_phone | plan = "enterprise" and customer.phone is missing | critical | reject onboarding | "Enterprise customers must provide a phone number" |
+  ERROR invalid_email: critical → reject onboarding and return the error to the submitter, "Invalid email address: {customer.email}"
+  ERROR missing_company: critical → reject onboarding, "Company name is required for all customers"
+  ERROR enterprise_missing_phone: critical → reject onboarding, "Enterprise customers must provide a phone number"
 
   EXAMPLES:
     valid_professional_customer: customer={ "name": "Alicia Torres", "email": "alicia@brightpath.io", "company": "Brightpath Solutions", "phone": "+1-416-555-0199", "industry": "Technology", "employee_count": 120 }, plan="professional" → { "validation": "passed" }
@@ -939,11 +895,8 @@ PROCEDURE onboard_customer: Walk through each onboarding step in order,
     Send a follow-up reminder to the assigned account manager
     Send an internal alert to the customer success team with the onboarding summary
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | account_provisioning_failure | account creation fails | critical | notify the infrastructure team and mark onboarding as failed | "Account provisioning failed for {customer.email}. Infrastructure team notified." |
-  | welcome_email_failure | the welcome email cannot be delivered after 3 attempts | warning | log the failure, continue onboarding, and flag for manual follow-up | "Welcome email delivery failed for {customer.email}. Manual follow-up required." |
+  ERROR account_provisioning_failure: critical → notify the infrastructure team and mark onboarding as failed, "Account provisioning failed for {customer.email}. Infrastructure team notified."
+  ERROR welcome_email_failure: warning → log the failure, continue onboarding, and flag for manual follow-up, "Welcome email delivery failed for {customer.email}. Manual follow-up required."
 
   EXAMPLE successful_professional_onboarding:
     INPUT: {
@@ -1169,10 +1122,7 @@ BEHAVIOR quarantine_check: Determine whether a file should be quarantined
     THEN quarantine the file
     -- prevent reprocessing of recently completed files
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | quarantined_file | any quarantine rule matches | warning | move the file to $config.quarantine_directory, log the reason, notify the data team | "File {file.name} quarantined: {reason}" |
+  ERROR quarantined_file: warning → move the file to $config.quarantine_directory, log the reason, notify the data team, "File {file.name} quarantined: {reason}"
 
   EXAMPLES:
     oversized_file: file={ "name": "huge_export.csv", "size": 750000000 } → { "state": "quarantined", "reason": "File size 750000000 exceeds 500 MB limit" }
@@ -1215,26 +1165,12 @@ PROCEDURE validate_file: Check that a file's structure matches the expected
     Record $records_in on the file result
     Log an audit entry: "Validation passed for {file.name}: {$records_in} records found"
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | empty_file | the file contains no data rows | warning | move the file from "validating" to "failed", log the issue | "File {file.name} is empty -- no records to process" |
-  | schema_not_found | no matching schema exists for the file's format and column structure | critical | move the file from "validating" to "failed", notify the data engineering team | "No schema found for {file.name} with format {$format}. Manual schema registration required." |
-  | validation_failed | one or more columns fail validation | critical | move the file from "validating" to "failed", attach $error_list to the file result | "Validation failed for {file.name}: {error_count} column issues found" |
-
-  EXAMPLE valid_csv_file:
-    INPUT: {
-      "file": { "name": "orders_20260301.csv", "path": "/uploads/orders_20260301.csv", "format": "csv" },
-      "header_row": ["order_id", "customer_id", "amount", "order_date", "status"]
-    }
-    EXPECTED: {
-      "state": "validating",
-      "records_in": 1250,
-      "audit_entry": "Validation passed for orders_20260301.csv: 1250 records found"
-    }
-    NOTES: All 5 columns match the orders schema. 1250 data rows found.
+  ERROR empty_file: warning → move the file from "validating" to "failed", log the issue, "File {file.name} is empty -- no records to process"
+  ERROR schema_not_found: critical → move the file from "validating" to "failed", notify the data engineering team, "No schema found for {file.name} with format {$format}. Manual schema registration required."
+  ERROR validation_failed: critical → move the file from "validating" to "failed", attach $error_list to the file result, "Validation failed for {file.name}: {error_count} column issues found"
 
   EXAMPLES:
+    valid_csv_file: file="orders_20260301.csv" with columns [order_id, customer_id, amount, order_date, status] → { "state": "validating", "records_in": 1250 }
     missing_required_column: file={ "name": "orders_broken.csv", "format": "csv" }, header_row=["order_id", "amount", "order_date"] → { "state": "failed", "errors": ["Missing required column: customer_id", "Missing required column: status"] }
 
 
@@ -1272,10 +1208,7 @@ PROCEDURE transform_records: Apply data transformations to validated records
   STEP finalize:
     Log an audit entry: "Transformation complete for {file.name}: {$records_out} of {$records_in} records ready to load"
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | batch_read_failure | a batch cannot be read from the file | critical | move the file from "transforming" to "failed", log the error with the batch number | "Failed to read batch {$current_batch} of {$batch_count} from {file.name}" |
+  ERROR batch_read_failure: critical → move the file from "transforming" to "failed", log the error with the batch number, "Failed to read batch {$current_batch} of {$batch_count} from {file.name}"
 
   EXAMPLE successful_transformation:
     INPUT: {
@@ -1338,26 +1271,11 @@ PROCEDURE load_to_warehouse: Load transformed records into the data warehouse
     Move the file from "loading" to "completed"
     Log an audit entry: "Load complete for {file.name}: {$loaded_count} records inserted"
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | connection_failed | the warehouse connection cannot be established after $config.warehouse.connection_retries attempts | critical | move the file from "loading" to "failed", notify the infrastructure team | "Cannot connect to warehouse: {connection_error}. File {file.name} load aborted." |
-  | load_failed | a batch insert fails after max_retries attempts | critical | move the file from "loading" to "failed", record which batch failed, roll back any partially inserted records for this file | "Batch {$current_batch} failed after {max_retries} retries for {file.name}. Partial load rolled back." |
-
-  EXAMPLE successful_load:
-    INPUT: {
-      "file": { "name": "orders_20260301.csv", "records_out": 1247 },
-      "batch_size": 500,
-      "max_retries": 3
-    }
-    EXPECTED: {
-      "state": "completed",
-      "loaded_count": 1247,
-      "audit_entry": "Load complete for orders_20260301.csv: 1247 records inserted"
-    }
-    NOTES: 3 load batches (500 + 500 + 247). All inserted successfully on first attempt.
+  ERROR connection_failed: critical → move the file from "loading" to "failed", notify the infrastructure team, "Cannot connect to warehouse: {connection_error}. File {file.name} load aborted."
+  ERROR load_failed: critical → move the file from "loading" to "failed", record which batch failed, roll back any partially inserted records for this file, "Batch {$current_batch} failed after {max_retries} retries for {file.name}. Partial load rolled back."
 
   EXAMPLES:
+    successful_load: file="orders_20260301.csv", records_out=1247, batch_size=500 → { "state": "completed", "loaded_count": 1247 }
     retry_then_success: file={ "name": "products_20260301.json", "records_out": 800 }, batch_size=500, max_retries=3 → { "state": "completed", "loaded_count": 800, "retry_count": 1 }
     permanent_failure: file={ "name": "events_20260301.parquet", "records_out": 5000 }, batch_size=500, max_retries=3 → { "state": "failed", "loaded_count": 0, "retry_count": 3 }
 
@@ -1400,10 +1318,7 @@ PROCEDURE run_pipeline: Orchestrate the full ingestion pipeline from file
     Record the $completed_at timestamp
     Log an audit entry: "Pipeline run {$run_id} complete: {$pipeline_result.files_succeeded} succeeded, {$pipeline_result.files_failed} failed, {$pipeline_result.total_records_loaded} records loaded"
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | pipeline_interrupted | an unexpected error halts the pipeline before all files are processed | critical | record partial results, log the interruption point, notify the data engineering team | "Pipeline run {$run_id} interrupted after processing {$files_processed} of {total_files} files" |
+  ERROR pipeline_interrupted: critical → record partial results, log the interruption point, notify the data engineering team, "Pipeline run {$run_id} interrupted after processing {$files_processed} of {total_files} files"
 
   EXAMPLE full_pipeline_run:
     INPUT: {
@@ -1563,14 +1478,7 @@ BEHAVIOR place_content: Determine the correct section for each extracted newslet
     resolved items MUST be removed entirely — MUST NOT use strikethrough
     -- Completed Items serves as the archive
 
-  RULE prefer_edit:
-    WHEN updating the file THEN use the Edit tool
-    ELSE WHEN file does not exist OR changes span > 50% THEN use the Write tool
-
-  ERRORS:
-  | name                | when                                    | severity | action                                   | message                                                         |
-  |---------------------|-----------------------------------------|----------|------------------------------------------|-----------------------------------------------------------------|
-  | duplicate_placement | item matches multiple sections          | critical | choose ONE section per classify_item table | "Item '{item}' matches multiple sections. Use single-source rule." |
+  ERROR duplicate_placement: critical → choose ONE section per classify_item table, "Item '{item}' matches multiple sections. Use single-source rule."
 
   EXAMPLES:
     action_placed: item="Register for Code-It Hacks", type=parent_action → Action Items (numbered)
@@ -1597,11 +1505,8 @@ PROCEDURE scan_newsletters: Search Gmail for new GIST newsletters
     Skip any newsletter whose date appears in "Newsletters reviewed" footer of $briefing
     For each remaining newsletter, extract: dates and deadlines, registration requirements, teacher and curriculum changes, parent action items, financial information
 
-  ERRORS:
-  | name                  | when                         | severity | action                    | message                                                  |
-  |-----------------------|------------------------------|----------|---------------------------|----------------------------------------------------------|
-  | gmail_search_failed   | Gmail MCP tool returns error | critical | halt and inform user      | "Gmail search failed. Check MCP server connection."      |
-  | newsletter_unreadable | newsletter cannot be parsed  | warning  | skip that one, continue   | "Could not read newsletter from {date}. Skipping."       |
+  ERROR gmail_search_failed: critical → halt and inform user, "Gmail search failed. Check MCP server connection."
+  ERROR newsletter_unreadable: warning → skip that one, continue, "Could not read newsletter from {date}. Skipping."
 
   EXAMPLES:
     two_new: lastUpdated="2026-02-15", gmail_results=2 → read both, extract, proceed to place_content and maintain_briefing
@@ -1638,10 +1543,7 @@ PROCEDURE sync_github_issue: Update GitHub issue #28 body and post changelog
   STEP post_changelog:
     Post comment on issue $config.github_issue: newsletters scanned (count + date range), changes as bullet list, upcoming action items with near-term deadlines
 
-  ERRORS:
-  | name               | when                  | severity | action                    | message                                                      |
-  |--------------------|-----------------------|----------|---------------------------|--------------------------------------------------------------|
-  | github_unavailable | gh CLI returns error  | warning  | log error, continue       | "GitHub sync failed: {error}. Briefing file was updated."    |
+  ERROR github_unavailable: warning → log error, continue, "GitHub sync failed: {error}. Briefing file was updated."
 
   EXAMPLES:
     full_sync: scanned=2, changes=["added 3 dates", "moved 1 event", "updated registration"] → replace body + post changelog
@@ -1665,11 +1567,8 @@ PROCEDURE draft_email: Draft HTML email to Janice
   STEP report_completion:
     Confirm to user: newsletters scanned (count + range), briefing file location, items changed, action items with deadlines, email draft created (remind to review before sending)
 
-  ERRORS:
-  | name             | when                            | severity | action                   | message                                                  |
-  |------------------|---------------------------------|----------|--------------------------|----------------------------------------------------------|
-  | template_missing | email-template.html not found   | warning  | use basic HTML formatting | "Email template not found. Using basic formatting."      |
-  | draft_failed     | draft_email MCP returns error   | warning  | inform user              | "Email draft failed: {error}. Briefing updated."        |
+  ERROR template_missing: warning → use basic HTML formatting, "Email template not found. Using basic formatting."
+  ERROR draft_failed: warning → inform user, "Email draft failed: {error}. Briefing updated."
 
   EXAMPLES:
     full_draft: template_loaded=true, briefing_updated=true → draft HTML email, report completion

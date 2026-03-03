@@ -90,10 +90,7 @@ BEHAVIOR select_tier: Choose the correct complexity tier for the specification
     WHEN a complex spec has only one behavior after refactoring
     THEN demote to micro tier
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | no_tier_determinable | target_tier is not provided AND complexity_indicators are insufficient | warning | default to standard tier and note the assumption | "Insufficient complexity signals. Defaulting to standard tier." |
+  ERROR no_tier_determinable: warning → default to standard tier and note the assumption, "Insufficient complexity signals. Defaulting to standard tier."
 
   EXAMPLES:
     single_concern: behavior_count=1, has_shared_types=false, has_overlapping_rules=false -> micro
@@ -137,14 +134,11 @@ BEHAVIOR structure_document: Assemble the specification with correct section ord
 
   RULE notation_requirement:
     WHEN tier is standard OR tier is complex
-    THEN the spec MUST include a Notation section after Meta
-    -- bridges readability for non-technical readers
+    THEN the spec MAY include a Notation section after Meta
+    -- bridges readability for non-technical readers; LLMs do not require it
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | missing_required_section | a required section for the selected tier is absent | critical | add the missing section | "Missing required section: {section_name} for {tier} tier." |
-  | extra_micro_section | a micro spec includes sections beyond Meta, Purpose, Behaviors/Procedures, Constraints | warning | remove the extra section or promote to standard | "Micro tier MUST NOT include {section_name}." |
+  ERROR missing_required_section: critical → add the missing section, "Missing required section: {section_name} for {tier} tier."
+  ERROR extra_micro_section: warning → remove the extra section or promote to standard, "Micro tier MUST NOT include {section_name}."
 
   EXAMPLES:
     standard_valid: tier=standard, all 10 required sections present -> valid
@@ -176,15 +170,16 @@ BEHAVIOR write_behaviors: Compose BEHAVIOR blocks with rules, errors, and exampl
     ELSE use WHEN/THEN rules for binary constraints
     -- the form is determined by branch count, not author preference
 
-  RULE compact_error_tables:
-    WHEN a behavior has 2 or more error cases
-    THEN use a compact ERRORS: table with 5 mandatory columns (name, when, severity, action, message)
-    ELSE a single error case MAY use either compact or traditional ERROR block format
+  RULE inline_error_format:
+    errors SHOULD use inline ERROR format: ERROR name: severity → action, "message"
+    -- one ERROR per line; compact and scannable
+    -- MAY use full ERROR block (WHEN/SEVERITY/ACTION/MESSAGE) for complex recovery logic
+    -- MAY use compact ERRORS: table for backward compatibility
 
   RULE compact_examples:
-    WHEN examples are simple and self-evident (no NOTES needed)
-    THEN use compact EXAMPLES: format with -> syntax
-    ELSE use full EXAMPLE blocks with INPUT/EXPECTED/NOTES
+    examples SHOULD use single-line format: name: input -> expected
+    -- concise and sufficient for most cases
+    MAY use full EXAMPLE blocks (INPUT/EXPECTED/NOTES) only when multi-line JSON or essential NOTES are needed
 
   RULE error_coverage:
     every RULE SHOULD have at least one EXAMPLE demonstrating it
@@ -214,12 +209,9 @@ BEHAVIOR write_behaviors: Compose BEHAVIOR blocks with rules, errors, and exampl
     rules within a behavior are evaluated in declaration order
     unless a PRIORITY tag overrides it
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | vague_rule | a rule uses vague language like "handle appropriately" or "validate the data" | critical | rewrite the rule with specific conditions and actions | "Rule '{rule_name}' is too vague. Specify each case explicitly." |
-  | missing_error_block | a behavior has rules that can fail but no ERROR blocks | warning | add ERROR blocks for each failure mode | "Behavior '{behavior_name}' has rules but no error handling." |
-  | route_under_threshold | an @route table has fewer than $config.tier_threshold.route_min_branches branches | warning | convert to WHEN/THEN rules | "@route '{table_name}' has fewer than {route_min_branches} branches. Use WHEN/THEN instead." |
+  ERROR vague_rule: critical → rewrite the rule with specific conditions and actions, "Rule '{rule_name}' is too vague. Specify each case explicitly."
+  ERROR missing_error_block: warning → add ERROR blocks for each failure mode, "Behavior '{behavior_name}' has rules but no error handling."
+  ERROR route_under_threshold: warning → convert to WHEN/THEN rules, "@route '{table_name}' has fewer than {route_min_branches} branches. Use WHEN/THEN instead."
 
   EXAMPLES:
     well_structured: behavior with 3 rules, 2 errors, 4 examples -> valid, self-contained
@@ -268,12 +260,9 @@ BEHAVIOR write_procedures: Compose PROCEDURE blocks with ordered steps written i
     WHEN a step changes the state of an entity
     THEN use the pattern: "Move <entity> from <old_state> to <new_state>"
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | programming_syntax | a step uses programming-style syntax (SET, FOR i=0, END IF, RETURN, assignment operators) | critical | rewrite the step in natural English | "Step '{step_name}' uses programming syntax. Rewrite in natural English." |
-  | steps_out_of_order | a step references a result that has not been produced by a prior step | critical | reorder steps so each step has what it needs | "Step '{step_name}' references '{dependency}' which has not been produced yet." |
-  | unproduced_variable | a $variable is referenced but no STEP declares it with -> $var | critical | add -> $var declaration to the producing step | "$variable '{var_name}' is referenced but never produced by any STEP." |
+  ERROR programming_syntax: critical → rewrite the step in natural English, "Step '{step_name}' uses programming syntax. Rewrite in natural English."
+  ERROR steps_out_of_order: critical → reorder steps so each step has what it needs, "Step '{step_name}' references '{dependency}' which has not been produced yet."
+  ERROR unproduced_variable: critical → add -> $var declaration to the producing step, "$variable '{var_name}' is referenced but never produced by any STEP."
 
   EXAMPLES:
     well_ordered: steps=[lookup, calculate, act, transition, notify] -> valid, each builds on previous
@@ -314,36 +303,34 @@ BEHAVIOR write_hybrid_elements: Apply v4 hybrid notation correctly across the sp
     AND $config.key references the @config block; $var references a step output
     -- variable threading is optional; steps without outputs omit the -> declaration
 
-  RULE compact_error_syntax:
-    compact error tables MUST have 5 mandatory columns: name, when, severity, action, message
+  RULE inline_error_syntax:
+    inline errors use the format: ERROR name: severity → action, "message"
     AND severity values MUST be: critical (halt), warning (continue with degradation), or info (log only)
-    AND for complex recovery logic needing multiple sentences, use a traditional ERROR block instead
+    AND for complex recovery logic needing multiple sentences, MAY use a full ERROR block instead
+    AND compact ERRORS: tables (5-column markdown) are accepted for backward compatibility
 
   RULE compact_example_syntax:
-    compact examples use the format: name: input_description -> expected_outcome
+    examples SHOULD use single-line format: name: input_description -> expected_outcome
     AND the -> symbol separates input from expected output
-    AND for examples needing NOTES or multi-line INPUT/EXPECTED, use full EXAMPLE blocks
+    AND MAY use full EXAMPLE blocks (INPUT/EXPECTED/NOTES) only when multi-line JSON or essential NOTES are needed
 
   RULE notation_section:
-    WHEN tier is standard OR tier is complex
-    THEN the spec MUST include a Notation section after Meta
-    AND the Notation section MUST define at minimum: $, @, ->, and MUST/SHOULD/MAY/CAN
-    -- micro tier MAY omit Notation or use an abbreviated form
+    the spec MAY include a Notation section after Meta
+    -- bridges readability for non-technical or human readers
+    -- LLM consumers do not require it
+    WHEN a Notation section is included
+    THEN it MUST define at minimum: $, @, ->, and MUST/SHOULD/MAY/CAN
 
   RULE mixed_usage:
     a BEHAVIOR or PROCEDURE block MAY contain both compact and traditional ERROR/EXAMPLE entries
     AND a BEHAVIOR block MAY contain both @route tables (for 3+ branch routing) AND individual RULE blocks (for binary constraints)
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | config_after_behavior | @config appears after a BEHAVIOR or PROCEDURE block | critical | move @config before all behavior/procedure blocks | "@config MUST appear before any BEHAVIOR or PROCEDURE block." |
-  | route_outside_behavior | @route appears outside a BEHAVIOR block | critical | move @route inside a BEHAVIOR block | "@route tables belong inside BEHAVIOR blocks only." |
-  | route_missing_wildcard | @route table has no * (wildcard) default row | critical | add a wildcard default row | "@route '{table_name}' is missing a wildcard (*) default row." |
-  | route_too_few_branches | @route table has fewer than $config.tier_threshold.route_min_branches branches | warning | convert to WHEN/THEN rules | "@route '{table_name}' has fewer than {route_min_branches} branches." |
-  | variable_never_produced | a $variable is referenced but never declared with -> $var | critical | add -> $var to the producing step | "$variable '{var_name}' is referenced but never produced." |
-  | config_runtime_misuse | $config.key is used for a runtime value that changes between invocations | warning | use $variable threading instead of @config | "$config is for static values only. Use $variable threading for '{key}'." |
-  | notation_missing | a standard or complex tier spec omits the Notation section | warning | add a Notation section after Meta | "Notation section is required for {tier} tier." |
+  ERROR config_after_behavior: critical → move @config before all behavior/procedure blocks, "@config MUST appear before any BEHAVIOR or PROCEDURE block."
+  ERROR route_outside_behavior: critical → move @route inside a BEHAVIOR block, "@route tables belong inside BEHAVIOR blocks only."
+  ERROR route_missing_wildcard: critical → add a wildcard default row, "@route '{table_name}' is missing a wildcard (*) default row."
+  ERROR route_too_few_branches: warning → convert to WHEN/THEN rules, "@route '{table_name}' has fewer than {route_min_branches} branches."
+  ERROR variable_never_produced: critical → add -> $var to the producing step, "$variable '{var_name}' is referenced but never produced."
+  ERROR config_runtime_misuse: warning → use $variable threading instead of @config, "$config is for static values only. Use $variable threading for '{key}'."
 
   EXAMPLES:
     config_valid: @config after Outputs, before Types, keys in snake_case -> valid
@@ -389,12 +376,9 @@ BEHAVIOR write_shared_definitions: Place types, functions, actions, and preceden
     inline PRIORITY tags within behaviors
     MUST NOT contradict the global PRECEDENCE block
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | orphan_type | a Type is defined but no BEHAVIOR references it | warning | remove the type or add a reference | "Type '{type_name}' is defined but never referenced." |
-  | orphan_function | a Function is defined but no BEHAVIOR or PROCEDURE references it | warning | remove the function or add a reference | "Function '{function_name}' is never referenced." |
-  | orphan_action | an ACTION is defined but no BEHAVIOR or PROCEDURE references it | warning | remove the action or add a reference | "ACTION '{action_name}' is never referenced." |
+  ERROR orphan_type: warning → remove the type or add a reference, "Type '{type_name}' is defined but never referenced."
+  ERROR orphan_function: warning → remove the function or add a reference, "Function '{function_name}' is never referenced."
+  ERROR orphan_action: warning → remove the action or add a reference, "ACTION '{action_name}' is never referenced."
 
   EXAMPLES:
     shared_type: type=Order, referenced_by=[validate_order, process_order] -> Types section, valid
@@ -456,17 +440,13 @@ BEHAVIOR ensure_quality: Validate the completed specification against SESF v4 st
     THEN every $variable MUST be produced before it is referenced
 
   RULE notation_completeness:
-    WHEN tier is standard or complex
-    THEN the Notation section MUST define all symbols used in the spec ($, @, ->)
+    WHEN a Notation section is included
+    THEN it MUST define all symbols used in the spec ($, @, ->)
     AND MUST define requirement strength keywords
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | validation_failure | validator reports failures > 0 | critical | fix the structural issues identified by the validator | "Specification has {n} validation failures. Fix before delivery." |
-  | over_budget | line count exceeds the tier's $config.line_budget range by more than 20% | warning | review for redundancy, extract reference material, consolidate related rules | "Specification is {n} lines, exceeding the {tier} tier target of {range}." |
-  | config_key_mismatch | a $config.key reference does not match any @config entry | critical | add the key to @config or fix the reference | "$config.{key} does not match any @config entry." |
-  | missing_notation | a standard/complex spec omits the Notation section | warning | add Notation section after Meta | "Notation section is required for {tier} tier." |
+  ERROR validation_failure: critical → fix the structural issues identified by the validator, "Specification has {n} validation failures. Fix before delivery."
+  ERROR over_budget: warning → review for redundancy, extract reference material, consolidate related rules, "Specification is {n} lines, exceeding the {tier} tier target of {range}."
+  ERROR config_key_mismatch: critical → add the key to @config or fix the reference, "$config.{key} does not match any @config entry."
 
   EXAMPLES:
     clean_validation: validator_output={failures: 0, warnings: 2} -> passed (warnings acceptable)
@@ -485,6 +465,48 @@ Constraints
 * YAML frontmatter (name + description) is required for Claude Code skills
 * @route tables MUST have AT LEAST $config.tier_threshold.route_min_branches branches and a wildcard default
 * $config values are static only -- use $variable threading for runtime data
+
+Syntax Quick Reference
+-- Essential syntax skeletons; see $config.reference_path for full details
+
+BEHAVIOR block:
+  BEHAVIOR behavior_name: Brief description
+    RULE rule_name:
+      WHEN condition
+      THEN action
+      ELSE alternative
+    ERROR error_name: severity → action, "message"
+    EXAMPLES:
+      name: input -> expected
+
+PROCEDURE block:
+  PROCEDURE procedure_name: Brief description
+    STEP step_name → $output_var:
+      action description → $output_var
+    ERROR error_name: severity → action, "message"
+    EXAMPLES:
+      name: input -> expected
+
+@config block:
+  @config
+    key: value
+    nested:
+      key: value
+  -- reference with $config.key or $config.nested.key
+
+@route table:
+  @route table_name [first_match_wins]
+    condition_1  → outcome_1
+    condition_2  → outcome_2
+    *            → default_outcome
+  -- 3+ branches required; MUST end with wildcard *
+
+Inline ERROR format:
+  ERROR name: severity → action, "message"
+  -- severity: critical (halt), warning (continue), info (log only)
+
+Single-line EXAMPLE format:
+  name: input_description -> expected_outcome
 
 Dependencies
 * Template: $config.template_path -- fill-in-the-blank templates for all three tiers

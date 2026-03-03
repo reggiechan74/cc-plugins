@@ -5,11 +5,11 @@ Fill-in-the-blank starting points for each specification tier. Copy the template
 **What is new in v4:**
 
 - YAML frontmatter (optional, for tooling integration)
-- Notation section (required for Standard/Complex tiers)
+- Notation section (optional, for human readers)
 - @config block for centralized parameters
 - @route decision tables inside BEHAVIOR blocks (3+ branches)
 - $variable threading in PROCEDURE steps
-- Compact ERRORS: table (5 mandatory columns)
+- Compact inline ERROR format
 - Compact EXAMPLES: one-line format
 
 ---
@@ -51,10 +51,7 @@ BEHAVIOR [behavior_name]: [Brief description of this behavior]
   RULE [constraint_rule_name]:
     [subject] MUST [requirement]
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | [error_name] | [condition] | [critical/warning/info] | [recovery action] | "[user-facing message]" |
+  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
 
   EXAMPLES:
     [success_case]: [input description] → [expected outcome]
@@ -66,7 +63,7 @@ Constraints
 
 **Alternatives for Micro tier:**
 
-- Traditional ERROR blocks may be used instead of the compact ERRORS: table:
+- Full ERROR blocks may be used for complex recovery logic needing multiple sentences:
   ```
   ERROR [error_name]:
     WHEN [condition that triggers this error]
@@ -74,6 +71,7 @@ Constraints
     ACTION [what to do when this error occurs]
     MESSAGE "[user-facing error message]"
   ```
+- Compact ERRORS: tables (5-column markdown) are accepted for backward compatibility.
 
 - Traditional EXAMPLE blocks may be used instead of compact EXAMPLES:
   ```
@@ -113,10 +111,7 @@ PROCEDURE [procedure_name]: [Brief description of what this procedure does]
   STEP [another_step]:
     [natural English action using $output_var from prior step]
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | [error_name] | [condition] | [critical/warning/info] | [recovery action] | "[user-facing message]" |
+  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
 
   EXAMPLES:
     [success_case]: [input description] → [expected outcome]
@@ -161,6 +156,7 @@ Notation
 * @ — marks a structured block (@config, @route)
 * → — means "produces", "routes to", or "yields"
 * MUST/SHOULD/MAY/CAN — requirement strength keywords
+-- Notation is optional; include for human readers
 
 Purpose
 [Two to three sentences describing what this specification accomplishes and why it exists.]
@@ -215,10 +211,7 @@ BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
   RULE [constraint_name]:
     [subject] MUST [binary constraint]
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | [error_name] | [condition] | [critical/warning/info] | [recovery action] | "[user-facing message]" |
+  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
 
   EXAMPLES:
     [success_case]: [input description] → [expected outcome]
@@ -234,10 +227,7 @@ PROCEDURE [procedure_name]: [Brief description of what this procedure does]
   STEP [another_step]:
     [action using $output_var from prior step]
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | [error_name] | [condition] | [critical/warning/info] | [recovery action] | "[user-facing message]" |
+  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
 
   EXAMPLES:
     [success_case]: [input description] → [expected outcome]
@@ -252,7 +242,7 @@ Dependencies
 
 **Alternatives for Standard tier:**
 
-- Traditional ERROR blocks may be used instead of the compact ERRORS: table:
+- Full ERROR blocks may be used for complex recovery logic needing multiple sentences:
   ```
   ERROR [error_name]:
     WHEN [condition]
@@ -260,6 +250,7 @@ Dependencies
     ACTION [what to do]
     MESSAGE "[user-facing message]"
   ```
+- Compact ERRORS: tables (5-column markdown) are accepted for backward compatibility.
 
 - Traditional EXAMPLE blocks may be used instead of compact EXAMPLES:
   ```
@@ -274,6 +265,7 @@ Dependencies
 **Notes for Standard tier:**
 
 - YAML frontmatter is optional. Omit the `---` block if your tooling does not need it.
+- Notation section is optional. Include it when hybrid symbols ($, @, →) appear and human readers may need a glossary.
 - @config is optional. Omit it if the spec has no configurable parameters.
 - @route is for 3+ branch conditionals inside BEHAVIOR blocks. For binary conditions, use WHEN/THEN/ELSE rules.
 - $variable threading on STEP declarations is optional. Omit `→ $var` when steps have no meaningful outputs.
@@ -313,6 +305,7 @@ Notation
 * @ — marks a structured block (@config, @route)
 * → — means "produces", "routes to", or "yields"
 * MUST/SHOULD/MAY/CAN — requirement strength keywords
+-- Notation is optional; include for human readers
 
 Purpose
 [Two to three sentences describing what this specification accomplishes and why it exists.]
@@ -374,10 +367,7 @@ BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
     [subject] MUST [binary constraint]
     PRIORITY 2
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | [error_name] | [condition] | [critical/warning/info] | [recovery action] | "[user-facing message]" |
+  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
 
   EXAMPLES:
     [success_case]: [input description] → [expected outcome]
@@ -399,10 +389,7 @@ BEHAVIOR [second_behavior_name]: [Brief description]
     THEN [action]
     PRIORITY 1
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | [error_name] | [condition] | [critical/warning/info] | [recovery action] | "[user-facing message]" |
+  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
 
   EXAMPLES:
     [success_case]: [input description] → [expected outcome]
@@ -421,10 +408,7 @@ PROCEDURE [procedure_name]: [Brief description of what this procedure does]
   STEP [final_step]:
     [natural English action or actions]
 
-  ERRORS:
-  | name | when | severity | action | message |
-  |------|------|----------|--------|---------|
-  | [error_name] | [condition] | [critical/warning/info] | [recovery action] | "[user-facing message]" |
+  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
 
   EXAMPLES:
     [success_case]: [input description] → [expected outcome]
@@ -456,7 +440,7 @@ Changelog
 
 **Alternatives for Complex tier:**
 
-- Traditional ERROR blocks may be used instead of the compact ERRORS: table:
+- Full ERROR blocks may be used for complex recovery logic needing multiple sentences:
   ```
   ERROR [error_name]:
     WHEN [condition]
@@ -464,6 +448,7 @@ Changelog
     ACTION [what to do]
     MESSAGE "[user-facing message]"
   ```
+- Compact ERRORS: tables (5-column markdown) are accepted for backward compatibility.
 
 - Traditional EXAMPLE blocks may be used instead of compact EXAMPLES:
   ```

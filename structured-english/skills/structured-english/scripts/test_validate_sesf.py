@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from validate_sesf import (
     parse_sesf,
     SESFDocument,
+    SESFInlineError,
     ValidationResult,
     check_config_references,
     check_variable_threading,
@@ -832,7 +833,7 @@ Meta
 * Tier: standard
 
 Purpose
-Test that a standard tier spec without Notation section triggers a WARN.
+Test that a standard tier spec without Notation section is accepted (v4.1: optional).
 
 Scope
 * IN SCOPE: everything
@@ -873,16 +874,23 @@ Dependencies
     try:
         doc = parse_sesf(path)
         results = check_notation_section(doc)
-        warn_results = [r for r in results if r.status == "WARN"]
-        assert len(warn_results) >= 1, (
-            f"Expected at least 1 WARN for missing Notation, got: "
+        # v4.1: Notation is optional — should get PASS, not WARN
+        pass_results = [r for r in results if r.status == "PASS"]
+        assert len(pass_results) >= 1, (
+            f"Expected PASS for absent Notation (optional in v4.1), got: "
             f"{[r.message for r in results]}"
         )
-        has_notation_warn = any(
-            "notation" in r.message.lower() for r in warn_results
+        has_absent_msg = any(
+            "absent" in r.message.lower() or "optional" in r.message.lower()
+            for r in pass_results
         )
-        assert has_notation_warn, (
-            f"Expected a warning about missing Notation section, got: "
+        assert has_absent_msg, (
+            f"Expected a PASS mentioning 'absent' or 'optional', got: "
+            f"{[r.message for r in pass_results]}"
+        )
+        warn_results = [r for r in results if r.status == "WARN"]
+        assert len(warn_results) == 0, (
+            f"Expected no warnings for missing Notation (v4.1 optional), got: "
             f"{[r.message for r in warn_results]}"
         )
         print("  PASS  test_notation_section_check")
@@ -1299,6 +1307,162 @@ Constraints
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# Test 23: Parse inline ERROR format (v4.1)
+# ──────────────────────────────────────────────────────────────────────────
+
+def test_parse_inline_error():
+    spec = """\
+Inline Error Test
+
+Meta: Version 1.0.0 | Date: 2026-03-01 | Domain: Testing | Status: active | Tier: micro
+
+Purpose
+Test that inline ERROR format is parsed correctly.
+
+BEHAVIOR validate: Check input
+
+  RULE check_required:
+    WHEN required field is missing
+    THEN reject
+
+  ERROR missing_field: critical → reject request, "Required field missing"
+  ERROR invalid_format: warning → flag for review, "Format does not match"
+
+  EXAMPLES:
+  valid: all fields present -> accepted
+  missing: required field null -> rejected
+
+Constraints
+* All errors must be handled
+"""
+    path = _write_temp_spec(spec)
+    try:
+        doc = parse_sesf(path)
+        assert len(doc.behaviors) == 1
+        beh = doc.behaviors[0]
+        assert len(beh.inline_errors) == 2, (
+            f"Expected 2 inline errors, got {len(beh.inline_errors)}"
+        )
+        ie1 = beh.inline_errors[0]
+        assert ie1.name == "missing_field", f"Expected name 'missing_field', got '{ie1.name}'"
+        assert ie1.severity == "critical", f"Expected severity 'critical', got '{ie1.severity}'"
+        assert ie1.action == "reject request", f"Expected action 'reject request', got '{ie1.action}'"
+        assert ie1.message == "Required field missing", f"Expected message 'Required field missing', got '{ie1.message}'"
+        ie2 = beh.inline_errors[1]
+        assert ie2.name == "invalid_format"
+        assert ie2.severity == "warning"
+        # Validate that error_table_structure check passes
+        results = check_error_table_structure(doc)
+        pass_results = [r for r in results if r.status == "PASS"]
+        assert len(pass_results) >= 1, (
+            f"Expected PASS for well-formed inline errors, got: "
+            f"{[r.message for r in results]}"
+        )
+        print("  PASS  test_parse_inline_error")
+    finally:
+        os.unlink(path)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Test 24: Mixed inline and compact error formats
+# ──────────────────────────────────────────────────────────────────────────
+
+def test_mixed_inline_and_compact_errors():
+    spec = """\
+Mixed Error Types Test
+
+Meta: Version 1.0.0 | Date: 2026-03-01 | Domain: Testing | Status: active | Tier: micro
+
+Purpose
+Test that a block can contain both inline errors and compact ERRORS: table.
+
+BEHAVIOR validate_data: Validate with multiple error formats
+
+  RULE check_required:
+    WHEN required field is missing
+    THEN reject
+
+  ERROR inline_err: critical → reject immediately, "Inline error triggered"
+
+  ERRORS:
+  | Name | When | Severity | Action | Message |
+  |------|------|----------|--------|---------|
+  | compact_err | field is null | warning | log it | Field was null |
+
+  EXAMPLE test:
+    INPUT: valid data
+    EXPECTED: accepted
+
+Constraints
+* Both error formats are supported
+"""
+    path = _write_temp_spec(spec)
+    try:
+        doc = parse_sesf(path)
+        assert len(doc.behaviors) == 1
+        beh = doc.behaviors[0]
+        assert len(beh.inline_errors) == 1, (
+            f"Expected 1 inline error, got {len(beh.inline_errors)}"
+        )
+        assert len(beh.compact_errors) == 1, (
+            f"Expected 1 compact error, got {len(beh.compact_errors)}"
+        )
+        assert beh.inline_errors[0].name == "inline_err"
+        assert beh.compact_errors[0].name == "compact_err"
+        print("  PASS  test_mixed_inline_and_compact_errors")
+    finally:
+        os.unlink(path)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Test 25: Inline ERROR in PROCEDURE block
+# ──────────────────────────────────────────────────────────────────────────
+
+def test_inline_error_in_procedure():
+    spec = """\
+Procedure Inline Error Test
+
+Meta: Version 1.0.0 | Date: 2026-03-01 | Domain: Testing | Status: active | Tier: micro
+
+Purpose
+Test that inline ERROR format works inside PROCEDURE blocks.
+
+PROCEDURE process_data: Process and validate data
+
+  STEP gather:
+    COLLECT all data from source
+
+  STEP transform:
+    APPLY normalization to data
+
+  ERROR data_corrupt: critical → halt processing, "Data corruption detected"
+  ERROR timeout: warning → retry once, "Processing timed out"
+
+  EXAMPLE valid:
+    INPUT: clean data
+    EXPECTED: processed
+
+Constraints
+* Steps execute in order
+"""
+    path = _write_temp_spec(spec)
+    try:
+        doc = parse_sesf(path)
+        assert len(doc.procedures) == 1
+        proc = doc.procedures[0]
+        assert len(proc.inline_errors) == 2, (
+            f"Expected 2 inline errors in procedure, got {len(proc.inline_errors)}"
+        )
+        assert proc.inline_errors[0].name == "data_corrupt"
+        assert proc.inline_errors[0].severity == "critical"
+        assert proc.inline_errors[1].name == "timeout"
+        assert proc.inline_errors[1].severity == "warning"
+        print("  PASS  test_inline_error_in_procedure")
+    finally:
+        os.unlink(path)
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Runner
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -1326,6 +1490,9 @@ def main():
         test_standard_section_requirements,
         test_error_when_clause,
         test_yaml_frontmatter_stripping,
+        test_parse_inline_error,
+        test_mixed_inline_and_compact_errors,
+        test_inline_error_in_procedure,
     ]
 
     passed = 0

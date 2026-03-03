@@ -1,6 +1,6 @@
 # SESF v4 Reference
 
-SESF v4 is a natural language for thinking programmatically. The precision comes from legal English conventions (MUST, SHOULD, MAY, CAN). Every line should read like an instruction to a competent human assistant. Non-programmers should be able to read or write SESF without programming experience.
+SESF v4 is a natural language for thinking programmatically. The precision comes from legal English conventions (MUST, SHOULD, MAY, CAN) and formal logic (IF/THEN, AND/OR, FOR EACH, first_match_wins). Every line should read like an instruction to a competent human assistant. Non-programmers should be able to read or write SESF without programming experience.
 
 This reference is organized in six parts:
 
@@ -22,8 +22,8 @@ These concepts apply to both BEHAVIOR and PROCEDURE blocks.
 | Tier     | Blocks Allowed                                      | Use When                                              | Target Length | Hybrid Elements |
 |----------|-----------------------------------------------------|-------------------------------------------------------|---------------|-----------------|
 | Micro    | 1 BEHAVIOR or 1 PROCEDURE                           | Single concern, 1-2 rules/steps                       | 20-40 lines   | Compact ERRORS/EXAMPLES optional; @config/@route not recommended |
-| Standard | Multiple BEHAVIORs and/or PROCEDUREs sharing types  | Multiple concerns                                     | 100-300 lines | All hybrid elements available; Notation section required |
-| Complex  | Everything + PRECEDENCE, State/Flow                  | Overlapping rules, state machines, mixed declarative+procedural | 300-600 lines | All hybrid elements available; Notation section required |
+| Standard | Multiple BEHAVIORs and/or PROCEDUREs sharing types  | Multiple concerns                                     | 100-300 lines | All hybrid elements available; Notation section optional |
+| Complex  | Everything + PRECEDENCE, State/Flow                  | Overlapping rules, state machines, mixed declarative+procedural | 300-600 lines | All hybrid elements available; Notation section optional |
 
 **Section ordering** (sections MUST appear in this order when present):
 
@@ -32,8 +32,8 @@ Meta, Notation, Purpose, Audience, Scope, Inputs, Outputs, @config, Types, Funct
 **Required sections per tier:**
 
 - **Micro**: Meta, Purpose, Behaviors/Procedures. Constraints is optional. Notation is optional.
-- **Standard**: Meta, Notation, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors/Procedures, Constraints, Dependencies. Audience and Changelog are optional.
-- **Complex**: All Standard sections plus Precedence. Audience is optional. Behaviors MAY include State/Flow subsections.
+- **Standard**: Meta, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors/Procedures, Constraints, Dependencies. Notation (optional). Audience and Changelog are optional.
+- **Complex**: All Standard sections plus Precedence. Notation (optional). Audience is optional. Behaviors MAY include State/Flow subsections.
 
 ### Meta Section Format
 
@@ -343,6 +343,9 @@ BEHAVIOR behavior_name: Brief description of what this behavior does
     SEVERITY critical | warning | info
     ACTION what_to_do
     MESSAGE "user-facing message"
+
+  -- Or use inline format for simple errors:
+  ERROR error_name: severity → action, "message"
 
   EXAMPLE example_name:
     INPUT: { concrete input data }
@@ -669,7 +672,7 @@ If you catch yourself writing programming syntax, you already know the natural w
 | All rules in one section, all errors in another | Group by behavior/procedure      |
 | `@route` with only 2 branches        | Use WHEN/THEN instead (threshold: 3+ branches) |
 | `$config` for runtime values          | Use $variable threading; @config is for static values only |
-| Omitting Notation section (Standard/Complex) | Required for human readability   |
+| Omitting Notation for human-audience specs | Notation helps human readers but is optional |
 
 ### Completeness Checklist
 
@@ -697,7 +700,7 @@ Before finalizing a spec, verify:
 - [ ] @config values referenced correctly ($config.key matches @config entries)
 - [ ] $variable references produced before use (document-global scope)
 - [ ] @route tables have wildcard default row
-- [ ] Notation section present (Standard/Complex tiers)
+- [ ] Notation section present if spec targets human readers
 - [ ] Validator runs clean: `python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <spec.md>`
 
 ---
@@ -707,10 +710,9 @@ Before finalizing a spec, verify:
 SESF v4 adds five structured notations for cases where compact syntax is more precise
 than prose. Each element is optional — use it when it reduces ambiguity.
 
-### Notation Section (Required for Standard/Complex tiers)
+### Notation Section (Optional)
 
-Every spec using hybrid elements MUST include a Notation section after the Meta block.
-This glossary bridges readability for non-technical readers.
+Specs MAY include a Notation section after the Meta block. It is optional but helpful for human readers.
 
 **Template:**
 
@@ -777,8 +779,8 @@ Precision
 * INDEPENDENTLY — no dependency between items
 ```
 
-Micro tier specs MAY omit the Notation section. When included at micro tier,
-it MAY use an abbreviated form covering only the categories actually used in that spec.
+Notation sections are optional at all tiers. When included, they bridge readability for human readers.
+When included at micro tier, it MAY use an abbreviated form covering only the categories actually used in that spec.
 
 ### @config — Centralized Parameters
 
@@ -904,9 +906,27 @@ PROCEDURE prepare_report: Generate and format the weekly sales report
     -- No output variable needed; this step produces the final file
 ```
 
-### Compact Error Tables
+### Error Formats
 
-Replaces verbose 4-line ERROR blocks when a block has multiple error cases.
+**Inline ERROR format (preferred):**
+
+Single-line error declarations. This SHOULD be the default format for error cases.
+
+**Syntax:**
+```
+ERROR error_name: severity → action, "message"
+```
+
+**Example:**
+```
+ERROR file_not_found: critical → halt and inform user, "File '{path}' not found."
+ERROR parse_error: warning → skip bad rows, "Skipped {count} malformed rows."
+ERROR empty_result: info → generate empty report, "No data for {date_range}. Empty report."
+```
+
+**Compact ERRORS table (alternative for backward compatibility):**
+
+An alternative tabular format accepted for multiple error cases in a single block.
 
 **Syntax:**
 ```
@@ -915,15 +935,6 @@ ERRORS:
 |------|------|----------|--------|---------|
 | error_name | condition | critical/warning/info | recovery action | "user message" |
 ```
-
-**Rules:**
-- All five columns are mandatory: name, when, severity, action, message
-- Severity values: `critical` (halt), `warning` (continue with degradation), `info` (log only)
-- Error tables can appear inside BEHAVIOR or PROCEDURE blocks
-- One row per error case
-- For complex recovery logic that needs multiple sentences, use a traditional ERROR block
-- `{variable}` in message strings indicates dynamic interpolation
-- Mixed usage allowed: a block can have both an error table AND individual ERROR blocks
 
 **Example:**
 ```
@@ -935,9 +946,17 @@ ERRORS:
 | empty_result     | query returns zero rows   | info     | generate empty report | "No data for {date_range}. Empty report."  |
 ```
 
+**Rules:**
+- Inline ERROR format SHOULD be preferred for simple error cases
+- ERRORS tables are accepted as an alternative, especially for blocks with many error cases
+- Use full multi-line ERROR blocks only for complex recovery logic that needs multiple sentences
+- Severity values: `critical` (halt), `warning` (continue with degradation), `info` (log only)
+- `{variable}` in message strings indicates dynamic interpolation
+- Mixed usage allowed: a block can combine inline errors, error tables, and full ERROR blocks
+
 ### Compact Examples
 
-Replaces multi-line EXAMPLE blocks for simple, self-evident test cases.
+Single-line format SHOULD be preferred for simple, self-evident test cases. Use full EXAMPLE blocks only when NOTES or multi-line INPUT/EXPECTED are needed.
 
 **Syntax:**
 ```
@@ -970,7 +989,7 @@ EXAMPLES:
 | Mixing $config.key and hardcoded values for same parameter | Move all instances to @config |
 | Error table with complex multi-sentence recovery | Use traditional ERROR block for that case |
 | $variable referenced but never produced | Every $var needs a STEP with → $var declaration |
-| Omitting Notation section in Standard/Complex tier | Required for human readability |
+| Omitting Notation for human-audience specs | Notation helps human readers but is optional |
 | "Process the files" (no quantifier) | "Process EACH file" or "Process ALL files" |
 | "If there are errors" (ambiguous quantifier) | "If ANY error exists" or "If EVERY check fails" |
 | "Don't process any files" (NOT + ANY = ambiguous) | "Process NONE of the files" or "SKIP ALL files" |
