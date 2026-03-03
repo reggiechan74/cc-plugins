@@ -299,20 +299,20 @@ Use backtick formatting for system tokens that are distinct from surrounding pro
 
 Backticks create a clear visual layer between "things in the system" and "English instructions about those things."
 
-**Bold for block keywords** (MAY):
+**Bold for block keywords** (SHOULD):
 
-Block keywords MAY use `**bold**` to stand out in rendered editors:
+Block keywords SHOULD use `**bold**` to stand out in rendered editors:
 - `**BEHAVIOR** validate_payment:` instead of `BEHAVIOR validate_payment:`
 - `**RULE** positive_amount:` instead of `RULE positive_amount:`
 - `**STEP** validate -> $eligibility` instead of `STEP validate -> $eligibility`
 
-**Heading syntax for sections** (MAY):
+**Heading syntax for sections** (SHOULD):
 
-Section headers MAY use markdown heading syntax for TOC navigation and collapsible sections:
+Section headers SHOULD use markdown heading syntax for TOC navigation and collapsible sections:
 - `### Behaviors` instead of `Behaviors`
 - `### Types` instead of `Types`
 
-Bold and heading formatting are optional. Specs MUST remain readable as plain text without rendering.
+Specs MUST remain readable as plain text without rendering.
 
 ---
 

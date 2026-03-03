@@ -432,9 +432,9 @@ BEHAVIOR ensure_quality: Validate the completed specification against SESF v4 st
     identifiers SHOULD use backtick formatting: `$variable` names, `@config` keys,
     `behavior_name` and `procedure_name` references, and literal values like `"error message"`
     -- backticks distinguish system tokens from surrounding prose in both raw and rendered markdown
-    AND section headers (Meta, Purpose, Behaviors, etc.) MAY use markdown `###` heading syntax
-    AND block keywords (BEHAVIOR, PROCEDURE, RULE, STEP) MAY use markdown `**bold**` syntax
-    -- heading and bold formatting are optional; they improve readability in rendered markdown editors
+    AND section headers (Meta, Purpose, Behaviors, etc.) SHOULD use markdown `###` heading syntax
+    AND block keywords (BEHAVIOR, PROCEDURE, RULE, STEP) SHOULD use markdown `**bold**` syntax
+    -- heading and bold formatting improve readability in rendered markdown editors
     -- but SESF specs MUST remain readable as plain text without rendering
 
   RULE run_validator:
