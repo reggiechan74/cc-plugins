@@ -285,6 +285,35 @@ EXAMPLE standard_pricing_fallback:
   NOTES: Non-gold customer gets standard pricing via ELSE branch
 ```
 
+### Markdown Formatting
+
+SESF specs are stored as `.md` files and are often read in markdown-rendering editors (VS Code, GitHub). Selective markdown formatting improves visual scanning without sacrificing plain-text readability.
+
+**Backticks for identifiers** (SHOULD):
+
+Use backtick formatting for system tokens that are distinct from surrounding prose:
+- `$variable` names: `$refund_amount`, `$eligibility`
+- `@config` keys: `$config.max_retries`, `$config.supported_currencies`
+- Block references: `validate_payment`, `process_refund`
+- Literal values: `"Currency required"`, `500`, `[CAD, USD, EUR]`
+
+Backticks create a clear visual layer between "things in the system" and "English instructions about those things."
+
+**Bold for block keywords** (MAY):
+
+Block keywords MAY use `**bold**` to stand out in rendered editors:
+- `**BEHAVIOR** validate_payment:` instead of `BEHAVIOR validate_payment:`
+- `**RULE** positive_amount:` instead of `RULE positive_amount:`
+- `**STEP** validate -> $eligibility` instead of `STEP validate -> $eligibility`
+
+**Heading syntax for sections** (MAY):
+
+Section headers MAY use markdown heading syntax for TOC navigation and collapsible sections:
+- `### Behaviors` instead of `Behaviors`
+- `### Types` instead of `Types`
+
+Bold and heading formatting are optional. Specs MUST remain readable as plain text without rendering.
+
 ---
 
 ## Part 2 -- Declarative Syntax
