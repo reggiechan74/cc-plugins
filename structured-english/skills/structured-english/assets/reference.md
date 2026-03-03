@@ -1,6 +1,6 @@
-# SESF v3 Reference
+# SESF v4 Reference
 
-SESF v3 is a natural language for thinking programmatically. The precision comes from legal English conventions (MUST, SHOULD, MAY, CAN). Every line should read like an instruction to a competent human assistant. Non-programmers should be able to read or write SESF without programming experience.
+SESF v4 is a natural language for thinking programmatically. The precision comes from legal English conventions (MUST, SHOULD, MAY, CAN). Every line should read like an instruction to a competent human assistant. Non-programmers should be able to read or write SESF without programming experience.
 
 This reference is organized in six parts:
 
@@ -19,21 +19,46 @@ These concepts apply to both BEHAVIOR and PROCEDURE blocks.
 
 ### Tier Comparison
 
-| Tier     | Blocks Allowed                                      | Use When                                              | Target Length |
-|----------|-----------------------------------------------------|-------------------------------------------------------|---------------|
-| Micro    | 1 BEHAVIOR or 1 PROCEDURE                           | Single concern, 1-2 rules/steps                       | 20-40 lines   |
-| Standard | Multiple BEHAVIORs and/or PROCEDUREs sharing types  | Multiple concerns                                     | 100-300 lines |
-| Complex  | Everything + PRECEDENCE, State/Flow                  | Overlapping rules, state machines, mixed declarative+procedural | 300-600 lines |
+| Tier     | Blocks Allowed                                      | Use When                                              | Target Length | Hybrid Elements |
+|----------|-----------------------------------------------------|-------------------------------------------------------|---------------|-----------------|
+| Micro    | 1 BEHAVIOR or 1 PROCEDURE                           | Single concern, 1-2 rules/steps                       | 20-40 lines   | Compact ERRORS/EXAMPLES optional; @config/@route not recommended |
+| Standard | Multiple BEHAVIORs and/or PROCEDUREs sharing types  | Multiple concerns                                     | 100-300 lines | All hybrid elements available; Notation section required |
+| Complex  | Everything + PRECEDENCE, State/Flow                  | Overlapping rules, state machines, mixed declarative+procedural | 300-600 lines | All hybrid elements available; Notation section required |
+
+**Section ordering** (sections MUST appear in this order when present):
+
+Meta, Notation, Purpose, Audience, Scope, Inputs, Outputs, @config, Types, Functions, Behaviors/Procedures, Constraints, Precedence, Dependencies, Changelog.
 
 **Required sections per tier:**
 
-- **Micro**: Meta, Purpose, Behaviors/Procedures. Constraints is optional.
-- **Standard**: Meta, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors/Procedures, Constraints, Dependencies. Changelog is optional.
-- **Complex**: All Standard sections plus Precedence. Behaviors MAY include State/Flow and Audience notes subsections.
+- **Micro**: Meta, Purpose, Behaviors/Procedures. Constraints is optional. Notation is optional.
+- **Standard**: Meta, Notation, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors/Procedures, Constraints, Dependencies. Audience and Changelog are optional.
+- **Complex**: All Standard sections plus Precedence. Audience is optional. Behaviors MAY include State/Flow subsections.
+
+### Meta Section Format
+
+**Standard/Complex tier** (multi-line):
+```
+Meta
+  Version: X.X.X
+  Date: YYYY-MM-DD
+  Domain: ...
+  Status: active
+  Tier: standard
+```
+
+**Micro tier** (pipe-delimited single line):
+```
+Meta: Version X.X.X | Date: YYYY-MM-DD | Domain: ... | Status: active | Tier: micro
+```
+
+The `Date` field always uses `YYYY-MM-DD` format with a colon separator in both forms.
 
 ### Requirement Keywords
 
-Use these keywords with precise meanings (always capitalize):
+Use these keywords with precise meanings. All operative terms MUST be capitalized when used as operative keywords.
+
+**Requirement Strength:**
 
 | Keyword    | Meaning |
 |------------|---------|
@@ -43,6 +68,72 @@ Use these keywords with precise meanings (always capitalize):
 | SHOULD NOT | Discouraged. Do only with documented reason. |
 | MAY        | Optional. Include if relevant or beneficial. |
 | CAN        | Capability. The system is able to do this. |
+
+**Quantifiers:**
+
+| Keyword    | Meaning |
+|------------|---------|
+| EACH       | One by one, sequentially. |
+| EVERY / ALL | Universal -- all items must satisfy the condition. |
+| ANY        | At least one item satisfies the condition. |
+| NONE       | Zero items satisfy the condition. Use instead of "not any" or "no [items]". |
+| EXACTLY N  | Precise count -- no more, no fewer. |
+| AT MOST N  | Upper bound -- N or fewer. |
+| AT LEAST N | Lower bound -- N or more. |
+
+**Logical Connectives:**
+
+| Keyword    | Meaning |
+|------------|---------|
+| AND        | Both conditions required. |
+| OR         | At least one condition (inclusive: A or B or both). |
+| EITHER...OR | Exactly one, not both (exclusive). |
+
+For compound grouping, use:
+- "ALL of the following:" for grouped AND
+- "ANY of the following:" for grouped OR
+
+**Negation:**
+
+Never combine NOT with EVERY/ALL/ANY -- rewrite using NONE or UNLESS:
+- Write "NONE of the files are processed" not "not any files are processed"
+- Write "SKIP invalid items" not "don't process invalid items"
+
+**Temporal:**
+
+| Keyword     | Meaning |
+|-------------|---------|
+| BEFORE      | Prerequisite -- must complete before this begins. |
+| AFTER       | Postcondition -- only begins after this completes. |
+| IMMEDIATELY | Next action, no intervening steps. |
+| EVENTUALLY  | At some future point, not necessarily next. |
+| ALWAYS      | Invariant -- condition holds continuously. |
+| UNTIL       | Condition holds up to a specified event. |
+
+**Conditions:**
+
+| Keyword       | Meaning |
+|---------------|---------|
+| UNLESS        | Exception to a rule. |
+| ONLY          | Exclusive restriction. |
+| ONLY WHEN     | Necessary condition (if and only if). |
+| REGARDLESS OF | Override a condition. |
+
+**Flow:**
+
+| Keyword              | Meaning |
+|----------------------|---------|
+| SKIP                 | Bypass the current item, continue with next. |
+| HALT                 | Stop all processing. |
+| RETRY [UP TO N TIMES] | Attempt again, with bounded retries. |
+
+**Precision:**
+
+| Keyword       | Meaning |
+|---------------|---------|
+| VERBATIM      | Character-for-character, no paraphrasing. |
+| SILENTLY      | Perform without reporting to user. |
+| INDEPENDENTLY | No dependency between items. |
 
 ### Logical Connectors
 
@@ -163,6 +254,20 @@ RULE apply_late_fee:
   THEN add_fee(invoice, 0.015)    -- 1.5% monthly late fee
 ```
 
+### Empty Section Stubs
+
+When a required section has no content, use the `-- none` stub with a brief reason:
+
+```
+Types
+-- none: all data structures are inline within behavior and procedure blocks
+
+Functions
+-- none: all logic is expressed directly in behavior rules and procedure steps
+```
+
+This prevents the validator from flagging empty required sections.
+
 ### Example Syntax
 
 Examples within a behavior or procedure demonstrate that block's rules, steps, and error cases.
@@ -248,6 +353,17 @@ RULE select_output_format:
   ELSE WHEN output = "json"    THEN add "--json"
   ELSE WHEN output = "schema"  THEN add "--output-schema <file>"
 ```
+
+### Decision Tables (@route)
+
+For conditionals with 3 or more branches, use an @route decision table instead of
+chained WHEN/THEN/ELSE WHEN blocks. See Part 6 for full @route syntax.
+
+A BEHAVIOR block MAY contain both:
+- @route tables for multi-branch classification (3+ branches)
+- WHEN/THEN rules for binary constraints
+
+The form is determined by branch count, not author preference.
 
 ### Severity Levels
 
@@ -335,6 +451,20 @@ Start with total at 0
 Calculate result as item.quantity times item.unit_price
 Record the customer name as input.first_name joined with input.last_name
 ```
+
+### Variable Threading ($variable)
+
+PROCEDURE steps can declare output variables using → $var syntax.
+All variables have document-global scope -- once produced by any STEP in any PROCEDURE,
+they are visible everywhere in the spec. See Part 6 for full $variable syntax.
+
+```
+STEP gather_data → $raw_sales, $date_range
+  Query the database → $raw_sales
+  Determine the date range → $date_range
+```
+
+Variable threading replaces prose like "record the result" with explicit declarations.
 
 ### Control Flow
 
@@ -508,6 +638,9 @@ If you catch yourself writing programming syntax, you already know the natural w
 | Nested conditionals 3+ deep          | Break into separate rules                   |
 | Ambiguous pronouns ("it", "this")    | Name the specific thing                     |
 | All rules in one section, all errors in another | Group by behavior/procedure      |
+| `@route` with only 2 branches        | Use WHEN/THEN instead (threshold: 3+ branches) |
+| `$config` for runtime values          | Use $variable threading; @config is for static values only |
+| Omitting Notation section (Standard/Complex) | Required for human readability   |
 
 ### Completeness Checklist
 
@@ -532,7 +665,11 @@ Before finalizing a spec, verify:
 - [ ] Reference/lookup data extracted to `assets/` if over 10 lines
 - [ ] PRECEDENCE declared if overlapping conditions exist (Complex)
 - [ ] State transitions explicitly name the from-state and to-state
-- [ ] Validator runs clean: `python3 scripts/validate_sesf.py <spec.md>`
+- [ ] @config values referenced correctly ($config.key matches @config entries)
+- [ ] $variable references produced before use (document-global scope)
+- [ ] @route tables have wildcard default row
+- [ ] Notation section present (Standard/Complex tiers)
+- [ ] Validator runs clean: `python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <spec.md>`
 
 ---
 
