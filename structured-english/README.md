@@ -40,6 +40,7 @@ Add the marketplace, then install the plugin:
 /write-spec payment webhook handler
 /write-spec email classification agent
 /assess-doc path/to/existing-document.md
+/update-spec path/to/old-v2-spec.md
 ```
 
 ### Natural language triggers
@@ -56,7 +57,7 @@ The skill activates automatically when you ask Claude to:
 | Component | Description |
 |-----------|-------------|
 | **Skill** | SESF v4 authoring rules -- tier selection, document structuring, BEHAVIOR and PROCEDURE composition, hybrid notation placement (@config, @route, $variable), quality assurance |
-| **Commands** | `/write-spec` -- guided specification creation workflow; `/assess-doc` -- evaluate whether an existing document would benefit from SESF conversion |
+| **Commands** | `/write-spec` -- guided specification creation workflow; `/assess-doc` -- evaluate whether an existing document would benefit from SESF conversion; `/update-spec` -- upgrade an existing SESF spec from any previous version to v4 |
 | **Validator** | `validate_sesf.py` -- structural validation with pass/fail/warning output, including hybrid notation checks |
 | **Templates** | Fill-in-the-blank starting points for micro, standard, and complex tiers with hybrid notation placeholders |
 | **Examples** | 7 complete specs covering all tiers and styles (see table below) |
