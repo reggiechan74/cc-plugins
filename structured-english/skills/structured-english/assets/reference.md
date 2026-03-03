@@ -536,7 +536,7 @@ Before finalizing a spec, verify:
 
 ---
 
-## Part 6: Hybrid Notation
+## Part 6 -- Hybrid Notation
 
 SESF v4 adds five structured notations for cases where compact syntax is more precise
 than prose. Each element is optional — use it when it reduces ambiguity.
