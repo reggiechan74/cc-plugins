@@ -25,7 +25,7 @@
     {
       "name": "google-workspace-mcp",
       "source": "./google-workspace-mcp",
-      "description": "Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code",
+      "description": "Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code. Features OAuth auto-refresh, retry with backoff, read-only tool annotations, and optimized API batching.",
       "version": "2.0.0"
     },
     {
