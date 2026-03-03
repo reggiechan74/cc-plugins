@@ -1,6 +1,6 @@
-# SESF v3 Complete Examples
+# SESF v4 Complete Examples
 
-Six complete specifications demonstrating every SESF v3 tier and style. Examples 1-3 are declarative (BEHAVIOR-centric), showing rules about what must be true. Examples 4-6 are procedural (PROCEDURE-centric), showing step-by-step processes. Together they cover the full range of SESF v3. Each is a working spec with concrete data, suitable as a reference when writing new specifications.
+Six complete specifications demonstrating every SESF v4 tier and style. Examples 1-3 are declarative (BEHAVIOR-centric), showing rules about what must be true. Examples 4-6 are procedural (PROCEDURE-centric), showing step-by-step processes. Together they cover the full range of SESF v4. Each is a working spec with concrete data, suitable as a reference when writing new specifications.
 
 ---
 
@@ -9,10 +9,12 @@ Six complete specifications demonstrating every SESF v3 tier and style. Examples
 ```
 Email Address Validator
 
-Meta: Version 1.0.0 | Date 2026-03-01 | Domain: Input Validation | Status: active | Tier: micro
+Meta: Version 1.0.0 | Date: 2026-03-01 | Domain: Input Validation | Status: active | Tier: micro
 
 Purpose
 Validate that a given string is a structurally valid email address before passing it to downstream systems.
+
+Behaviors
 
 BEHAVIOR validate_email: Check that an input string conforms to basic email address structure
 
@@ -24,22 +26,14 @@ BEHAVIOR validate_email: Check that an input string conforms to basic email addr
     THEN the portion after "@" MUST contain at least one "." character
          AND the portion after "@" MUST be at least 3 characters long
 
-  ERROR invalid_email:
-    WHEN input fails contains_at_sign OR has_domain
-    SEVERITY critical
-    ACTION reject input
-    MESSAGE "Invalid email address: does not meet structural requirements"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | invalid_email | input fails contains_at_sign OR has_domain | critical | reject input | "Invalid email address: does not meet structural requirements" |
 
-  EXAMPLE valid_email:
-    INPUT: "reggie.chan@tenebrus.ca"
-    EXPECTED: { "valid": true }
-    NOTES: Contains one @ with a valid domain portion (tenebrus.ca)
-
-  EXAMPLE missing_at_sign:
-    INPUT: "reggie.chan.tenebrus.ca"
-    EXPECTED: { "valid": false,
-                "error": "Invalid email address: does not meet structural requirements" }
-    NOTES: No @ character present — triggers contains_at_sign rule failure
+  EXAMPLES:
+    valid_email: input="reggie.chan@tenebrus.ca" → { "valid": true }
+    missing_at_sign: input="reggie.chan.tenebrus.ca" → rejected with "Invalid email address: does not meet structural requirements"
 
 Constraints
 * Validation is structural only — does not verify that the domain exists or accepts mail
@@ -50,14 +44,25 @@ Constraints
 ## Example 2: Standard Tier -- Commercial Lease Abstraction
 
 ```
-Commercial Lease Abstraction
+---
+name: lease-abstraction
+description: "Extract structured data from commercial lease PDFs"
+---
+
+# Commercial Lease Abstraction
 
 Meta
-* Version: 2.0.0
+* Version: 2.1.0
 * Date: 2026-03-01
 * Domain: Real Estate / Document Processing
 * Status: active
 * Tier: standard
+
+Notation
+* $ — references a variable or config value (e.g., $config.min_confidence)
+* @ — marks a structured block (@config for parameters, @route for decision tables)
+* → — means "produces" (in steps), "routes to" (in tables), or "yields" (in examples)
+* MUST/SHOULD/MAY/CAN — requirement strength keywords
 
 Purpose
 Extract structured data from commercial lease PDF documents to populate a standardized
@@ -78,6 +83,16 @@ Outputs
 * lease_data: LeaseData - structured lease information with all extracted fields
 * confidence: number - overall extraction confidence score (0.0 to 1.0)
 * warnings: list of string - issues encountered during extraction
+
+@config
+  min_confidence: 0.5
+  required_fields: [parties.landlord, parties.tenant, premises.address, premises.sqft, term.commencement, term.expiration, rent.base_amount]
+  sqft_range:
+    min: 100
+    max: 2000000
+  max_term_months: 300
+  output_format: json
+  currency_default: CAD
 
 Types
 
@@ -118,7 +133,7 @@ Term {
 Rent {
   base_amount: number, required
   period: enum [monthly, annual, psf_annual], required
-  currency: enum [CAD, USD], default: CAD
+  currency: enum [CAD, USD], default: $config.currency_default
   escalations: list of Escalation, optional
 }
 
@@ -149,6 +164,8 @@ FUNCTION confidence_score(extracted, required_fields):
   total = count of required_fields
   RETURNS found / total
 
+Behaviors
+
 BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease document
 
   RULE landlord_required:
@@ -159,21 +176,17 @@ BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease 
     parties.tenant MUST be present
     AND parties.tenant.name MUST NOT be empty
 
-  RULE entity_type_inference:
-    WHEN party name contains "Inc", "Corp", "Ltd", or "Limited"
-    THEN entity_type SHOULD be set to "Corporation"
+  @route entity_type_classification [first_match_wins]
+    party name contains "Inc", "Corp", "Ltd", or "Limited"  → set entity_type to "Corporation"
+    party name contains "LLC" or "L.L.C."                    → set entity_type to "LLC"
+    party name contains "LP" or "L.P." or "Partnership"      → set entity_type to "Partnership"
+    *                                                         → set entity_type to "Individual"
 
-  ERROR missing_landlord:
-    WHEN parties.landlord is null or parties.landlord.name is empty
-    SEVERITY critical
-    ACTION halt extraction
-    MESSAGE "Could not identify landlord in lease document"
-
-  ERROR missing_tenant:
-    WHEN parties.tenant is null or parties.tenant.name is empty
-    SEVERITY critical
-    ACTION halt extraction
-    MESSAGE "Could not identify tenant in lease document"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_landlord | parties.landlord is null or parties.landlord.name is empty | critical | halt extraction | "Could not identify landlord in lease document" |
+  | missing_tenant | parties.tenant is null or parties.tenant.name is empty | critical | halt extraction | "Could not identify tenant in lease document" |
 
   EXAMPLE successful_party_extraction:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -183,15 +196,10 @@ BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease 
         "tenant": { "name": "Northern Lights Coffee Inc.", "entity_type": "Corporation", "address": "456 Queen Street West, Toronto, ON M5V 2A8" }
       }
     }
-    NOTES: Both parties extracted with entity_type inferred from "Ltd." and "Inc."
+    NOTES: Both parties extracted with entity_type inferred from "Ltd." and "Inc." via @route entity_type_classification.
 
-  EXAMPLE missing_landlord_case:
-    INPUT: { "lease_pdf": "damaged_scan_lease.pdf" }
-    EXPECTED: {
-      "error": "Could not identify landlord in lease document",
-      "confidence": 0.0
-    }
-    NOTES: OCR damage obscured first page — landlord name unreadable. Extraction halts.
+  EXAMPLES:
+    missing_landlord_case: lease_pdf="damaged_scan_lease.pdf" → rejected with "Could not identify landlord in lease document"
 
 
 BEHAVIOR premises_extraction: Extract physical property details from the lease
@@ -204,14 +212,13 @@ BEHAVIOR premises_extraction: Extract physical property details from the lease
          AND premises.city MUST NOT be empty
 
   RULE sqft_reasonableness:
-    premises.sqft SHOULD be between 100 and 2000000
+    premises.sqft SHOULD be between $config.sqft_range.min and $config.sqft_range.max
     -- flag outliers for review
 
-  ERROR missing_sqft:
-    WHEN premises.sqft is null or premises.sqft = 0
-    SEVERITY warning
-    ACTION continue with flag
-    MESSAGE "Square footage not found -- may require manual review"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_sqft | premises.sqft is null or premises.sqft = 0 | warning | continue with flag | "Square footage not found -- may require manual review" |
 
   EXAMPLE complete_premises:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -219,18 +226,8 @@ BEHAVIOR premises_extraction: Extract physical property details from the lease
       "premises": { "address": "456 Queen Street West, Unit 2B", "city": "Toronto", "province_or_state": "ON", "postal_code": "M5V 2A8", "sqft": 3200, "unit": "2B", "permitted_use": "Retail food service and ancillary uses" }
     }
 
-  EXAMPLE missing_sqft_case:
-    INPUT: { "lease_pdf": "older_format_lease.pdf" }
-    EXPECTED: {
-      "premises": {
-        "address": "89 Wellington Street East",
-        "city": "Aurora",
-        "province_or_state": "ON",
-        "sqft": null
-      },
-      "warnings": ["Square footage not found -- may require manual review"]
-    }
-    NOTES: Older lease format did not include sqft. Extraction continues with warning.
+  EXAMPLES:
+    missing_sqft_case: lease_pdf="older_format_lease.pdf" → premises extracted with sqft=null and warning "Square footage not found -- may require manual review"
 
 
 BEHAVIOR term_extraction: Extract and validate lease commencement and expiration dates
@@ -242,14 +239,13 @@ BEHAVIOR term_extraction: Extract and validate lease commencement and expiration
     term.months MUST equal months_between(term.commencement, term.expiration)
 
   RULE term_reasonableness:
-    term.months SHOULD be between 1 and 300
+    term.months SHOULD be between 1 and $config.max_term_months
     -- flag unusual terms for review
 
-  ERROR date_parse_failure:
-    WHEN commencement or expiration date cannot be parsed from document text
-    SEVERITY critical
-    ACTION halt extraction
-    MESSAGE "Could not parse lease term dates from document"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | date_parse_failure | commencement or expiration date cannot be parsed from document text | critical | halt extraction | "Could not parse lease term dates from document" |
 
   EXAMPLE valid_five_year_term:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -262,12 +258,8 @@ BEHAVIOR term_extraction: Extract and validate lease commencement and expiration
     }
     NOTES: Standard 5-year commercial term. months_between(2026-07-01, 2031-06-30) = 60.
 
-  EXAMPLE invalid_dates_case:
-    INPUT: { "lease_pdf": "corrupted_dates_lease.pdf" }
-    EXPECTED: {
-      "error": "Could not parse lease term dates from document"
-    }
-    NOTES: Document contained handwritten date amendments that OCR could not resolve.
+  EXAMPLES:
+    invalid_dates_case: lease_pdf="corrupted_dates_lease.pdf" → rejected with "Could not parse lease term dates from document"
 
 
 BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation schedule
@@ -277,14 +269,13 @@ BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation sche
 
   RULE escalation_chronology:
     WHEN rent.escalations is present
-    THEN each escalation.effective_date MUST be after term.commencement
+    THEN EACH escalation.effective_date MUST be after term.commencement
     AND escalation dates MUST be in ascending order
 
-  ERROR missing_rent:
-    WHEN rent.base_amount is null or rent.base_amount <= 0
-    SEVERITY critical
-    ACTION halt extraction
-    MESSAGE "Could not extract base rent amount from document"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_rent | rent.base_amount is null or rent.base_amount <= 0 | critical | halt extraction | "Could not extract base rent amount from document" |
 
   EXAMPLE psf_rent_with_escalations:
     INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
@@ -303,36 +294,21 @@ BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation sche
     }
     NOTES: $32.50 PSF with ~3% annual escalations. annual_rent(rent, 3200) = $104,000 in year one.
 
-  EXAMPLE monthly_rent_no_escalations:
-    INPUT: { "lease_pdf": "simple_retail_lease.pdf" }
-    EXPECTED: {
-      "rent": {
-        "base_amount": 4500.00,
-        "period": "monthly",
-        "currency": "CAD",
-        "escalations": []
-      }
-    }
-    NOTES: Flat $4,500/month with no escalations. annual_rent(rent, null) = $54,000.
+  EXAMPLES:
+    monthly_rent_no_escalations: lease_pdf="simple_retail_lease.pdf" → rent extracted with base_amount=4500.00, period="monthly", escalations=[]
 
 
 BEHAVIOR confidence_scoring: Compute overall extraction confidence based on field completeness
 
   RULE confidence_calculation:
-    confidence MUST equal confidence_score(lease_data, [parties.landlord, parties.tenant, premises.address, premises.sqft, term.commencement, term.expiration, rent.base_amount])
+    confidence MUST equal confidence_score(lease_data, $config.required_fields)
 
   RULE confidence_range:
     confidence MUST be between 0.0 and 1.0
 
-  EXAMPLE high_confidence:
-    INPUT: { "extracted_fields": ["parties.landlord", "parties.tenant", "premises.address", "premises.sqft", "term.commencement", "term.expiration", "rent.base_amount"] }
-    EXPECTED: { "confidence": 1.0 }
-    NOTES: All 7 required fields extracted. 7/7 = 1.0.
-
-  EXAMPLE low_confidence:
-    INPUT: { "extracted_fields": ["parties.tenant", "premises.address", "rent.base_amount"] }
-    EXPECTED: { "confidence": 0.43 }
-    NOTES: Only 3 of 7 required fields found. 3/7 = 0.43. Missing landlord, sqft, and both dates.
+  EXAMPLES:
+    high_confidence: all 7 required fields extracted → { "confidence": 1.0 }
+    low_confidence: only 3 of 7 required fields found → { "confidence": 0.43 }
 
 Constraints
 * Extraction MUST handle PDFs up to 200 pages
@@ -352,14 +328,25 @@ Dependencies
 ## Example 3: Complex Tier -- Purchase Order Approval Workflow
 
 ```
-Purchase Order Approval Workflow
+---
+name: po-approval
+description: "Route purchase orders through approval chains based on amount thresholds and urgency"
+---
+
+# Purchase Order Approval Workflow
 
 Meta
-* Version: 2.1.0
+* Version: 3.0.0
 * Date: 2026-03-01
 * Domain: Finance / Procurement
 * Status: active
 * Tier: complex
+
+Notation
+* $ — references a variable or config value (e.g., $config.thresholds.tier_1)
+* @ — marks a structured block (@config for parameters, @route for decision tables)
+* → — means "produces" (in steps), "routes to" (in tables), or "yields" (in examples)
+* MUST/SHOULD/MAY/CAN — requirement strength keywords
 
 Purpose
 Route purchase order requests through the appropriate approval chain based on dollar
@@ -367,19 +354,19 @@ thresholds, department policies, and urgency levels. Manage notification dispatc
 timeout escalation, and state transitions to ensure proper financial controls while
 allowing emergency overrides for time-critical needs.
 
-Scope
-* IN SCOPE: PO validation, approval routing by amount threshold, emergency override,
-  notification dispatch (sequential and parallel), timeout escalation, state management
-* OUT OF SCOPE: Purchase order creation UI, vendor management, payment processing,
-  budget tracking, three-way matching
-
 Audience
 * AI agents: This spec drives an automated workflow engine. Each behavior is
   self-contained. Process behaviors in PRECEDENCE order when a PO enters the system.
 * Human reviewers: Start with approval_routing to understand threshold logic,
   then read notification_dispatch and timeout_escalation for the async flow.
-* Administrators: Threshold amounts and timeout durations are defined as constants
-  in the rules. Adjust these values when corporate policy changes.
+* Administrators: Threshold amounts and timeout durations are in @config.
+  Adjust these values when corporate policy changes.
+
+Scope
+* IN SCOPE: PO validation, approval routing by amount threshold, emergency override,
+  notification dispatch (sequential and parallel), timeout escalation, state management
+* OUT OF SCOPE: Purchase order creation UI, vendor management, payment processing,
+  budget tracking, three-way matching
 
 Inputs
 * purchase_order: PurchaseOrder - the PO requiring approval - required
@@ -390,6 +377,24 @@ Outputs
 * approval_status: ApprovalStatus - current workflow state and next steps
 * approval_chain: list of Approver - ordered list of approvers with their decisions
 * notifications: list of Notification - all messages dispatched during the workflow
+
+@config
+  thresholds:
+    tier_1: 5000
+    tier_2: 25000
+    tier_3: 100000
+    emergency_max: 10000
+  timeouts:
+    standard_hours: 48
+    standard_reminder_hours: 24
+    urgent_hours: 4
+    emergency_hours: 2
+  notification:
+    max_retries: 3
+    dispatch_deadline_seconds: 60
+  escalation:
+    final_fallback: usr_cfo
+  budget_code_pattern: "[A-Z]{2}-[0-9]{4}-[0-9]{3}"
 
 Types
 
@@ -445,12 +450,14 @@ FUNCTION get_department_head(department):
 
 FUNCTION calculate_timeout(urgency):
   IF urgency = "standard" THEN
-    timeout = 48 hours
+    timeout = $config.timeouts.standard_hours hours
   ELSE IF urgency = "urgent" THEN
-    timeout = 4 hours
+    timeout = $config.timeouts.urgent_hours hours
   ELSE IF urgency = "emergency" THEN
-    timeout = 2 hours
+    timeout = $config.timeouts.emergency_hours hours
   RETURNS timeout
+
+Behaviors
 
 BEHAVIOR request_validation: Validate that a purchase order has all required fields
   and a valid budget code before entering the approval workflow
@@ -462,7 +469,7 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     AND purchase_order.amount MUST be greater than zero
 
   RULE budget_code_valid:
-    purchase_order.budget_code MUST match pattern "[A-Z]{2}-[0-9]{4}-[0-9]{3}"
+    purchase_order.budget_code MUST match pattern $config.budget_code_pattern
     -- Format: two-letter department prefix, four-digit cost center, three-digit account code
     -- Example: EN-4200-310 = Engineering, cost center 4200, account 310
 
@@ -470,19 +477,11 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     requester.manager_id MUST NOT be null
     -- Every PO needs at least one approver in the chain
 
-  ERROR missing_required_fields:
-    WHEN any of vendor, description, justification, or amount fails validation
-    SEVERITY critical
-    ACTION reject PO and return to requester
-    MESSAGE "Purchase order is incomplete.
-             All fields (vendor, description, justification, amount) are required."
-
-  ERROR invalid_budget_code:
-    WHEN purchase_order.budget_code does not match required pattern
-    SEVERITY critical
-    ACTION reject PO and return to requester
-    MESSAGE "Budget code format invalid.
-             Expected format: XX-0000-000 (e.g., EN-4200-310)."
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_required_fields | any of vendor, description, justification, or amount fails validation | critical | reject PO and return to requester | "Purchase order is incomplete. All fields (vendor, description, justification, amount) are required." |
+  | invalid_budget_code | purchase_order.budget_code does not match $config.budget_code_pattern | critical | reject PO and return to requester | "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)." |
 
   EXAMPLE valid_request:
     INPUT: {
@@ -496,62 +495,19 @@ BEHAVIOR request_validation: Validate that a purchase order has all required fie
     }
     EXPECTED: { "validation": "passed", "next": "approval_routing" }
 
-  EXAMPLE invalid_budget_code:
-    INPUT: {
-      "purchase_order": {
-        "id": "PO-2026-00848", "amount": 3200.00, "vendor": "Staples Business Advantage",
-        "description": "Office furniture for boardroom refresh",
-        "department": "Operations", "justification": "Boardroom chairs past useful life",
-        "budget_code": "OPS-42"
-      },
-      "requester": { "id": "usr_205", "name": "Marcus Chen", "email": "marcus.chen@company.ca", "department": "Operations", "manager_id": "usr_088" }
-    }
-    EXPECTED: { "validation": "failed", "error": "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)." }
-    NOTES: "OPS-42" does not match the required pattern [A-Z]{2}-[0-9]{4}-[0-9]{3}.
+  EXAMPLES:
+    invalid_budget_code_case: budget_code="OPS-42" → rejected with "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)."
 
 
 BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
   then route for review. Emergency purchases bypass the standard chain.
 
-  State: pending -> in_review -> approved | rejected | info_requested
-
-  RULE emergency_override:
-    WHEN urgency = "emergency"
-         AND purchase_order.amount <= 10000
-    THEN approval_chain = [get_department_head(purchase_order.department)]
-         AND approval_status.state = "in_review"
-    PRIORITY 1
-
-  RULE amount_threshold_1:
-    WHEN purchase_order.amount <= 5000
-    THEN approval_chain = [requester.manager_id]
-         AND approval_status.state = "in_review"
-    PRIORITY 5
-
-  RULE amount_threshold_2:
-    WHEN purchase_order.amount > 5000
-         AND purchase_order.amount <= 25000
-    THEN approval_chain = [requester.manager_id,
-                           get_department_head(purchase_order.department)]
-         AND approval_status.state = "in_review"
-    PRIORITY 6
-
-  RULE amount_threshold_3:
-    WHEN purchase_order.amount > 25000
-         AND purchase_order.amount <= 100000
-    THEN approval_chain = [requester.manager_id,
-                           get_department_head(purchase_order.department),
-                           "usr_finance_director"]
-         AND approval_status.state = "in_review"
-    PRIORITY 7
-
-  RULE amount_threshold_4:
-    WHEN purchase_order.amount > 100000
-    THEN approval_chain = [requester.manager_id,
-                           get_department_head(purchase_order.department),
-                           "usr_finance_director", "usr_cfo"]
-         AND approval_status.state = "in_review"
-    PRIORITY 8
+  @route approval_chain_assignment [first_match_wins]
+    urgency = "emergency" AND amount <= $config.thresholds.emergency_max  → chain = [department_head] (emergency override)
+    amount <= $config.thresholds.tier_1                                   → chain = [manager]
+    amount <= $config.thresholds.tier_2                                   → chain = [manager, department_head]
+    amount <= $config.thresholds.tier_3                                   → chain = [manager, department_head, finance_director]
+    *                                                                     → chain = [manager, department_head, finance_director, $config.escalation.final_fallback]
 
   RULE chain_progression:
     WHEN current approver decision = "approved" AND next approver exists in chain
@@ -562,15 +518,14 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
     THEN approval_status.state = "approved"
 
   RULE any_rejection:
-    WHEN any approver decision = "rejected"
+    WHEN ANY approver decision = "rejected"
     THEN approval_status.state = "rejected"
     AND remaining approvers are not consulted
 
-  ERROR missing_manager:
-    WHEN requester.manager_id is null AND urgency != "emergency"
-    SEVERITY critical
-    ACTION halt workflow
-    MESSAGE "Requester has no manager assigned. Cannot build approval chain."
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | missing_manager | requester.manager_id is null AND urgency != "emergency" | critical | halt workflow | "Requester has no manager assigned. Cannot build approval chain." |
 
   EXAMPLE small_purchase_single_approver:
     INPUT: {
@@ -584,7 +539,7 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
         { "user_id": "usr_220", "role": "Direct Manager", "level": 1, "decision": "pending" }
       ]
     }
-    NOTES: $2,800 <= $5,000 threshold. Single approver: direct manager only.
+    NOTES: $2,800 <= $config.thresholds.tier_1 ($5,000). Single approver: direct manager only.
 
   EXAMPLE large_purchase_three_approvers:
     INPUT: {
@@ -600,7 +555,7 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
         { "user_id": "usr_finance_director", "role": "Finance Director", "level": 3, "decision": "pending" }
       ]
     }
-    NOTES: $67,000 falls in the $25K-$100K band. Three approvers required, processed sequentially.
+    NOTES: $67,000 falls in the $25K-$100K band via @route. Three approvers required, processed sequentially.
 
   EXAMPLE emergency_override_to_department_head:
     INPUT: {
@@ -614,39 +569,33 @@ BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
         { "user_id": "usr_ops_head", "role": "Department Head", "level": 1, "decision": "pending" }
       ]
     }
-    NOTES: Emergency + amount <= $10K triggers PRIORITY 1 override.
+    NOTES: Emergency + amount <= $config.thresholds.emergency_max ($10K) triggers first @route row.
            Bypasses manager, routes directly to department head. 2-hour timeout applies.
+
+  State/Flow
+    pending -> in_review: WHEN approval_chain_assignment matches and approver(s) notified
+    in_review -> approved: WHEN last approver in chain decision = "approved"
+    in_review -> rejected: WHEN ANY approver decision = "rejected"
+    in_review -> info_requested: WHEN ANY approver requests additional information
 
 
 BEHAVIOR notification_dispatch: Send approval request notifications to the
   appropriate approvers. Standard urgency uses sequential notification; urgent
   uses parallel.
 
-  RULE standard_sequential:
-    WHEN urgency = "standard"
-    THEN notify only the current approver in the chain
-         AND do not notify subsequent approvers until the current one decides
-
-  RULE urgent_parallel:
-    WHEN urgency = "urgent"
-    THEN notify all approvers in the chain simultaneously
-         AND all approvers MUST approve for the PO to be approved
-    PRIORITY 2
-
-  RULE emergency_immediate:
-    WHEN urgency = "emergency"
-    THEN notify the single approver immediately
-    AND include "EMERGENCY" prefix in message subject
+  @route notification_strategy [first_match_wins]
+    urgency = "standard"   → notify only the current approver; wait for decision before notifying next
+    urgency = "urgent"     → notify ALL approvers simultaneously; ALL MUST approve
+    urgency = "emergency"  → notify the single approver IMMEDIATELY with "EMERGENCY" prefix
+    *                      → notify only the current approver (fallback to sequential)
 
   RULE notification_content:
     notification.message MUST include PO id, amount, vendor, and requester name
 
-  ERROR notification_send_failure:
-    WHEN notification delivery fails after 3 retry attempts
-    SEVERITY warning
-    ACTION log failure, continue workflow, alert system administrator
-    MESSAGE "Failed to deliver notification to {recipient_email}
-             after 3 attempts"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | notification_send_failure | notification delivery fails after $config.notification.max_retries retry attempts | warning | log failure, continue workflow, alert system administrator | "Failed to deliver notification to {recipient_email} after {$config.notification.max_retries} attempts" |
 
   EXAMPLE standard_sequential_notification:
     INPUT: {
@@ -659,7 +608,7 @@ BEHAVIOR notification_dispatch: Send approval request notifications to the
         { "id": "ntf_90001", "recipient_email": "tom.park@company.ca", "type": "approval_request", "po_id": "PO-2026-00851", "sent_at": "2026-03-01T09:15:00-05:00", "message": "Approval required: PO-2026-00851 for $2,800.00 from Staples Business Advantage, submitted by Dana Williams." }
       ]
     }
-    NOTES: Standard urgency -- only the current approver is notified. Next approver waits.
+    NOTES: Standard urgency via @route notification_strategy -- only the current approver is notified. Next approver waits.
 
   EXAMPLE urgent_parallel_notification:
     INPUT: {
@@ -678,39 +627,23 @@ BEHAVIOR notification_dispatch: Send approval request notifications to the
         { "id": "ntf_90004", "recipient_email": "finance.director@company.ca", "type": "approval_request", "sent_at": "2026-03-01T09:15:01-05:00" }
       ]
     }
-    NOTES: Urgent — all three approvers notified simultaneously
-           with identical URGENT-prefixed messages. All must approve.
+    NOTES: Urgent via @route notification_strategy -- all three approvers notified
+           simultaneously with URGENT-prefixed messages. ALL MUST approve.
 
 
 BEHAVIOR timeout_escalation: Escalate to the next level of management when an
   approver does not respond within the timeout window defined by urgency level.
 
-  RULE standard_timeout:
-    WHEN urgency = "standard"
-         AND current approver has not responded within 48 hours
-    THEN send reminder notification to current approver
-         AND if no response within additional 24 hours,
-             escalate to current approver's manager
+  @route escalation_action [first_match_wins]
+    urgency = "standard" AND no response within $config.timeouts.standard_hours hours    → send reminder; if no response within additional $config.timeouts.standard_reminder_hours hours, escalate to approver's manager
+    urgency = "urgent" AND no response within $config.timeouts.urgent_hours hours        → escalate IMMEDIATELY to approver's manager
+    urgency = "emergency" AND no response within $config.timeouts.emergency_hours hours  → escalate to $config.escalation.final_fallback with "EMERGENCY ESCALATION" prefix
+    *                                                                                     → no action (timeout not yet reached)
 
-  RULE urgent_timeout:
-    WHEN urgency = "urgent"
-         AND any approver has not responded within 4 hours
-    THEN escalate immediately to that approver's manager
-         AND send escalation notification
-
-  RULE emergency_timeout:
-    WHEN urgency = "emergency"
-         AND approver has not responded within 2 hours
-    THEN escalate to CFO directly
-         AND send escalation notification with "EMERGENCY ESCALATION" prefix
-
-  ERROR approver_unavailable:
-    WHEN escalation target (approver's manager) is also unavailable
-         or has no manager_id
-    SEVERITY critical
-    ACTION escalate to CFO as final fallback, alert system administrator
-    MESSAGE "Approval chain broken: no available escalation target
-             for PO {po_id}"
+  ERRORS:
+  | name | when | severity | action | message |
+  |------|------|----------|--------|---------|
+  | approver_unavailable | escalation target (approver's manager) is also unavailable or has no manager_id | critical | escalate to $config.escalation.final_fallback as final fallback, alert system administrator | "Approval chain broken: no available escalation target for PO {po_id}" |
 
   EXAMPLE standard_timeout_escalation:
     INPUT: {
@@ -727,53 +660,44 @@ BEHAVIOR timeout_escalation: Escalate to the next level of management when an
         "message": "Reminder: PO-2026-00851 for $2,800.00 is awaiting your approval. Please respond within 24 hours to avoid escalation."
       }
     }
-    NOTES: 49 hours > 48-hour threshold. Reminder sent first. If no response by hour 72, escalation to usr_sales_head occurs.
+    NOTES: 49 hours > $config.timeouts.standard_hours (48). Reminder sent first.
+           If no response by hour 72, escalation to usr_sales_head occurs.
 
-  EXAMPLE urgent_escalation:
-    INPUT: {
-      "po_id": "PO-2026-00852",
-      "current_approver": { "user_id": "usr_102", "manager_id": "usr_eng_head" },
-      "urgency": "urgent",
-      "time_since_notification": "5 hours"
-    }
-    EXPECTED: {
-      "action": "escalated",
-      "escalated_to": "usr_eng_head",
-      "notification": {
-        "recipient_email": "engineering.head@company.ca",
-        "type": "escalation",
-        "message": "ESCALATION: PO-2026-00852 for $67,000.00 has not been actioned by Raj Kumar within the 4-hour urgent window. Your approval is required."
-      }
-    }
-    NOTES: 5 hours > 4-hour urgent threshold. Immediate escalation to approver's manager.
+  EXAMPLES:
+    urgent_escalation: po_id="PO-2026-00852", urgency="urgent", time_since_notification="5 hours" → escalated to usr_eng_head with "ESCALATION" prefix
+
+Precedence
 
 PRECEDENCE:
-  1. emergency_override (from BEHAVIOR approval_routing)
-  2. urgent_parallel (from BEHAVIOR notification_dispatch)
-  3. amount_threshold_4 (from BEHAVIOR approval_routing)
-  4. amount_threshold_3 (from BEHAVIOR approval_routing)
-  5. amount_threshold_2 (from BEHAVIOR approval_routing)
-  6. amount_threshold_1 (from BEHAVIOR approval_routing)
+  1. required_fields (from BEHAVIOR request_validation)
+  2. budget_code_valid (from BEHAVIOR request_validation)
+  3. approval_chain_assignment (from BEHAVIOR approval_routing)
+  4. notification_strategy (from BEHAVIOR notification_dispatch)
+  5. escalation_action (from BEHAVIOR timeout_escalation)
+  6. chain_progression (from BEHAVIOR approval_routing)
+  7. any_rejection (from BEHAVIOR approval_routing)
 
 Constraints
 * Approval decisions MUST be recorded with timestamp
   and persisted to survive system restarts
-* Notifications MUST be dispatched within 60 seconds of a state change
-* Timeout checks MUST run on a recurring schedule (every 15 minutes minimum)
+* Notifications MUST be dispatched within $config.notification.dispatch_deadline_seconds seconds of a state change
+* Timeout checks MUST run on a recurring schedule (EVERY 15 minutes at minimum)
 * All monetary amounts MUST be displayed with two decimal places and currency code
 * A user MUST NOT appear more than once in the same approval chain
-* Emergency override MUST NOT apply to POs exceeding $10,000
+* Emergency override MUST NOT apply to POs exceeding $config.thresholds.emergency_max
 
 Dependencies
 * org_directory service for manager lookups and department head resolution
-* budget_code registry for validation against pattern
-  [A-Z]{2}-[0-9]{4}-[0-9]{3}
+* budget_code registry for validation against $config.budget_code_pattern
 * notification service (email gateway) with retry capability
 * workflow state persistence store (database or durable queue)
 * scheduled job runner for timeout escalation checks
 
 Changelog
-* 2.1.0: 2026-03-01 - Migrated to SESF v2 behavior-centric format.
+* 3.0.0: 2026-03-01 - Migrated to SESF v4 hybrid notation. Added @config, @route
+  tables, compact ERRORS, Notation section, State/Flow subsections, and updated
+  PRECEDENCE to reference only BEHAVIOR rules.
+* 2.1.0: 2026-02-15 - Migrated to SESF v2 behavior-centric format.
   Added PRECEDENCE block and explicit PRIORITY tags to approval_routing rules.
 * 2.0.0: 2026-01-18 - Added emergency override rule for amounts under $10K.
   Added timeout escalation behavior.
