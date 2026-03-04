@@ -16,7 +16,7 @@ Use the `structured-english` skill — it contains all the rules, formats, and v
 
 ### Step 2: Gather Requirements
 
-If the user provided a domain/topic in the arguments, use that. Otherwise, ask:
+Always ask all three questions, even if the user provided a domain/topic in the arguments (use it as a starting point but confirm):
 
 1. **Domain**: "What system or process should this specification define?"
 2. **Nature**: "Is this primarily declarative rules (conditions that produce different outcomes) or a step-by-step workflow (do this, then this), or a mix of both?"
@@ -26,7 +26,7 @@ If the user provided a domain/topic in the arguments, use that. Otherwise, ask:
 
 Based on the requirements, select the appropriate SESF tier:
 
-- **Micro**: Single BEHAVIOR or single PROCEDURE, 1-2 rules/steps, 20-40 lines
+- **Micro**: Single BEHAVIOR or single PROCEDURE containing 1-2 rules/steps within it, 20-40 lines
 - **Standard**: Multiple BEHAVIORs and/or PROCEDUREs sharing types, 100-300 lines. Requires a Notation section defining any symbols used.
 - **Complex**: Overlapping rules, state machines, mixed declarative+procedural, 300-600 lines. Requires a Notation section defining any symbols used.
 
@@ -47,6 +47,8 @@ Also consider hybrid elements that reduce boilerplate:
 
 A spec can use any combination of these. If unsure about tier, default to standard.
 
+Present the selected tier and block types to the user for confirmation before proceeding to write the specification.
+
 ### Step 4: Write the Specification
 
 1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/template.md`
@@ -55,7 +57,11 @@ A spec can use any combination of these. If unsure about tier, default to standa
 4. Use concrete values in all examples — never placeholders
 5. Use natural English throughout — every line should read like an instruction to a human assistant, not programming syntax
 
-### Step 5: Validate
+### Step 5: Review
+
+Present the finished specification to the user for review before saving. Allow them to request changes before proceeding.
+
+### Step 6: Validate
 
 Run the structural validator:
 
@@ -63,8 +69,8 @@ Run the structural validator:
 python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <output-file>
 ```
 
-Fix any failures. Warnings about example count are acceptable.
+Show the validation results to the user. If there are failures, present each proposed fix and ask the user to approve before applying — especially when a fix would change something the user explicitly requested. Warnings about example count are acceptable.
 
-### Step 6: Save
+### Step 7: Save
 
-Ask the user where to save the specification, or use a sensible default based on the domain name (e.g., `<domain>-spec.md`).
+Ask the user where to save the specification, or suggest a default based on the domain name (e.g., `<domain>-spec.md`). If the target file already exists, ask the user whether to overwrite it or save to a different path.
