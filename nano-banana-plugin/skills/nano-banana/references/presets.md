@@ -346,6 +346,17 @@ Photography presets generate photorealistic images across portrait, lifestyle, a
 
 ---
 
+#### sketchnotes
+
+- **Slug:** `sketchnotes`
+- **Default Aspect:** 4:3
+- **Default Size:** 2K
+- **Prompt Prefix:** "Sketchnote visual note on white paper: hand-drawn marker illustration in Mike Rohde sketchnote style, bold Neuland-style block lettering mixed with casual handwritten script, thick and thin stroke variation from marker pressure, black ink base with limited 3-color highlight palette using warm accent tones, visual elements including arrows, speech bubbles, banners, divider lines, and small spot illustrations, concept clusters connected by directional flows and dotted paths, size hierarchy emphasizing key ideas over supporting detail, visual metaphors and icons replacing text where possible, structured spatial zones with organic layout, RSA Animate or visual facilitation quality, sketchnote conference notes aesthetic. "
+- **When to Use:** Capturing and communicating ideas from presentations, lectures, book summaries, workshops, and meetings. Effective for concept maps, learning artifacts, and visual storytelling where combining text and illustration improves retention and engagement.
+- **Tips:** Name the topic or domain explicitly so spot illustrations use contextually appropriate icons (e.g., "sketchnote of agile software development: sprints, retrospectives, user stories"). Specify the number of key concepts to guide spatial density (e.g., "5 main ideas with supporting details"). Add "portrait orientation A4 page layout" for tall document formats or "landscape presentation slide layout" for horizontal display.
+
+---
+
 ## Customization Guide
 
 Presets establish a strong default style foundation. Three techniques allow precise customization without abandoning the preset's structure.
