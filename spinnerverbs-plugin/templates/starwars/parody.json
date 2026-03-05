@@ -1,0 +1,32 @@
+{
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "May the Force be with you... and also the context window",
+      "I am your father... process",
+      "Do or do not, there is no try-catch",
+      "These aren't the tokens you're looking for",
+      "I've got a bad feeling about this merge conflict",
+      "The Force is strong with this pull request",
+      "It's a trap!... in the dependency tree",
+      "Never tell me the token odds",
+      "Help me, Claude, you're my only hope",
+      "Use the Force, Luke... or just use grep",
+      "I am the Senate... of sub-agents",
+      "This is where the fun begins... initializing tools",
+      "In my experience, there's no such thing as a clean build",
+      "Great output. Don't get cocky",
+      "Chewie, we're home... in the codebase",
+      "Stay on target... file",
+      "The Dark Side clouds everything... including my context",
+      "Judge me by my token count, do you?",
+      "Punch it!... send the API request",
+      "I find your lack of tests disturbing",
+      "Strike me down and I will become a background task",
+      "The refactor is now complete",
+      "I know... I read the file",
+      "Hello there... tool call incoming",
+      "Your prompt determines your reality"
+    ]
+  }
+}
