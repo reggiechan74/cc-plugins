@@ -5,7 +5,7 @@ description: This skill should be used when the user asks to "generate an image"
 
 ## Purpose
 
-Generate and edit images via the Gemini REST API using the Python script at `scripts/nano_banana.py` (relative to this skill's base directory). Support 25 style presets across 6 categories (Technical, Business, Creative, UI/UX, Photography, Specialized) to produce consistently styled output without manual prompt engineering. Configure aspect ratios from 14 available options and resolution tiers ranging from 512px to 4K to match any output target.
+Generate and edit images via the Gemini REST API using the Python script at `scripts/nano_banana.py` (relative to this skill's base directory). Support 26 style presets across 6 categories (Technical, Business, Creative, UI/UX, Photography, Specialized) to produce consistently styled output without manual prompt engineering. Configure aspect ratios from 14 available options and resolution tiers ranging from 512px to 4K to match any output target.
 
 ## Prerequisites
 
@@ -88,6 +88,7 @@ Note: Preset defaults for aspect/size apply only when not explicitly overridden 
 | Photography | `lifestyle` | 3:2 | 2K |
 | Photography | `architectural-viz` | 16:9 | 4K |
 | Specialized | `storyboard` | 16:9 | 2K |
+| Specialized | `sketchnotes` | 4:3 | 2K |
 
 ## Available Aspect Ratios
 
