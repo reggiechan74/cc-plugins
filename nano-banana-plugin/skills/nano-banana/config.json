@@ -155,6 +155,12 @@
       "prompt_prefix": "Storyboard panel for film production: dynamic sketch-style illustration with confident ink linework, panel border with shot type label (WS/MS/CU/ECU) in corner, camera movement arrows and direction annotations, clear character staging and blocking, dramatic perspective matching the shot type, light/shadow indication with quick hatching, sequential narrative clarity, Ridley Scott or Spielberg production quality storyboard, action lines for movement. ",
       "default_aspect": "16:9",
       "default_size": "2K"
+    },
+    "sketchnotes": {
+      "category": "Specialized",
+      "prompt_prefix": "Sketchnote visual note on white paper: hand-drawn marker illustration in Mike Rohde sketchnote style, bold Neuland-style block lettering mixed with casual handwritten script, thick and thin stroke variation from marker pressure, black ink base with limited 3-color highlight palette using warm accent tones, visual elements including arrows, speech bubbles, banners, divider lines, and small spot illustrations, concept clusters connected by directional flows and dotted paths, size hierarchy emphasizing key ideas over supporting detail, visual metaphors and icons replacing text where possible, structured spatial zones with organic layout, RSA Animate or visual facilitation quality, sketchnote conference notes aesthetic. ",
+      "default_aspect": "4:3",
+      "default_size": "2K"
     }
   }
 }

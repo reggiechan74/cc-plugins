@@ -149,7 +149,7 @@ The deck spec is the contract between this skill and nano-banana's `--deck` mode
 ```json
 {
   "title": "string -- Deck title, displayed in logs and used for output directory naming",
-  "presentation_config": "string -- Preset name: consulting | workshop | pitch | creative",
+  "presentation_config": "string -- Preset name: consulting | workshop | pitch | creative | notebooklm",
   "total_slides": "integer -- Total number of slides in the deck",
   "output_dir": "string -- Relative path (from project root) or absolute path for generated images",
   "slides": [
