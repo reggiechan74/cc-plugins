@@ -17,6 +17,7 @@ AI image generation and presentation deck creation plugin for Claude Code, power
 - **25 style presets** across 6 categories: Technical, Business, Creative, UI/UX, Photography, Specialized
 - **Image editing** with up to 14 reference images per call
 - **Batch deck generation** from JSON specifications with resume support
+- **Structured prompt schema** — structured fields (`heading`, `visual`, `labels`, `text_panel`) with template assembly for presentation-quality slides
 - **Report-to-slides** decomposition — convert markdown/PDF reports into presentation decks
 - **Version-safe output** — never overwrites existing files
 
@@ -129,7 +130,7 @@ Tell Claude: *"/deck-prompt path/to/report.md --preset consulting"*
 
 ### Presentation presets
 
-5 presets for slide deck generation via `/deck-prompt`. Each defines a color palette, typography style, and per-slide-type prompt prefixes that are automatically applied.
+5 presets for slide deck generation via `/deck-prompt`. Each defines a color palette, typography style, `style_context`, and per-slide-type templates that are automatically applied.
 
 | Preset | Style | Color Palette | Best for |
 |--------|-------|---------------|----------|
@@ -138,6 +139,34 @@ Tell Claude: *"/deck-prompt path/to/report.md --preset consulting"*
 | `pitch` | Startup/VC, bold, high-contrast | Pure black, electric blue, white, neon green | Investor pitches, product launches, demo days |
 | `creative` | Portfolio/agency, editorial | Warm cream, matte black, terracotta, sage green | Design portfolios, creative briefs, agency proposals |
 | `notebooklm` | Architectural engineering, blueprint-inspired | Engineering cream, blueprint navy, copper, teal, steel blue | Institutional investor reports, real estate consulting, technical analyses |
+
+### Structured deck spec
+
+Deck specs use structured fields instead of freeform prompts. The template assembly engine combines these fields with the presentation config's `style_context` and per-slide-type `template` to produce the final Gemini prompt.
+
+```json
+{
+  "slide_number": 3,
+  "slide_type": "content",
+  "heading": "The Human Impact Equation",
+  "visual": "four isometric 3D blocks connected by multiplication signs",
+  "labels": ["Direct Effect", "Leverage Effect", "Time Effect"],
+  "text_panel": "Employee impact is additive, multiplicative, and exponential.",
+  "reference_image": null,
+  "style_overrides": {}
+}
+```
+
+| Field | Required | Purpose |
+|-------|----------|---------|
+| `heading` | Yes | Bold title at top of slide (~8 words max) |
+| `visual` | Yes | Dominant physical metaphor — concrete object or scene (~30 words) |
+| `labels` | No | Short annotation strings placed on the visual (~3 words each) |
+| `text_panel` | No | Explanatory text in bottom panel (~2 sentences max) |
+| `reference_image` | No | Path to style reference image for consistency |
+| `style_overrides` | No | Per-slide aspect, size, or model overrides |
+
+Slides with a legacy `prompt` field (no `heading`/`visual`) fall back to prefix concatenation for backward compatibility.
 
 ## Skills
 

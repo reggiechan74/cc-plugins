@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `notebooklm` presentation preset — architectural engineering aesthetic with blueprint-inspired styling, engineering cream background, and copper/teal accents for institutional investor reports
+- **Structured prompt schema** — new deck spec fields (`heading`, `visual`, `labels`, `text_panel`, `reference_image`, `style_overrides`) replace freeform `prompt` field
+- **Template assembly engine** — presentation configs define per-slide-type templates with `{style_context}`, `{heading}`, `{visual}`, `{label_instruction}`, `{text_panel}` slots
+- Per-slide `reference_image` support for style consistency chaining
+- Retry with simplification — on failure, retries once with `text_panel` stripped, tracks `warnings` in JSON summary
+
+### Changed
+- Default model switched from `flash` to `pro` across all 5 presentation configs for better text fidelity
+- `style_context` replaces hex color codes with color names to prevent codes leaking into rendered slides
+- Templates use `No slide number` instruction to prevent Gemini from hallucinating arbitrary numbers
+- `deck-prompt` skill rewritten with structured field authoring rules (physical metaphor first, claim headings, 2-sentence text panels)
+
+### Fixed
+- `shutil.copy2` same-file error when `deck_spec.json` is already in the output directory
+- Quote marks around `{heading}` and label format strings no longer leak into rendered slide text
 
 ## [1.0.0] - 2026-02-27
 
