@@ -3,7 +3,7 @@
   "description": "Portfolio/agency creative deck - editorial, full-bleed imagery, asymmetric",
   "default_aspect": "16:9",
   "default_size": "2K",
-  "default_model": "flash",
+  "default_model": "pro",
   "color_palette": "warm neutral cream, matte black, one vibrant terracotta accent, sage green",
   "typography_hint": "mixed serif headings with sans-serif body, editorial magazine feel",
   "style_context": "Creative editorial slide, 16:9 widescreen, warm cream background, matte black text, terracotta and sage green accents, mixed serif headings with sans-serif body, editorial magazine aesthetic, illustrated style with organic hand-drawn quality.",

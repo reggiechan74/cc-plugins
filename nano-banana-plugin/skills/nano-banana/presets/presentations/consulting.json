@@ -3,7 +3,7 @@
   "description": "Professional consulting deliverable - McKinsey/BCG aesthetic",
   "default_aspect": "16:9",
   "default_size": "2K",
-  "default_model": "flash",
+  "default_model": "pro",
   "color_palette": "deep navy, white, accent coral, light gray",
   "typography_hint": "sans-serif, Helvetica/Inter weight hierarchy",
   "style_context": "Professional consulting slide, 16:9 widescreen, deep navy and white with coral accents, geometric sans-serif typography (Inter/Helvetica), clean technical grid background, isometric illustration style with subtle dimension lines, muted palette with one accent highlight color.",

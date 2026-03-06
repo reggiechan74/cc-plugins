@@ -3,7 +3,7 @@
   "description": "Startup/VC pitch deck - bold, high-contrast, minimal text",
   "default_aspect": "16:9",
   "default_size": "2K",
-  "default_model": "flash",
+  "default_model": "pro",
   "color_palette": "pure black, electric blue, white, neon accent green",
   "typography_hint": "bold geometric sans-serif, maximum contrast",
   "style_context": "Bold startup pitch slide, 16:9 widescreen, pure black background, electric blue and neon green accents, white geometric sans-serif typography at maximum contrast, dramatic minimal design, isometric illustration style with glowing edges.",

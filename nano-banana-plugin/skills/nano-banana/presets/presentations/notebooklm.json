@@ -3,7 +3,7 @@
   "description": "Architectural engineering aesthetic - structural, blueprint-inspired, institutional investor quality",
   "default_aspect": "16:9",
   "default_size": "2K",
-  "default_model": "flash",
+  "default_model": "pro",
   "color_palette": "engineering cream (#F2F1ED), blueprint navy (#0F1F2C), structural copper (#C27C56), technical teal (#4A8B88), steel blue (#2C4A68)",
   "typography_hint": "geometric sans-serif (Inter/SF Pro), Swiss-style hierarchy, heavy titles, medium subheads, regular body",
   "global_prompt_prefix": "Professional corporate presentation slide, architectural engineering aesthetic, 16:9 widescreen format. Background is off-white bone color (#F2F1ED) with a faint technical grid pattern. Color palette uses deep navy blue (#0F1F2C) text, with accents of muted copper (#C27C56) and teal green (#4A8B88). Clean geometric sans-serif typography (Inter). Flat slightly illustrative outlined iconography with partial color fill, not generic clip art. Blocky flat arrows, not thin lines. Layouts use geometric containers with chamfered angled corners and thin dark borders. Minimalist, data-driven, high-end real estate consulting style, ",

@@ -3,7 +3,7 @@
   "description": "Educational workshop deck - warm, accessible, progressive disclosure",
   "default_aspect": "16:9",
   "default_size": "2K",
-  "default_model": "flash",
+  "default_model": "pro",
   "color_palette": "warm teal, soft amber, cream, charcoal gray",
   "typography_hint": "rounded sans-serif, friendly approachable hierarchy",
   "style_context": "Educational workshop slide, 16:9 widescreen, warm teal and soft amber on cream background, rounded sans-serif typography, friendly accessible design, isometric illustration style with warm natural aesthetic.",
