@@ -6,7 +6,7 @@
   "default_model": "flash",
   "color_palette": "deep navy, white, accent coral, light gray",
   "typography_hint": "sans-serif, Helvetica/Inter weight hierarchy",
-  "style_context": "Professional consulting slide, 16:9 widescreen, deep navy (#1B2A4A) and white with coral (#E8634A) accents, geometric sans-serif typography (Inter/Helvetica), clean technical grid background, isometric illustration style with subtle dimension lines, muted palette with one accent highlight color.",
+  "style_context": "Professional consulting slide, 16:9 widescreen, deep navy and white with coral accents, geometric sans-serif typography (Inter/Helvetica), clean technical grid background, isometric illustration style with subtle dimension lines, muted palette with one accent highlight color.",
   "global_prompt_prefix": "Professional consulting presentation slide with consistent brand identity, clean modern design, deep navy and white color scheme with coral accents, high-contrast text areas, presentation-quality typography, 16:9 widescreen format, ",
   "layouts": [
     "left-visual-right-text",
@@ -19,32 +19,32 @@
   "slide_types": {
     "title": {
       "prompt_prefix": "Presentation title slide, 16:9 widescreen: large bold sans-serif title centered in upper third, subtitle below in lighter weight font, clean brand gradient background transitioning from deep navy to dark blue, subtle geometric accent pattern in corners, professional consulting firm quality, no slide number, generous whitespace framing the title block, ",
-      "template": "{style_context} Title slide. Large bold title: '{heading}'. Subtitle below in lighter weight: {text_panel}. Background: {visual}. No slide number.",
+      "template": "{style_context} Title slide. Large bold title: {heading}. Subtitle below in lighter weight: {text_panel}. Background: {visual}. No slide number.",
       "default_layout": "centered-statement"
     },
     "section-divider": {
       "prompt_prefix": "Section divider slide, 16:9 widescreen: bold section title left-aligned with oversized font, thin decorative accent bar in coral below the title, abstract background visual related to section topic on right side, muted navy palette with subtle gradient, clean transition aesthetic separating major deck sections, ",
-      "template": "{style_context} Section title large and bold on left: '{heading}'. Illustration on right: {visual}. {label_instruction} Brief description: {text_panel}. Thin coral accent bar below title.",
+      "template": "{style_context} Section title large and bold on left: {heading}. Illustration on right: {visual}. {label_instruction} Brief description: {text_panel}. Thin coral accent bar below title.",
       "default_layout": "left-visual-right-text"
     },
     "content": {
       "prompt_prefix": "Content slide, 16:9 widescreen: clear heading at top in bold sans-serif, organized body content area with short bullet points or key phrases, supporting icon or small visual element, consistent deep navy and white brand colors with coral accents on key data, generous whitespace between elements, single key message per slide, no slide number, ",
-      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. No slide number.",
+      "template": "{style_context} Heading at top in bold: {heading}. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. No slide number.",
       "default_layout": "left-visual-right-text"
     },
     "data-chart": {
       "prompt_prefix": "Data visualization slide, 16:9 widescreen: prominent professional chart or graph as hero element occupying 60-70% of slide area, clear axis labels with units and data point markers, insight callout annotation with leader line pointing to key finding, muted navy and gray palette with coral highlight on key data series, clean gridlines, legend with consistent typography, publication-quality data journalism aesthetic, ",
-      "template": "{style_context} Heading at top: '{heading}'. Hero data visualization: {visual}. {label_instruction} Annotation panel below: {text_panel}. Coral accent on key data point.",
+      "template": "{style_context} Heading at top: {heading}. Hero data visualization: {visual}. {label_instruction} Annotation panel below: {text_panel}. Coral accent on key data point.",
       "default_layout": "full-bleed-image"
     },
     "quote": {
       "prompt_prefix": "Quote slide, 16:9 widescreen: large quotation in elegant serif font centered vertically and horizontally, oversized opening quotation mark as decorative element in light navy, attribution line below in smaller sans-serif with coral accent dash, subtle textured or lightly gradient navy background, generous whitespace framing the quote, editorial quality, ",
-      "template": "{style_context} Minimal decorative background: {visual}. Large centered quote in elegant serif: '{heading}'. Attribution and context below: {text_panel}. Oversized quotation mark as decorative element.",
+      "template": "{style_context} Minimal decorative background: {visual}. Large centered quote in elegant serif: {heading}. Attribution and context below: {text_panel}. Oversized quotation mark as decorative element.",
       "default_layout": "centered-statement"
     },
     "closing": {
       "prompt_prefix": "Closing slide, 16:9 widescreen: prominent thank you message or summary statement in large sans-serif, contact information block below with email and phone in clean layout, company logo placement area in lower portion, clean professional background matching title slide gradient aesthetic, subtle call-to-action text, consistent brand identity with title slide, ",
-      "template": "{style_context} Summary statement large and centered: '{heading}'. Visual: {visual}. {label_instruction} Action items and contact info below: {text_panel}.",
+      "template": "{style_context} Summary statement large and centered: {heading}. Visual: {visual}. {label_instruction} Action items and contact info below: {text_panel}.",
       "default_layout": "centered-statement"
     }
   }

@@ -352,7 +352,7 @@ def assemble_prompt(slide, pres_config, skip_text_panel=False):
         labels = slide.get("labels", [])
         if labels:
             label_instruction = "Labels on the visual: " + ", ".join(
-                f"'{l}'" for l in labels
+                f"{l}" for l in labels
             ) + "."
         else:
             label_instruction = ""
