@@ -414,7 +414,7 @@ def run_deck(deck_spec_path, force=False):
 
     # Copy deck spec into output dir for reference
     spec_dest = output_dir / "deck_spec.json"
-    if not spec_dest.exists() or force:
+    if deck_path.resolve() != spec_dest.resolve() and (not spec_dest.exists() or force):
         shutil.copy2(deck_path, spec_dest)
 
     # --- Get API key -------------------------------------------------------
