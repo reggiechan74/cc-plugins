@@ -28,8 +28,8 @@
       "default_layout": "left-visual-right-text"
     },
     "content": {
-      "prompt_prefix": "Step-by-step visual progression slide, 16:9 widescreen: clear heading in charcoal at top, numbered or sequenced content blocks showing progressive disclosure of concepts, teal accent icons or visual markers for each step, soft amber highlights on key terms and takeaways, cream background with generous whitespace between learning points, single teaching concept per slide, small slide number in lower-right, ",
-      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. Small slide number lower-right.",
+      "prompt_prefix": "Step-by-step visual progression slide, 16:9 widescreen: clear heading in charcoal at top, numbered or sequenced content blocks showing progressive disclosure of concepts, teal accent icons or visual markers for each step, soft amber highlights on key terms and takeaways, cream background with generous whitespace between learning points, single teaching concept per slide, no slide number, ",
+      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. No slide number.",
       "default_layout": "left-visual-right-text"
     },
     "data-chart": {

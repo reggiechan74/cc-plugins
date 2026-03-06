@@ -29,7 +29,7 @@
     },
     "content": {
       "prompt_prefix": "Single bold statement with hero number slide, 16:9 widescreen: one oversized key metric or statistic in electric blue or neon green occupying top half, short declarative sentence in white below explaining significance, pure black background, zero bullet points, extreme whitespace, geometric sans-serif at maximum weight, every element earns its place on the slide, investor-ready minimal aesthetic, ",
-      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. Small slide number lower-right.",
+      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. No slide number.",
       "default_layout": "centered-statement"
     },
     "data-chart": {

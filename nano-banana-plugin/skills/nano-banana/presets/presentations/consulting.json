@@ -28,8 +28,8 @@
       "default_layout": "left-visual-right-text"
     },
     "content": {
-      "prompt_prefix": "Content slide, 16:9 widescreen: clear heading at top in bold sans-serif, organized body content area with short bullet points or key phrases, supporting icon or small visual element, consistent deep navy and white brand colors with coral accents on key data, generous whitespace between elements, single key message per slide, small slide number in lower-right corner, ",
-      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. Small slide number lower-right.",
+      "prompt_prefix": "Content slide, 16:9 widescreen: clear heading at top in bold sans-serif, organized body content area with short bullet points or key phrases, supporting icon or small visual element, consistent deep navy and white brand colors with coral accents on key data, generous whitespace between elements, single key message per slide, no slide number, ",
+      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. No slide number.",
       "default_layout": "left-visual-right-text"
     },
     "data-chart": {

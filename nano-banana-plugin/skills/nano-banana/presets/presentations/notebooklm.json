@@ -28,8 +28,8 @@
       "default_layout": "left-visual-right-text"
     },
     "content": {
-      "prompt_prefix": "Content slide, 16:9 widescreen: clear heading at top in bold geometric sans-serif blueprint navy, organized body content in light grey card containers (#E8E8E8) with chamfered corners and thin dark outlines, key data highlighted in copper (#C27C56) or teal (#4A8B88), important numbers displayed oversized in heavy weight copper or navy, flat slightly illustrative outlined icons with partial color fill, engineering cream (#F2F1ED) background with faint grid, single key message per slide, small slide number in lower-right, ",
-      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. Small slide number lower-right.",
+      "prompt_prefix": "Content slide, 16:9 widescreen: clear heading at top in bold geometric sans-serif blueprint navy, organized body content in light grey card containers (#E8E8E8) with chamfered corners and thin dark outlines, key data highlighted in copper (#C27C56) or teal (#4A8B88), important numbers displayed oversized in heavy weight copper or navy, flat slightly illustrative outlined icons with partial color fill, engineering cream (#F2F1ED) background with faint grid, single key message per slide, no slide number, ",
+      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. No slide number.",
       "default_layout": "left-visual-right-text"
     },
     "data-chart": {

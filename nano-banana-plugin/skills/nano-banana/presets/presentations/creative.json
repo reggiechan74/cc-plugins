@@ -29,7 +29,7 @@
     },
     "content": {
       "prompt_prefix": "Editorial layout with large hero image and minimal text overlay, 16:9 widescreen: dominant full-bleed or large-crop image taking 60-70% of slide area, brief text block in sans-serif overlaid or adjacent with cream background panel, terracotta accent on key phrase or pull quote, asymmetric placement creating visual interest, sage green fine rule lines as structural elements, magazine feature article aesthetic, white space as a design element, ",
-      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. Small slide number lower-right.",
+      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. No slide number.",
       "default_layout": "left-visual-right-text"
     },
     "data-chart": {
