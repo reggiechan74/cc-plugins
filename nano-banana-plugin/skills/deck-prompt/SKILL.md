@@ -7,7 +7,7 @@ argument-hint: report_path --preset name --slides count
 
 ## Purpose
 
-Decompose a markdown or PDF report into a structured deck specification JSON file that the nano-banana `--deck` mode can consume to generate presentation slide images. Claude reads the source document, understands its structure and content, selects appropriate slide types and layouts, writes concise visual prompts for each slide, and outputs a complete deck spec ready for image generation.
+Decompose a markdown or PDF report into a structured deck specification JSON file that the nano-banana `--deck` mode can consume to generate presentation slide images. Claude reads the source document, understands its structure and content, selects appropriate slide types, writes structured slide fields (heading, visual metaphor, labels, text panel) conforming to a strict schema, and outputs a complete deck spec ready for image generation.
 
 ## Path Resolution
 
@@ -26,7 +26,7 @@ Parse the document structure: title, abstract/summary, section headings, body co
 
 ### Step 2: Load the Presentation Config
 
-Read the presentation config JSON to understand available slide types, layouts, prompt prefixes, and brand identity:
+Read the presentation config JSON to understand available slide types, prompt prefixes, and brand identity:
 
 ```
 $BASE_DIR/../nano-banana/presets/presentations/{preset}.json
@@ -47,16 +47,9 @@ If the user does not specify a preset, default to `consulting`.
 **What to extract from the config:**
 - `global_prompt_prefix` -- prepended to every slide prompt by nano-banana
 - `slide_types` -- per-type `prompt_prefix` values (also prepended automatically)
-- `layouts` -- available layout options for this preset
 - `default_aspect`, `default_size`, `default_model` -- inherited defaults
 
-You do NOT need to include the global or type prompt prefixes in your slide prompts. Nano-banana assembles the full prompt automatically using this order:
-
-```
-global_prompt_prefix + slide_type.prompt_prefix + "Layout: {layout}. " + slide.prompt
-```
-
-Your `slide.prompt` field only needs the slide-specific content description.
+You do NOT need to include the global or type prompt prefixes in your slide fields. Nano-banana assembles the full prompt automatically from the structured fields.
 
 ### Step 3: Decompose the Report into Slides
 
@@ -77,42 +70,58 @@ Map report sections to slide types using these rules:
 - Every deck must have exactly one `title` slide (first) and one `closing` slide (last).
 - Use `section-divider` slides to create visual breaks between major topics; do not use them for every minor heading.
 
-### Step 4: Select Layouts for Each Slide
+### Step 5: Write Structured Slide Fields
 
-Choose a layout from the config's `layouts` array for each slide. Available layouts and their best use:
+For each slide, write four structured fields: `heading`, `visual`, `labels`, and `text_panel`. Follow these authoring rules strictly.
 
-| Layout | Description | Best For |
-|--------|-------------|----------|
-| `centered-statement` | Text centered vertically and horizontally | Title slides, quotes, section dividers with short text, bold single statements |
-| `left-visual-right-text` | Image/visual on left, text content on right | Content slides with supporting imagery, section dividers with topic visuals |
-| `full-bleed-image` | Image fills the entire slide area | Data charts, hero visuals, dramatic photography, creative title slides |
-| `split-horizontal` | Top and bottom halves divided | Before/after comparisons, two related points, complementary content |
-| `grid-2x2` | Four equal quadrants | Comparing four items, SWOT-style analysis, multiple metrics |
-| `grid-3-column` | Three equal columns | Three-point arguments, process steps, category comparisons |
+**Rule 1: Every slide starts with a physical metaphor.** Before writing any field, answer: "What concrete object or scene would a viewer see?" The `visual` field must describe something you could build with your hands or photograph. Not "two columns comparing X and Y" but "a 1D number line dissolving into a 3D coordinate space."
 
-Each slide type has a `default_layout` in the config. Use the default unless a different layout better serves the specific content of that slide.
+**Rule 2: The `visual` field is the hero -- 60% of the slide area.** Describe the object, its materials, its spatial arrangement. Use engineering/architectural vocabulary: isometric, cross-section, exploded view, dimension lines, blueprint grid. ~30 words max.
 
-### Step 5: Write Slide Prompts
+**Rule 3: Labels are short annotations ON the visual.** Each label is 1-4 words. They go on or next to the visual element they describe. Think engineering drawing callouts. Array of strings, not sentences.
 
-**Prompt writing rules:**
+**Rule 4: `text_panel` is max 2 sentences (~40 words).** This is the "so what" at the bottom. If you can't say it in 2 sentences, the slide is trying to do too much -- split it.
 
-1. **Maximum ~50 words per prompt.** Be concise and specific. Every word must earn its place.
-2. **Lead with the visual description.** Describe what the viewer sees first, then the text content.
-3. **Include key data verbatim.** If the source has a specific number, percentage, dollar amount, or date, include it exactly as stated. Do not paraphrase data.
-4. **One key message per slide.** Do not cram multiple concepts into a single prompt.
-5. **Do not repeat the type/layout/brand prefixes.** Nano-banana prepends those automatically. Your prompt is only the slide-specific content.
-6. **Use concrete nouns and action verbs.** "Bar chart showing Q3 revenue growth from $2.1M to $3.4M" beats "chart about revenue."
-7. **Specify text content in single quotes.** For any text that should appear on the slide, wrap it in single quotes so the model treats it as literal text to render.
+**Rule 5: `heading` is the claim, not the topic (~8 words).** Not "Market Analysis" but "Transportation Leads at $4.2B." The heading states what the viewer should conclude.
 
-**Good prompt examples:**
-- `"'Infrastructure AI Market Analysis' subtitle 'Prepared for Acme Corp' with abstract city skyline silhouette"`
-- `"Bar chart comparing five regional markets, Toronto leads at $4.2B, Vancouver second at $2.8B, coral highlight on Toronto bar"`
-- `"'The convergence of AI and infrastructure creates a $50B opportunity by 2030' -- Industry Report 2025"`
+**Rule 6: One metaphor per slide, one insight per slide.** If you're describing two different visuals, it's two slides.
 
-**Bad prompt examples (avoid these):**
-- `"A nice title slide with the report name"` -- too vague, no actual content
-- `"Professional consulting slide showing the data from section 3 about the market"` -- no specific data, references source instead of extracting
-- `"Deep navy background with white sans-serif text showing..."` -- repeating brand/style instructions that the prefix already handles
+**Metaphor mapping table:**
+
+| Report Element | Think About | Example Metaphor |
+|---|---|---|
+| Core equation/formula | Physical components multiplying | Colored blocks with x operators between them |
+| Comparison (A vs B) | Contrasting objects | Split panel: solid cube vs cracked cube |
+| Taxonomy/categories | Grid of distinct objects | 4x2 grid of isometric icon cards |
+| Process/flow | Connected mechanism | Interlocking gears, conveyor belt |
+| Constraints/limitations | Physical barriers | Locked panel vs. open control board |
+| Time dynamics | Diverging curves | Exponential growth curve vs decay curve |
+| Key quote/principle | Architectural frame | Minimal frame with centered bold statement |
+
+**Good example (structured):**
+
+```json
+{
+  "slide_number": 3,
+  "slide_type": "content",
+  "heading": "Deconstructing Human Impact",
+  "visual": "four isometric 3D blocks in a row connected by large multiplication signs: blue block (Direct Effect), copper block (Leverage Effect), green block (Time Effect), equals dark block (Organizational Output), with engineering dimension arrows",
+  "labels": ["Direct Effect", "Leverage Effect", "Time Effect", "Organizational Output"],
+  "text_panel": "Employee impact is not merely additive. It is additive (Ai, Di), multiplicative (Li), and exponential (Ci, Fi).",
+  "style_overrides": {}
+}
+```
+
+**Bad example (old freeform -- DO NOT USE):**
+
+```json
+{
+  "slide_number": 3,
+  "slide_type": "content",
+  "layout": "split-horizontal",
+  "prompt": "Top half heading 'What Conventional Labels Miss'. Two columns: Left column labeled 'Standard View' showing linear spectrum from Subtractor to Adder to Multiplier..."
+}
+```
 
 ### Step 6: Write the Deck Spec JSON
 
@@ -148,49 +157,43 @@ The deck spec is the contract between this skill and nano-banana's `--deck` mode
 
 ```json
 {
-  "title": "string -- Deck title, displayed in logs and used for output directory naming",
-  "presentation_config": "string -- Preset name: consulting | workshop | pitch | creative | notebooklm",
-  "total_slides": "integer -- Total number of slides in the deck",
-  "output_dir": "string -- Relative path (from project root) or absolute path for generated images",
+  "title": "string",
+  "presentation_config": "string -- consulting | workshop | pitch | creative | notebooklm",
+  "total_slides": "integer",
+  "output_dir": "string",
   "slides": [
     {
-      "slide_number": "integer -- 1-indexed position in the deck",
-      "slide_type": "string -- One of: title | section-divider | content | data-chart | quote | closing",
-      "layout": "string -- One of: centered-statement | left-visual-right-text | full-bleed-image | split-horizontal | grid-2x2 | grid-3-column",
-      "prompt": "string -- Slide-specific prompt (~50 words max). Do NOT include global/type prefixes.",
-      "style_overrides": "object -- Optional overrides: { aspect, size, model }. Empty {} to use config defaults."
+      "slide_number": "integer -- 1-indexed",
+      "slide_type": "string -- title | section-divider | content | data-chart | quote | closing",
+      "heading": "string -- Bold title text, ~8 words, states the claim",
+      "visual": "string -- Dominant physical metaphor, ~30 words, concrete object/scene",
+      "labels": "array of strings -- Short annotations on the visual, 1-4 words each. Optional.",
+      "text_panel": "string -- Explanatory text, max 2 sentences. Optional.",
+      "reference_image": "string -- Path to style reference image. Optional, null if unused.",
+      "style_overrides": "object -- Optional: { aspect, size, model }"
     }
   ]
 }
 ```
 
 **Required fields:** `title`, `presentation_config`, `total_slides`, `output_dir`, `slides`
-**Required per-slide fields:** `slide_number`, `slide_type`, `layout`, `prompt`
-**Optional per-slide fields:** `style_overrides` (defaults to `{}`)
+**Required per-slide fields:** `slide_number`, `slide_type`, `heading`, `visual`
+**Optional per-slide fields:** `labels` (defaults to `[]`), `text_panel` (defaults to `""`), `reference_image` (defaults to `null`), `style_overrides` (defaults to `{}`)
+
+**Backward compatibility:** The old `prompt` and `layout` fields still work but should NOT be used in new deck specs.
 
 **`output_dir` convention:** Use `output/nano-banana/decks/YYYY-MM-DD_{title_slug}` for relative paths. Nano-banana resolves relative paths from the current working directory (project root).
 
 ## Slide Types Reference
 
-| Type | Purpose | Typical Count | Default Layout |
-|------|---------|---------------|----------------|
-| `title` | Opening slide with deck title, subtitle, author | Exactly 1 (first) | `centered-statement` |
-| `section-divider` | Visual break introducing a major section | 1-4 per deck | `left-visual-right-text` |
-| `content` | Core information: findings, analysis, explanations | 2-6 per deck | `left-visual-right-text` |
-| `data-chart` | Quantitative data: charts, tables, metrics | 1-3 per deck | `full-bleed-image` |
-| `quote` | Notable quotes, callouts, key statements | 0-2 per deck | `centered-statement` |
-| `closing` | Conclusions, recommendations, next steps, contact | Exactly 1 (last) | `centered-statement` |
-
-## Layouts Reference
-
-| Layout | Composition | Best Paired With |
-|--------|-------------|------------------|
-| `centered-statement` | Text centered vertically and horizontally with generous whitespace | `title`, `quote`, `closing`, `section-divider` |
-| `left-visual-right-text` | Visual element on left ~40%, text content on right ~60% | `content`, `section-divider` |
-| `full-bleed-image` | Image fills entire slide; text overlaid or integrated | `data-chart`, `creative title`, hero visuals |
-| `split-horizontal` | Top half and bottom half divided by a horizontal rule or whitespace | Before/after, two complementary points |
-| `grid-2x2` | Four equal quadrants | SWOT analysis, four-metric dashboards, comparisons |
-| `grid-3-column` | Three equal vertical columns | Three-step processes, triple comparisons, category breakdowns |
+| Type | Purpose | Typical Count |
+|------|---------|---------------|
+| `title` | Opening slide with deck title, subtitle, author | Exactly 1 (first) |
+| `section-divider` | Visual break introducing a major section | 1-4 per deck |
+| `content` | Core information: findings, analysis, explanations | 2-6 per deck |
+| `data-chart` | Quantitative data: charts, tables, metrics | 1-3 per deck |
+| `quote` | Notable quotes, callouts, key statements | 0-2 per deck |
+| `closing` | Conclusions, recommendations, next steps, contact | Exactly 1 (last) |
 
 ## Example Deck Spec
 
@@ -206,43 +209,55 @@ A 6-slide consulting deck generated from a hypothetical market analysis report:
     {
       "slide_number": 1,
       "slide_type": "title",
-      "layout": "centered-statement",
-      "prompt": "'Canadian Infrastructure AI Opportunity' subtitle 'Market Analysis Q1 2026' with subtle circuit-board pattern fading into cityscape silhouette",
+      "heading": "Canadian Infrastructure AI Opportunity",
+      "visual": "subtle circuit-board pattern fading into cityscape silhouette with blueprint grid lines",
+      "labels": [],
+      "text_panel": "Market Analysis Q1 2026 | Tenebrus Capital",
       "style_overrides": {}
     },
     {
       "slide_number": 2,
       "slide_type": "section-divider",
-      "layout": "left-visual-right-text",
-      "prompt": "'Market Landscape' with abstract visualization of interconnected infrastructure nodes rendered as glowing network graph",
+      "heading": "Market Landscape",
+      "visual": "abstract visualization of interconnected infrastructure nodes -- roads, bridges, power lines rendered as glowing isometric network graph",
+      "labels": [],
+      "text_panel": "Understanding the $4.2B Canadian infrastructure AI market",
       "style_overrides": {}
     },
     {
       "slide_number": 3,
       "slide_type": "data-chart",
-      "layout": "full-bleed-image",
-      "prompt": "Bar chart showing Canadian infrastructure AI spending by sector: Transportation $1.8B, Energy $1.4B, Water $0.6B, Telecom $0.4B. Coral highlight on Transportation bar. Annotation: '42% CAGR since 2023'",
+      "heading": "Transportation Leads at $1.8B",
+      "visual": "bar chart showing four vertical bars of decreasing height, with the tallest bar highlighted in coral accent",
+      "labels": ["Transportation $1.8B", "Energy $1.4B", "Water $0.6B", "Telecom $0.4B"],
+      "text_panel": "42% CAGR since 2023. Transportation sector alone exceeds combined water and telecom spending.",
       "style_overrides": {}
     },
     {
       "slide_number": 4,
       "slide_type": "content",
-      "layout": "left-visual-right-text",
-      "prompt": "Heading: 'Three Convergence Drivers'. Visual of overlapping circles. Points: '1. Federal infrastructure bill ($14B allocated)' '2. Municipal digital twin mandates' '3. Private sector AI adoption reaching 60%'",
+      "heading": "Three Forces Driving Convergence",
+      "visual": "three overlapping translucent circles forming a Venn diagram, each containing a distinct isometric icon: government building, digital twin cube, AI chip",
+      "labels": ["Federal $14B bill", "Municipal digital twin mandates", "60% private AI adoption"],
+      "text_panel": "Federal infrastructure spending, municipal digital twin mandates, and private sector AI adoption are converging to create a structural opportunity.",
       "style_overrides": {}
     },
     {
       "slide_number": 5,
       "slide_type": "quote",
-      "layout": "centered-statement",
-      "prompt": "'By 2028, 75% of Canadian infrastructure inspections will involve AI-assisted analysis' -- Canadian Infrastructure Report Card 2025",
+      "heading": "By 2028, 75% of Canadian infrastructure inspections will involve AI-assisted analysis",
+      "visual": "subtle geometric pattern of intersecting lines forming an abstract bridge structure",
+      "labels": [],
+      "text_panel": "-- Canadian Infrastructure Report Card 2025",
       "style_overrides": {}
     },
     {
       "slide_number": 6,
       "slide_type": "closing",
-      "layout": "centered-statement",
-      "prompt": "'Recommendations & Next Steps'. Three action items: 'Target transportation vertical first' 'Build municipal pilot program' 'Secure strategic partnerships by Q3'",
+      "heading": "Recommendations & Next Steps",
+      "visual": "three ascending platforms connected by arrows, each containing an isometric icon: target, handshake, calendar",
+      "labels": ["Target transportation vertical", "Build municipal pilot", "Secure partnerships by Q3"],
+      "text_panel": "Contact: reggie@tenebruscapital.com | Tenebrus Capital Corp",
       "style_overrides": {}
     }
   ]

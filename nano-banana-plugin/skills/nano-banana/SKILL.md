@@ -151,11 +151,31 @@ On completion, stdout contains a JSON summary:
   "slides_generated": 8,
   "slides_failed": 1,
   "failed_slides": [{"slide_number": 3, "error": "Content filtering triggered"}],
+  "warnings": [{"slide_number": 5, "warning": "Generated with simplified prompt (text_panel dropped)"}],
   "total_slides": 9,
   "model": "flash",
   "presentation_config": "consulting"
 }
 ```
+
+**Structured slide fields (recommended):**
+
+The deck spec supports structured fields per slide for higher-quality output:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `heading` | Yes* | Bold title text at top of slide (~8 words) |
+| `visual` | Yes* | Dominant physical metaphor description (~30 words) |
+| `labels` | No | Array of short annotation strings (1-4 words each) placed on the visual |
+| `text_panel` | No | Explanatory text in bottom panel (max 2 sentences) |
+| `reference_image` | No | Path to a style reference image loaded alongside the prompt |
+| `style_overrides` | No | Override aspect, size, or model per slide |
+
+*When `heading` and `visual` are present, the script uses template-based prompt assembly from the presentation config. When absent, it falls back to the legacy `prompt` field with prefix concatenation.
+
+**Reference images:** When `reference_image` is set, the image is loaded and sent alongside the text prompt as a style reference. Relative paths are resolved from the current working directory. Use this to maintain visual consistency across slides or to match an external style reference.
+
+**Retry behavior:** If a slide fails to generate, the script automatically retries once with a simplified prompt (text_panel removed). Successful retries are recorded in the `warnings` array of the JSON summary output.
 
 **Generating deck spec files:**
 
