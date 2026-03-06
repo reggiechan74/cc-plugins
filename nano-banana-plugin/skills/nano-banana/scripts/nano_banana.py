@@ -334,6 +334,60 @@ def save_image(b64_data, output_path):
     return str(out.resolve())
 
 
+def assemble_prompt(slide, pres_config, skip_text_panel=False):
+    """Assemble a slide prompt from structured fields using a presentation template.
+
+    If the slide has structured fields (heading, visual), uses the template engine.
+    If the slide only has a legacy 'prompt' field, falls back to prefix concatenation.
+    """
+    slide_type = slide["slide_type"]
+    type_config = pres_config["slide_types"].get(slide_type, {})
+
+    # --- Structured path (new schema) ---
+    if "heading" in slide and "visual" in slide:
+        template = type_config.get("template")
+        if not template:
+            return _assemble_legacy_prompt(slide, pres_config)
+
+        labels = slide.get("labels", [])
+        if labels:
+            label_instruction = "Labels on the visual: " + ", ".join(
+                f"'{l}'" for l in labels
+            ) + "."
+        else:
+            label_instruction = ""
+
+        text_panel = "" if skip_text_panel else slide.get("text_panel", "")
+
+        return template.format(
+            style_context=pres_config.get("style_context", ""),
+            heading=slide.get("heading", ""),
+            visual=slide.get("visual", ""),
+            label_instruction=label_instruction,
+            text_panel=text_panel,
+        )
+
+    # --- Legacy path (old freeform prompt) ---
+    return _assemble_legacy_prompt(slide, pres_config)
+
+
+def _assemble_legacy_prompt(slide, pres_config):
+    """Assemble prompt using the old prefix concatenation method."""
+    slide_type = slide["slide_type"]
+    type_info = pres_config["slide_types"].get(slide_type, {})
+
+    global_prefix = pres_config.get("global_prompt_prefix", "")
+    if not global_prefix:
+        global_prefix = pres_config.get("style_context", "") + " "
+
+    type_prefix = type_info.get("prompt_prefix", "")
+    layout = slide.get("layout", type_info.get("default_layout", ""))
+    layout_hint = f"Layout: {layout}. " if layout else ""
+    prompt_text = slide.get("prompt", "")
+
+    return global_prefix + type_prefix + layout_hint + prompt_text
+
+
 def run_deck(deck_spec_path, force=False):
     """Generate all slides from a deck specification JSON file.
 
@@ -373,12 +427,11 @@ def run_deck(deck_spec_path, force=False):
     slides = deck["slides"]
     generated = 0
     failed = []
+    warnings = []
 
     for slide in slides:
         num = slide["slide_number"]
         slide_type = slide["slide_type"]
-        layout = slide.get("layout", pres_config["slide_types"].get(slide_type, {}).get("default_layout", ""))
-        prompt_text = slide["prompt"]
         overrides = slide.get("style_overrides", {})
 
         slide_file = output_dir / f"slide_{num:02d}.png"
@@ -392,12 +445,8 @@ def run_deck(deck_spec_path, force=False):
             generated += 1
             continue
 
-        # Assemble prompt: global + type prefix + layout hint + user prompt
-        global_prefix = pres_config.get("global_prompt_prefix", "")
-        type_info = pres_config["slide_types"].get(slide_type, {})
-        type_prefix = type_info.get("prompt_prefix", "")
-        layout_hint = f"Layout: {layout}. " if layout else ""
-        full_prompt = global_prefix + type_prefix + layout_hint + prompt_text
+        # Assemble prompt using structured template or legacy fallback
+        full_prompt = assemble_prompt(slide, pres_config)
 
         # Resolve settings
         aspect = overrides.get("aspect", pres_config.get("default_aspect", "16:9"))
@@ -405,26 +454,72 @@ def run_deck(deck_spec_path, force=False):
         model_key = overrides.get("model", pres_config.get("default_model", "flash"))
         model_id = MODELS.get(model_key, MODELS["flash"])
 
+        # Load per-slide reference image if specified
+        ref_path = slide.get("reference_image")
+        input_images = None
+        if ref_path:
+            ref_resolved = Path(ref_path)
+            if not ref_resolved.is_absolute():
+                ref_resolved = PROJECT_ROOT / ref_resolved
+            try:
+                input_images = load_input_images([str(ref_resolved)])
+            except Exception as ref_exc:
+                print(
+                    f"  [{num}/{total}] Warning: could not load reference image: {ref_exc}",
+                    file=sys.stderr,
+                )
+
         # Progress
-        label = prompt_text[:50] + ("..." if len(prompt_text) > 50 else "")
+        heading = slide.get("heading", slide.get("prompt", ""))
+        label = heading[:50] + ("..." if len(heading) > 50 else "")
         print(
             f"  [{num}/{total}] Generating {slide_type} slide: \"{label}\"",
             file=sys.stderr,
         )
 
+        # First attempt
         try:
-            body = build_request_body(full_prompt, aspect, size)
+            body = build_request_body(full_prompt, aspect, size, input_images)
             response = call_api(body, model_id, api_key)
             b64_data, _mime = extract_image(response)
             save_image(b64_data, str(slide_file))
             generated += 1
-        except Exception as exc:
-            error_msg = str(exc)
+            continue
+        except Exception as first_error:
+            first_msg = str(first_error)
             print(
-                f"  [{num}/{total}] FAILED: {error_msg[:100]}",
+                f"  [{num}/{total}] First attempt failed: {first_msg[:80]}",
                 file=sys.stderr,
             )
-            failed.append({"slide_number": num, "error": error_msg})
+
+        # Retry with simplified prompt (drop text_panel)
+        if "heading" in slide and "visual" in slide:
+            print(
+                f"  [{num}/{total}] Retrying with simplified prompt (text_panel dropped)...",
+                file=sys.stderr,
+            )
+            try:
+                simplified = assemble_prompt(slide, pres_config, skip_text_panel=True)
+                body = build_request_body(simplified, aspect, size, input_images)
+                response = call_api(body, model_id, api_key)
+                b64_data, _mime = extract_image(response)
+                save_image(b64_data, str(slide_file))
+                generated += 1
+                warnings.append({
+                    "slide_number": num,
+                    "warning": "Generated with simplified prompt (text_panel dropped)",
+                })
+                continue
+            except Exception as retry_error:
+                error_msg = str(retry_error)
+        else:
+            error_msg = first_msg
+
+        print(
+            f"  [{num}/{total}] FAILED: {error_msg[:100]}",
+            file=sys.stderr,
+        )
+        failed.append({"slide_number": num, "error": error_msg})
 
     # --- Summary -----------------------------------------------------------
     summary = {
@@ -432,6 +527,7 @@ def run_deck(deck_spec_path, force=False):
         "slides_generated": generated,
         "slides_failed": len(failed),
         "failed_slides": failed,
+        "warnings": warnings,
         "total_slides": total,
         "model": pres_config.get("default_model", "flash"),
         "presentation_config": deck["presentation_config"],

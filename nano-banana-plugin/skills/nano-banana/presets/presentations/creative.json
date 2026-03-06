@@ -6,6 +6,7 @@
   "default_model": "flash",
   "color_palette": "warm neutral cream, matte black, one vibrant terracotta accent, sage green",
   "typography_hint": "mixed serif headings with sans-serif body, editorial magazine feel",
+  "style_context": "Creative editorial slide, 16:9 widescreen, warm cream background, matte black text, terracotta (#C2552D) and sage green (#87A878) accents, mixed serif headings with sans-serif body, editorial magazine aesthetic, illustrated style with organic hand-drawn quality.",
   "global_prompt_prefix": "Creative portfolio presentation slide, editorial magazine aesthetic, asymmetric composition, warm neutral palette with terracotta accents, mixed serif and sans-serif typography, sage green secondary accent, 16:9 widescreen format, ",
   "layouts": [
     "left-visual-right-text",
@@ -18,26 +19,32 @@
   "slide_types": {
     "title": {
       "prompt_prefix": "Bold editorial magazine cover layout title slide, 16:9 widescreen: oversized serif headline placed asymmetrically with dramatic kerning, full-bleed atmospheric background image with warm cream and matte black tonal treatment, terracotta accent on a single word or decorative element, subtitle in small sans-serif caps offset to one side, editorial art direction with intentional negative space, feels like opening a premium design annual, ",
+      "template": "{style_context} Title slide. Large bold title: '{heading}'. Subtitle below in lighter weight: {text_panel}. Background: {visual}. No slide number.",
       "default_layout": "full-bleed-image"
     },
     "section-divider": {
       "prompt_prefix": "Editorial section opener slide, 16:9 widescreen: large serif section title positioned off-center with asymmetric alignment, full-bleed image on one half with warm neutral color grading, terracotta vertical accent bar or rule separating image from text area, sage green small caps subtitle or section number, magazine spread aesthetic with intentional visual tension between image and type, ",
+      "template": "{style_context} Section title large and bold on left: '{heading}'. Illustration on right: {visual}. {label_instruction} Brief description: {text_panel}. Accent bar below title.",
       "default_layout": "left-visual-right-text"
     },
     "content": {
       "prompt_prefix": "Editorial layout with large hero image and minimal text overlay, 16:9 widescreen: dominant full-bleed or large-crop image taking 60-70% of slide area, brief text block in sans-serif overlaid or adjacent with cream background panel, terracotta accent on key phrase or pull quote, asymmetric placement creating visual interest, sage green fine rule lines as structural elements, magazine feature article aesthetic, white space as a design element, ",
+      "template": "{style_context} Heading at top in bold: '{heading}'. Central illustration occupying 60% of slide: {visual}. {label_instruction} Bottom panel with explanatory text in clean columns: {text_panel}. Small slide number lower-right.",
       "default_layout": "left-visual-right-text"
     },
     "data-chart": {
       "prompt_prefix": "Illustrated infographic style with hand-drawn chart aesthetic, 16:9 widescreen: artful data visualization with organic hand-illustrated quality, warm cream background with matte black ink-style chart elements, terracotta highlight on key data point or series, sage green secondary data series, serif annotation labels with editorial feel, feels like a curated infographic from a design magazine rather than a corporate spreadsheet, artistic yet informative, ",
+      "template": "{style_context} Heading at top: '{heading}'. Hero data visualization: {visual}. {label_instruction} Annotation panel below: {text_panel}. Accent highlight on key data point.",
       "default_layout": "full-bleed-image"
     },
     "quote": {
       "prompt_prefix": "Editorial pull quote slide, 16:9 widescreen: elegant large serif italic quote placed asymmetrically on warm cream background, oversized terracotta decorative quotation mark as dominant visual element, attribution in small matte black sans-serif caps with sage green accent dash, generous asymmetric margins creating editorial page feel, could be a spread from a premium lifestyle or architecture magazine, ",
+      "template": "{style_context} Minimal decorative background: {visual}. Large centered quote in elegant serif: '{heading}'. Attribution and context below: {text_panel}. Oversized quotation mark as decorative element.",
       "default_layout": "centered-statement"
     },
     "closing": {
       "prompt_prefix": "Creative portfolio closing slide, 16:9 widescreen: elegant serif thank you or closing statement positioned asymmetrically, full-bleed atmospheric image with warm neutral color treatment as background, contact details in small clean sans-serif with terracotta accent on email or website, sage green decorative element or rule, editorial colophon aesthetic matching the title slide visual language, intentional and refined, ",
+      "template": "{style_context} Summary statement large and centered: '{heading}'. Visual: {visual}. {label_instruction} Action items and contact info below: {text_panel}.",
       "default_layout": "full-bleed-image"
     }
   }
