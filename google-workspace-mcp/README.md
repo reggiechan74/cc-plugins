@@ -43,6 +43,8 @@ claude plugin add github:reggiechan74/cc-plugins/google-workspace-mcp
 2. Create an OAuth 2.0 Client ID (Desktop application type)
 3. Download the JSON credentials file
 
+> **Token expiry warning:** If your GCP app is in "Testing" publishing status (the default), Google enforces a **7-day refresh token expiry**. You will need to re-authenticate weekly by running `/authenticate` again. Publishing the app to "Production" removes this limit, but requires Google's verification process (privacy policy, homepage, domain verification) — even for personal-use apps.
+
 ### 2. Enable APIs
 
 Enable these APIs in your GCP project:
@@ -52,13 +54,15 @@ Enable these APIs in your GCP project:
 
 ### 3. Store Credentials
 
-Copy the OAuth JSON to both config directories:
+Each server reads OAuth app credentials from its own config directory. Copy the same OAuth JSON to both:
 
 ```bash
 mkdir -p ~/.gmail-mcp ~/.calendar-mcp
 cp your-oauth-keys.json ~/.gmail-mcp/gcp-oauth.keys.json
 cp your-oauth-keys.json ~/.calendar-mcp/gcp-oauth.keys.json
 ```
+
+> **Why two copies?** The Gmail and Calendar servers run as independent MCP processes, each loading credentials from its own directory. The Gmail server has a fallback to `~/.calendar-mcp/` if its own copy is missing, but the Calendar server does not — so both copies are required.
 
 ### 4. Authenticate
 
@@ -77,6 +81,33 @@ const CALENDAR_SHORTNAMES = {
   team: "abc123@group.calendar.google.com",
 };
 ```
+
+## Ephemeral Environments (Codespaces, Containers)
+
+The `~/.gmail-mcp/` and `~/.calendar-mcp/` directories are lost on environment rebuild. To persist credentials:
+
+1. **Store OAuth app keys as environment secrets:**
+   ```bash
+   # Codespaces: store as user-level secret
+   gh secret set GOOGLE_OAUTH_CREDENTIALS --user --body "$(cat ~/.gmail-mcp/gcp-oauth.keys.json)"
+   ```
+
+2. **Store user tokens after first authentication:**
+   ```bash
+   gh secret set GMAIL_CREDENTIALS --user --body "$(cat ~/.gmail-mcp/credentials.json)"
+   gh secret set CALENDAR_CREDENTIALS --user --body "$(cat ~/.calendar-mcp/credentials.json)"
+   ```
+
+3. **Hydrate on rebuild** (add to your `postCreateCommand` or startup script):
+   ```bash
+   mkdir -p ~/.gmail-mcp ~/.calendar-mcp
+   echo "$GOOGLE_OAUTH_CREDENTIALS" > ~/.gmail-mcp/gcp-oauth.keys.json
+   echo "$GOOGLE_OAUTH_CREDENTIALS" > ~/.calendar-mcp/gcp-oauth.keys.json
+   echo "$GMAIL_CREDENTIALS" > ~/.gmail-mcp/credentials.json
+   echo "$CALENDAR_CREDENTIALS" > ~/.calendar-mcp/credentials.json
+   ```
+
+The servers auto-refresh and persist access tokens to disk during normal use, so you only need to update the secrets periodically (or when the refresh token expires).
 
 ## License
 
