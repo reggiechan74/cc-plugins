@@ -109,33 +109,74 @@
 
 | Feature | Reason |
 |---------|--------|
-| Arbitrary theorem proving | Not a general proof engine — proof scaffolding only, scoped to finite/logical claims |
-| Full machine-checked proofs by default | Requires stable IR + mature Lean 4 tooling — deferred to Phase 5 |
-| Unconstrained natural-language spec generation | Schema-first is non-negotiable — prevents natural-language soup failure mode |
+| Arbitrary theorem proving | Not a general proof engine -- proof scaffolding only, scoped to finite/logical claims |
+| Full machine-checked proofs by default | Requires stable IR + mature Lean 4 tooling -- deferred to Phase 5 |
+| Unconstrained natural-language spec generation | Schema-first is non-negotiable -- prevents natural-language soup failure mode |
 | High-end nonlinear continuous mathematics | Beyond tractable model families for MVP |
 | Real-time / streaming optimization | Batch compilation model only |
 | General AI mathematics claims | Explicitly anti-positioned against magic optimizer framing |
 
 ## Traceability
 
-*Populated during roadmap creation.*
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 through INFRA-04 | Phase TBD | Pending |
-| COMP-01 through COMP-17 | Phase TBD | Pending |
-| SOLVER-01 through SOLVER-04 | Phase TBD | Pending |
-| DOMAIN-01 through DOMAIN-05 | Phase TBD | Pending |
-| REPORT-01 through REPORT-08 | Phase TBD | Pending |
-| EPIST-01 through EPIST-04 | Phase TBD | Pending |
-| VERIFY-01 through VERIFY-05 | Phase TBD | Pending |
-| STRESS-01 through STRESS-04 | Phase TBD | Pending |
+| INFRA-01 | Phase 1 | Pending |
+| INFRA-02 | Phase 1 | Pending |
+| INFRA-03 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Pending |
+| COMP-01 | Phase 2 | Pending |
+| COMP-02 | Phase 2 | Pending |
+| COMP-03 | Phase 2 | Pending |
+| COMP-04 | Phase 2 | Pending |
+| COMP-05 | Phase 2 | Pending |
+| COMP-06 | Phase 3 | Pending |
+| COMP-07 | Phase 3 | Pending |
+| COMP-08 | Phase 3 | Pending |
+| COMP-09 | Phase 3 | Pending |
+| COMP-10 | Phase 3 | Pending |
+| COMP-11 | Phase 3 | Pending |
+| COMP-12 | Phase 4 | Pending |
+| COMP-13 | Phase 4 | Pending |
+| COMP-14 | Phase 4 | Pending |
+| COMP-15 | Phase 2 | Pending |
+| COMP-16 | Phase 3 | Pending |
+| COMP-17 | Phase 4 | Pending |
+| SOLVER-01 | Phase 5 | Pending |
+| SOLVER-02 | Phase 5 | Pending |
+| SOLVER-03 | Phase 5 | Pending |
+| SOLVER-04 | Phase 5 | Pending |
+| DOMAIN-01 | Phase 6 | Pending |
+| DOMAIN-02 | Phase 6 | Pending |
+| DOMAIN-03 | Phase 6 | Pending |
+| DOMAIN-04 | Phase 6 | Pending |
+| DOMAIN-05 | Phase 6 | Pending |
+| REPORT-01 | Phase 7 | Pending |
+| REPORT-02 | Phase 7 | Pending |
+| REPORT-03 | Phase 7 | Pending |
+| REPORT-04 | Phase 7 | Pending |
+| REPORT-05 | Phase 7 | Pending |
+| REPORT-06 | Phase 7 | Pending |
+| REPORT-07 | Phase 7 | Pending |
+| REPORT-08 | Phase 7 | Pending |
+| EPIST-01 | Phase 2 | Pending |
+| EPIST-02 | Phase 7 | Pending |
+| EPIST-03 | Phase 2 | Pending |
+| EPIST-04 | Phase 7 | Pending |
+| VERIFY-01 | Phase 8 | Pending |
+| VERIFY-02 | Phase 8 | Pending |
+| VERIFY-03 | Phase 8 | Pending |
+| VERIFY-04 | Phase 8 | Pending |
+| VERIFY-05 | Phase 8 | Pending |
+| STRESS-01 | Phase 9 | Pending |
+| STRESS-02 | Phase 9 | Pending |
+| STRESS-03 | Phase 9 | Pending |
+| STRESS-04 | Phase 9 | Pending |
 
 **Coverage:**
-- v1 requirements: 46 total
-- Mapped to phases: 0
-- Unmapped: 46 ⚠️
+- v1 requirements: 51 total
+- Mapped to phases: 51
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after initial definition*
+*Last updated: 2026-03-09 after roadmap creation*
