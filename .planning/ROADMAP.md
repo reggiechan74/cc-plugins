@@ -33,11 +33,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. User can run `model:setup` and have all Python dependencies installed and importable
   3. User can run `model:doctor` and see a pass/fail health check for every required dependency
   4. Plugin README has correct shields.io badges inside badge markers
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Plugin scaffold, Wave 0 test stubs, README with badges (INFRA-03, INFRA-04)
+- [ ] 01-02-PLAN.md — setup_runtime.py and doctor_runtime.py (INFRA-01, INFRA-02)
 
 ### Phase 2: Spec Layer and IR Core
 **Goal**: User can author a YAML optimization spec and compile it into a typed, epistemic-status-enforced IR that handles CP-SAT integer-only constraints
@@ -154,7 +154,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can run `model:stress` to execute a scenario sweep across declared uncertainty ranges
   2. Interval-bounded parameters are expanded into robust counterpart formulations
-  3. Sensitivity analysis via scipy shows how objective value changes under parameter perturbation
+  3. Sensitivity analysis via scipy reports how objective value changes under parameter perturbation
   4. Stress results include counterexample candidates -- parameter combinations that cause feasibility failure or objective degradation beyond thresholds
 **Plans**: TBD
 
