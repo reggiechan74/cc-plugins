@@ -1,6 +1,6 @@
 {
   "name": "structured-english",
-  "version": "5.2.0",
+  "version": "5.2.1",
   "description": "Natural-language specification format with hybrid notation for declarative rules (BEHAVIOR), step-by-step workflows (PROCEDURE), decision tables (@route), and centralized configuration (@config).",
   "author": {
     "name": "Reggie Chan"

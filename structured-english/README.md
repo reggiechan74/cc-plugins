@@ -1,7 +1,7 @@
 # structured-english
 
 <!-- badges-start -->
-[![Plugin](https://img.shields.io/badge/plugin-v5.2.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
+[![Plugin](https://img.shields.io/badge/plugin-v5.2.1-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
 [![SESF](https://img.shields.io/badge/sesf-v4.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.8+-yellow)](https://www.python.org)
