@@ -382,7 +382,8 @@ def parse_sesf(filepath: str) -> SESFDocument:
             continue
 
         # --- Spec separator: stop at first `---` after we've started parsing ---
-        if stripped == "---" and (doc.title or doc.meta):
+        # Only match unindented `---` lines; indented ones are content (e.g., markdown hr in templates)
+        if stripped == "---" and (doc.title or doc.meta) and not raw_line.startswith((" ", "\t")):
             _finish_behavior()
             _finish_procedure()
             _finish_type()
@@ -910,22 +911,23 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 continue
 
             # STEP detection (with $variable threading)
-            step_match = re.match(r"^\s*STEP\s+(\w+)\s*:", stripped)
+            # Matches both `STEP name:` and `STEP name -> $var1, $var2:`
+            step_match = re.match(r"^\s*STEP\s+(\w+)\s*(?:(?:->|\u2192)[^:]*)?:", stripped)
             if step_match:
                 _finish_proc_sub_block()
                 step_name = step_match.group(1)
                 current_step = SESFStep(
                     name=step_name, line_number=line_num
                 )
-                # Check for output variables: STEP name → $var1, $var2
-                # or STEP name -> $var1, $var2
-                rest_of_step = stripped[step_match.end():]
-                arrow_idx = None
+                # Check for output variables: STEP name → $var1, $var2:
+                # or STEP name -> $var1, $var2:
+                # Search in the full stripped line (arrow comes before the colon)
                 for arrow in ("\u2192", "->"):
-                    idx = rest_of_step.find(arrow)
-                    if idx >= 0:
-                        arrow_idx = idx + len(arrow)
-                        after_arrow = rest_of_step[arrow_idx:]
+                    arrow_idx = stripped.find(arrow)
+                    if arrow_idx >= 0:
+                        after_arrow = stripped[arrow_idx + len(arrow):]
+                        # Strip trailing colon and whitespace
+                        after_arrow = after_arrow.rstrip().rstrip(":")
                         # Extract $-prefixed tokens
                         var_tokens = re.findall(r"\$\w+", after_arrow)
                         current_step.output_variables.extend(var_tokens)
