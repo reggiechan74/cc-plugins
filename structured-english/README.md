@@ -18,7 +18,7 @@ Write specifications and procedural pseudocode using **Structured English Specif
 - **Notation section**: Optional symbol glossary that bridges readability for non-technical readers
 - **Natural English syntax**: Non-programmers can read and write specs without programming experience
 - **ACTION functions**: Distinguish pure calculations (FUNCTION) from side-effect operations (ACTION)
-- **3-tier scaling**: Micro (20-100 lines), Standard (100-300 lines), Complex (300-600 lines)
+- **3-tier scaling**: Micro (20-100 lines), Standard (80-250 lines), Complex (250-500 lines)
 - **Behavior-centric grouping**: Rules, errors, and examples grouped by concern -- not separated by type
 - **Structural validator**: Python script that checks section completeness, behavior/procedure structure, @config/@route correctness, $variable threading, and tier compliance
 - **Templates and examples**: Fill-in-the-blank templates for all tiers, plus 7 complete working examples
@@ -173,7 +173,7 @@ PROCEDURE process_refund: Handle a customer refund request
 
 This plugin uses two version numbers:
 
-- **Plugin version** (5.0.0) tracks the package release -- plugin.json, README, commands, templates, examples, and validator.
+- **Plugin version** (5.2.3) tracks the package release -- plugin.json, README, commands, templates, examples, and validator.
 - **SESF format version** (4.0.0) tracks the specification language -- syntax rules, hybrid notation, section ordering, and keyword semantics defined in the reference and SKILL.md.
 
 The plugin version increments when any shipped file changes. The SESF format version increments only when the specification language itself changes (new block types, new notation, changed semantics).
