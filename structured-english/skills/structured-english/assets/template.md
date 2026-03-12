@@ -176,28 +176,6 @@ Outputs
   [key]: [value]
   [key]: [value]
 
-Types
-
-[TypeName] {
-  [field_name]: [type], [required | optional]
-  [field_name]: [type], [default: value]
-  [field_name]: enum [[option1, option2, option3]], [required]
-}
-
-Functions
-
-FUNCTION [function_name]([parameter1], [parameter2]):
-  [logic as simple statements]
-  IF [condition] THEN
-    [action]
-  ELSE
-    [alternative action]
-  RETURNS [output]
-
-ACTION [action_name]([parameter1], [parameter2]):
-  [natural English actions with side effects]
-  RETURNS [output]
-
 Behaviors
 
 BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
@@ -206,16 +184,13 @@ BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
     [condition_1]  → [outcome_1]
     [condition_2]  → [outcome_2]
     [condition_3]  → [outcome_3]
-    *              → [default_outcome]
+    -- include wildcard only when a meaningful default exists: * → [default_outcome]
 
   RULE [constraint_name]:
     [subject] MUST [binary constraint]
 
-  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
-
-  EXAMPLES:
-    [success_case]: [input description] → [expected outcome]
-    [failure_case]: [input description] → [expected error outcome]
+  -- include ERROR declarations only for failure modes not already covered by RULE logic
+  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
 
 Procedures
 
@@ -227,11 +202,8 @@ PROCEDURE [procedure_name]: [Brief description of what this procedure does]
   STEP [another_step]:
     [action using $output_var from prior step]
 
-  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
-
-  EXAMPLES:
-    [success_case]: [input description] → [expected outcome]
-    [failure_case]: [input description] → [expected error outcome]
+  -- include ERROR declarations only for failure modes not already covered by RULE logic
+  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
 
 Constraints
 * [constraint statement using MUST/SHOULD/MAY]
@@ -269,14 +241,8 @@ Dependencies
 - @config is optional. Omit it if the spec has no configurable parameters.
 - @route is for 3+ branch conditionals inside BEHAVIOR blocks. For binary conditions, use WHEN/THEN/ELSE rules.
 - $variable threading on STEP declarations is optional. Omit `→ $var` when steps have no meaningful outputs.
-- Types and Functions sections are required. Use `-- none` stubs if the spec has no type definitions or functions:
-  ```
-  Types
-  -- none: all data structures are inline within behavior and procedure blocks
-
-  Functions
-  -- none: all logic is expressed directly in behavior rules and procedure steps
-  ```
+- Types and Functions sections are optional. Include Types only when 2+ blocks share the same structure. Include Functions only when a calculation is used by multiple blocks. Omit both entirely if unused — do not add `-- none` stubs.
+- @route wildcard row (`*`) is optional. Include it only when a meaningful default action exists. Omit it when all cases are explicitly enumerated.
 
 ---
 
@@ -330,23 +296,6 @@ Outputs
   [nested_group]:
     [key]: [value]
 
-Types
-
-[TypeName] {
-  [field_name]: [type], [required | optional]
-  [field_name]: enum [[option1, option2]], [required]
-}
-
-Functions
-
-FUNCTION [function_name]([parameter1]):
-  [logic as simple statements]
-  RETURNS [output]
-
-ACTION [action_name]([parameter1]):
-  [natural English actions with side effects]
-  RETURNS [output]
-
 Behaviors
 
 BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
@@ -355,7 +304,7 @@ BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
     [condition_1]  → [outcome_1]
     [condition_2]  → [outcome_2]
     [condition_3]  → [outcome_3]
-    *              → [default_outcome]
+    -- include wildcard only when a meaningful default exists: * → [default_outcome]
 
   RULE [rule_name]:
     WHEN [condition]
@@ -367,11 +316,8 @@ BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
     [subject] MUST [binary constraint]
     PRIORITY 2
 
-  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
-
-  EXAMPLES:
-    [success_case]: [input description] → [expected outcome]
-    [failure_case]: [input description] → [expected error outcome]
+  -- include ERROR declarations only for failure modes not already covered by RULE logic
+  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
 
   State/Flow
     [state_name] -> [next_state]: WHEN [transition condition]
@@ -389,11 +335,8 @@ BEHAVIOR [second_behavior_name]: [Brief description]
     THEN [action]
     PRIORITY 1
 
-  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
-
-  EXAMPLES:
-    [success_case]: [input description] → [expected outcome]
-    [edge_case]: [input testing overlap with first behavior] → [output showing precedence resolution]
+  -- include ERROR declarations only for failure modes not already covered by RULE logic
+  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
 
 Procedures
 
@@ -408,11 +351,8 @@ PROCEDURE [procedure_name]: [Brief description of what this procedure does]
   STEP [final_step]:
     [natural English action or actions]
 
-  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
-
-  EXAMPLES:
-    [success_case]: [input description] → [expected outcome]
-    [failure_case]: [input description] → [expected error outcome]
+  -- include ERROR declarations only for failure modes not already covered by RULE logic
+  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
 
   State/Flow
     [state_name] -> [next_state]: WHEN [transition condition]
@@ -467,4 +407,6 @@ Changelog
 - State/Flow subsections are optional within BEHAVIOR and PROCEDURE blocks. Include them when the block manages state transitions.
 - PRECEDENCE is required at Complex tier when rules from different behaviors can match the same input. If no overlapping conditions exist, include a stub: `PRECEDENCE: -- none: no overlapping conditions between behaviors`.
 - @config, @route, and $variable threading follow the same rules as Standard tier.
+- Types and Functions sections are optional. Include only when 2+ blocks share the same structure or calculation. Omit entirely if unused — do not add `-- none` stubs.
+- @route wildcard row (`*`) is optional. Include it only when a meaningful default action exists. Omit it when all cases are explicitly enumerated.
 - PRIORITY tags on individual rules within a BEHAVIOR MUST NOT contradict the global PRECEDENCE block.

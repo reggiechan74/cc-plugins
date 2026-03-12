@@ -43,8 +43,8 @@ Outputs
   examples_path: ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/references/examples.md
   line_budget:
     micro: [10, 100]
-    standard: [100, 300]
-    complex: [300, 600]
+    standard: [80, 250]
+    complex: [250, 500]
   tier_threshold:
     route_min_branches: 3
 
@@ -109,7 +109,7 @@ BEHAVIOR structure_document: Assemble the specification with correct section ord
 
   @route required_sections [all_matches]
     tier is micro     -> Meta, Purpose, Behaviors OR Procedures, Constraints (optional)
-    tier is standard  -> Meta, Notation, Purpose, Scope, Inputs, Outputs, @config (if needed), Types, Functions, Behaviors/Procedures, Constraints, Dependencies
+    tier is standard  -> Meta, Notation, Purpose, Scope, Inputs, Outputs, @config (if needed), Behaviors/Procedures, Constraints, Dependencies
     tier is complex   -> all standard sections plus Precedence, Audience (optional), State/Flow (optional per block)
     *                 -> Meta, Purpose, Behaviors OR Procedures
 
@@ -123,8 +123,10 @@ BEHAVIOR structure_document: Assemble the specification with correct section ord
     ELSE use multi-line bullet Meta format
 
   RULE empty_section_stubs:
-    WHEN a required section has no content (e.g., no shared types exist)
+    WHEN a required section has no content
     THEN use a `-- none` stub with a brief reason
+    -- applies only to sections required by the tier (e.g., Constraints at standard tier)
+    -- optional sections (Types, Functions) MUST be omitted entirely rather than stubbed
 
   RULE purpose_length:
     Purpose MUST be 1-3 sentences describing what the spec accomplishes
@@ -175,15 +177,19 @@ BEHAVIOR write_behaviors: Compose BEHAVIOR blocks with rules, errors, and exampl
     -- one ERROR per line; compact and scannable
     -- MAY use full ERROR block (WHEN/SEVERITY/ACTION/MESSAGE) for complex recovery logic
     -- MAY use compact ERRORS: table for backward compatibility
+    -- omit ERROR declarations entirely when the failure mode is already fully specified by a RULE's WHEN/THEN/ELSE
+    -- ERROR is for failure modes that rules don't cover
 
   RULE compact_examples:
     examples SHOULD use single-line format: name: input -> expected
     -- concise and sufficient for most cases
     MAY use full EXAMPLE blocks (INPUT/EXPECTED/NOTES) only when multi-line JSON or essential NOTES are needed
+    -- omit examples entirely when the rules are self-explanatory
+    -- an example that just restates a rule adds bytes without adding clarity
 
   RULE error_coverage:
-    every RULE SHOULD have at least one EXAMPLE demonstrating it
-    AND every ERROR SHOULD have at least one EXAMPLE triggering it
+    EXAMPLES SHOULD cover only non-obvious edge cases, borderline decisions, or behavior that is surprising or ambiguous
+    -- happy-path examples that restate what the rules already say are bloat — omit them
 
   RULE error_structure:
     ERROR blocks MUST contain: WHEN, SEVERITY (critical|warning|info), ACTION, MESSAGE
@@ -289,8 +295,9 @@ BEHAVIOR write_hybrid_elements: Apply v4 hybrid notation correctly across the sp
 
   RULE route_threshold:
     @route tables MUST have AT LEAST $config.tier_threshold.route_min_branches branches
-    AND every @route table MUST end with a * (wildcard) default row
     -- for fewer than 3 branches, use WHEN/THEN rules instead
+    AND @route tables SHOULD end with a * (wildcard) default row WHEN a meaningful default action exists
+    -- WHEN all cases are explicitly enumerated, the wildcard MAY be omitted
 
   RULE route_modes:
     @route tables use one of two modes:
@@ -327,7 +334,7 @@ BEHAVIOR write_hybrid_elements: Apply v4 hybrid notation correctly across the sp
 
   ERROR config_after_behavior: critical → move @config before all behavior/procedure blocks, "@config MUST appear before any BEHAVIOR or PROCEDURE block."
   ERROR route_outside_behavior: critical → move @route inside a BEHAVIOR block, "@route tables belong inside BEHAVIOR blocks only."
-  ERROR route_missing_wildcard: critical → add a wildcard default row, "@route '{table_name}' is missing a wildcard (*) default row."
+  ERROR route_missing_wildcard: warning → consider whether a wildcard default is needed, "@route '{table_name}' has no wildcard (*) default row. Omit if all cases are explicitly covered."
   ERROR route_too_few_branches: warning → convert to WHEN/THEN rules, "@route '{table_name}' has fewer than {route_min_branches} branches."
   ERROR variable_never_produced: critical → add -> $var to the producing step, "$variable '{var_name}' is referenced but never produced."
   ERROR config_runtime_misuse: warning → use $variable threading instead of @config, "$config is for static values only. Use $variable threading for '{key}'."
@@ -345,7 +352,9 @@ BEHAVIOR write_shared_definitions: Place types, functions, actions, and preceden
   RULE type_placement:
     WHEN a data structure is referenced by multiple behaviors or procedures
     THEN define it in the Types section
-    ELSE inline it within the single behavior or procedure that uses it
+    ELSE inline its fields directly in the single behavior or procedure that uses it
+    -- only extract to Types when 2+ blocks share the same structure
+    -- single-use types in the Types section are dead weight; inline them
 
   RULE function_purity:
     functions MUST be pure -- inputs in, outputs out, no side effects
@@ -360,6 +369,12 @@ BEHAVIOR write_shared_definitions: Place types, functions, actions, and preceden
     WHEN a calculation is used by multiple behaviors or procedures
     THEN define it in the Functions section
     ELSE inline it within the single behavior or procedure that uses it
+
+  RULE omit_empty_sections:
+    WHEN a section would contain only a `-- none` stub
+    THEN omit the section entirely
+    -- do not template the absence of content
+    -- applies to optional sections: Types, Functions, Notation, Audience, Changelog
 
   RULE no_orphan_definitions:
     every Type, Function, and ACTION defined in the shared sections
@@ -387,6 +402,16 @@ BEHAVIOR write_shared_definitions: Place types, functions, actions, and preceden
 
 
 BEHAVIOR ensure_quality: Validate the completed specification against SESF v4 standards
+
+  RULE no_duplication_across_layers:
+    ERROR declarations MUST NOT duplicate failure modes already fully specified by RULE blocks
+    -- if a RULE's WHEN/THEN covers the failure case, an ERROR restating it is redundant
+    -- ERROR adds value only for failure modes that rules don't cover
+
+  RULE inline_single_use_config:
+    WHEN a @config value is referenced exactly once in the spec
+    THEN consider inlining it at the point of use rather than declaring it in @config
+    -- @config earns its bytes when the same value appears in multiple locations or is likely to change
 
   RULE deduplicate:
     no rule MUST be restated in Constraints that already appears as a RULE inside a BEHAVIOR
@@ -463,7 +488,7 @@ Constraints
 * Tight over bloated: say each thing once, in the right place -- completeness does not mean repetition
 * specifications MUST pass `python3 $config.validator_path` with zero failures before delivery
 * YAML frontmatter (name + description) is required for Claude Code skills
-* @route tables MUST have AT LEAST $config.tier_threshold.route_min_branches branches and a wildcard default
+* @route tables MUST have AT LEAST $config.tier_threshold.route_min_branches branches; wildcard default row is recommended but MAY be omitted when all cases are explicitly covered
 * $config values are static only -- use $variable threading for runtime data
 
 Syntax Quick Reference
@@ -499,7 +524,7 @@ PROCEDURE block:
     condition_1  → outcome_1
     condition_2  → outcome_2
     *            → default_outcome
-  -- 3+ branches required; MUST end with wildcard *
+  -- 3+ branches required; wildcard * recommended when a meaningful default exists
 
 Inline ERROR format:
   ERROR name: severity → action, "message"

@@ -22,8 +22,8 @@ These concepts apply to both BEHAVIOR and PROCEDURE blocks.
 | Tier     | Blocks Allowed                                      | Use When                                              | Target Length | Hybrid Elements |
 |----------|-----------------------------------------------------|-------------------------------------------------------|---------------|-----------------|
 | Micro    | 1 BEHAVIOR or 1 PROCEDURE                           | Single concern, 1-2 rules/steps                       | 20-40 lines   | Compact ERRORS/EXAMPLES optional; @config/@route not recommended |
-| Standard | Multiple BEHAVIORs and/or PROCEDUREs sharing types  | Multiple concerns                                     | 100-300 lines | All hybrid elements available; Notation section optional |
-| Complex  | Everything + PRECEDENCE, State/Flow                  | Overlapping rules, state machines, mixed declarative+procedural | 300-600 lines | All hybrid elements available; Notation section optional |
+| Standard | Multiple BEHAVIORs and/or PROCEDUREs sharing types  | Multiple concerns                                     | 80-250 lines  | All hybrid elements available; Notation section optional |
+| Complex  | Everything + PRECEDENCE, State/Flow                  | Overlapping rules, state machines, mixed declarative+procedural | 250-500 lines | All hybrid elements available; Notation section optional |
 
 **Section ordering** (sections MUST appear in this order when present):
 
@@ -32,7 +32,7 @@ Meta, Notation, Purpose, Audience, Scope, Inputs, Outputs, @config, Types, Funct
 **Required sections per tier:**
 
 - **Micro**: Meta, Purpose, Behaviors/Procedures. Constraints is optional. Notation is optional.
-- **Standard**: Meta, Purpose, Scope, Inputs, Outputs, Types, Functions, Behaviors/Procedures, Constraints, Dependencies. Notation (optional). Audience and Changelog are optional.
+- **Standard**: Meta, Purpose, Scope, Inputs, Outputs, Behaviors/Procedures, Constraints, Dependencies. Notation (optional). Types and Functions are optional — include only when 2+ blocks share the same structure or calculation. Audience and Changelog are optional.
 - **Complex**: All Standard sections plus Precedence. Notation (optional). Audience is optional. Behaviors MAY include State/Flow subsections.
 
 ### Meta Section Format
@@ -682,8 +682,8 @@ Before finalizing a spec, verify:
 - [ ] Purpose stated in 1-3 sentences
 - [ ] All inputs listed with types (Standard+)
 - [ ] All outputs defined with structure (Standard+)
-- [ ] Every BEHAVIOR has rules, at least one error case, and at least one example
-- [ ] Every PROCEDURE has ordered steps, at least one error case, and at least one example
+- [ ] Every BEHAVIOR has rules; ERROR and EXAMPLES only where they add clarity beyond what rules already say
+- [ ] Every PROCEDURE has ordered steps; ERROR and EXAMPLES only for non-obvious failure modes and edge cases
 - [ ] PROCEDURE steps are ordered logically (each step has what it needs from prior steps)
 - [ ] Side effects use ACTION, not FUNCTION
 - [ ] Iteration uses natural English phrasing (not programming syntax)
@@ -699,7 +699,7 @@ Before finalizing a spec, verify:
 - [ ] State transitions explicitly name the from-state and to-state
 - [ ] @config values referenced correctly ($config.key matches @config entries)
 - [ ] $variable references produced before use (document-global scope)
-- [ ] @route tables have wildcard default row
+- [ ] @route tables have wildcard default row when a meaningful default exists (omit if all cases are explicitly covered)
 - [ ] Notation section present if spec targets human readers
 - [ ] Validator runs clean: `python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <spec.md>`
 
@@ -841,7 +841,7 @@ not author preference.
 
 **Rules:**
 - @route MUST appear inside a BEHAVIOR block
-- `*` (wildcard) is the default case — it MUST be the last row
+- `*` (wildcard) is the default case — it SHOULD be the last row when a meaningful default exists; MAY be omitted when all cases are explicitly enumerated
 - Each row is `condition → outcome` with `→` as separator
 - Conditions are natural English predicates (not code expressions)
 - A @route table replaces multiple RULE blocks for multi-branch routing
