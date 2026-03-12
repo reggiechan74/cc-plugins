@@ -236,6 +236,22 @@ def _strip_yaml_frontmatter(text: str) -> str:
     return text  # No closing --- found, return as-is
 
 
+_BOLD_KW_RE = re.compile(r'\*\*([A-Z][A-Z0-9_]*)\*\*')
+_HEADING_RE = re.compile(r'^#+\s*')
+
+
+def _normalize_for_matching(s: str) -> str:
+    """Strip markdown **BOLD** and ### heading markers for keyword matching.
+
+    Allows the parser to accept both plain and markdown-formatted forms:
+      '**BEHAVIOR** name:' → 'BEHAVIOR name:'
+      '### Behaviors'      → 'Behaviors'
+    """
+    s = _BOLD_KW_RE.sub(r'\1', s)
+    s = _HEADING_RE.sub('', s)
+    return s
+
+
 def _parse_meta_pipe(line: str) -> dict:
     """Parse a pipe-delimited meta line like:
     Version: 1.0.0 | Date: 2026-02-28 | Domain: Validation | Status: active | Tier: micro
@@ -373,6 +389,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
         line_num = line_idx + 1  # 1-based
         line = raw_line.rstrip()
         stripped = line.strip()
+        stripped_norm = _normalize_for_matching(stripped)
 
         # --- Skip empty lines (but don't change section) ---
         if not stripped:
@@ -393,7 +410,8 @@ def parse_sesf(filepath: str) -> SESFDocument:
         if not doc.title and stripped.startswith("#"):
             # Could be `# Title` or just `Title` at the top
             title = stripped.lstrip("#").strip()
-            if title:
+            # Don't treat `### Section` headers as the title
+            if title and title.lower() not in KNOWN_SECTIONS:
                 doc.title = title
                 continue
 
@@ -410,7 +428,8 @@ def parse_sesf(filepath: str) -> SESFDocument:
         # --- Section detection ---
         # A section keyword at the very start of a line (not indented),
         # possibly followed by nothing, or by `:` or content.
-        low_stripped = stripped.lower()
+        # stripped_norm removes **bold** and ### heading markers first.
+        low_stripped = stripped_norm.lower()
         section_match = None
         for sec in KNOWN_SECTIONS:
             if low_stripped == sec or low_stripped == sec + ":":
@@ -437,7 +456,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
             if section_match == "meta":
                 meta_started = True
                 # Check if rest of line has pipe-delimited meta
-                rest = stripped[len(section_match):].strip().lstrip(":").strip()
+                rest = stripped_norm[len(section_match):].strip().lstrip(":").strip()
                 if "|" in rest:
                     doc.meta.update(_parse_meta_pipe(rest))
 
@@ -495,7 +514,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
 
         # --- BEHAVIOR detection (must come before section-specific handlers
         #     so that BEHAVIOR lines are not consumed by e.g. Functions) ---
-        behavior_match = re.match(r"^\s*BEHAVIOR\s+(\w+)\s*:", stripped)
+        behavior_match = re.match(r"^\s*BEHAVIOR\s+(\w+)\s*:", stripped_norm)
         if behavior_match:
             _finish_behavior()
             _finish_procedure()
@@ -510,7 +529,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
             continue
 
         # --- PROCEDURE detection (parallel to BEHAVIOR) ---
-        procedure_match = re.match(r"^\s*PROCEDURE\s+(\w+)\s*:", stripped)
+        procedure_match = re.match(r"^\s*PROCEDURE\s+(\w+)\s*:", stripped_norm)
         if procedure_match:
             _finish_behavior()
             _finish_procedure()
@@ -527,7 +546,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
             continue
 
         # --- PRECEDENCE detection (can appear after behaviors, at top level) ---
-        prec_header_match = re.match(r"^PRECEDENCE\s*:", stripped)
+        prec_header_match = re.match(r"^PRECEDENCE\s*:", stripped_norm)
         if prec_header_match and not raw_line.startswith((" ", "\t")):
             _finish_behavior()
             _finish_procedure()
@@ -588,10 +607,10 @@ def parse_sesf(filepath: str) -> SESFDocument:
         # --- Inside Functions section: capture FUNCTION and ACTION declarations ---
         if current_section == "functions":
             doc.sections["functions"].append(stripped)
-            func_match = re.match(r"^FUNCTION\s+(\w+)\s*\(", stripped)
+            func_match = re.match(r"^FUNCTION\s+(\w+)\s*\(", stripped_norm)
             if func_match:
                 doc.functions.append(func_match.group(1))
-            action_match = re.match(r"^ACTION\s+(\w+)\s*\(", stripped)
+            action_match = re.match(r"^ACTION\s+(\w+)\s*\(", stripped_norm)
             if action_match:
                 doc.actions.append(action_match.group(1))
             continue
@@ -653,7 +672,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 # Fall through to process this line normally
 
             # --- Compact ERRORS: table detection inside behavior ---
-            if stripped.upper().startswith("ERRORS:") and not re.match(r"^\s*ERROR\s+\w+\s*:", stripped):
+            if stripped_norm.upper().startswith("ERRORS:") and not re.match(r"^\s*ERROR\s+\w+\s*:", stripped_norm):
                 _finish_sub_block()
                 in_compact_errors = True
                 compact_errors_header_seen = False
@@ -696,7 +715,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 # Fall through to process this line normally
 
             # --- Compact EXAMPLES: detection inside behavior ---
-            if stripped.upper().startswith("EXAMPLES:") and not re.match(r"^\s*EXAMPLE\s+\w+\s*:", stripped):
+            if stripped_norm.upper().startswith("EXAMPLES:") and not re.match(r"^\s*EXAMPLE\s+\w+\s*:", stripped_norm):
                 _finish_sub_block()
                 in_compact_examples = True
                 in_compact_errors = False
@@ -724,7 +743,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
             # --- Inline ERROR detection: ERROR name: severity → action, "message" ---
             inline_err_match = re.match(
                 r'^\s*ERROR\s+(\w+)\s*:\s*(\w+)\s*(?:→|->)\s*(.+?),\s*"([^"]*)"',
-                stripped,
+                stripped_norm,
             )
             if inline_err_match:
                 _finish_sub_block()
@@ -740,7 +759,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 continue
 
             # RULE detection
-            rule_match = re.match(r"^\s*RULE\s+(\w+)\s*:", stripped)
+            rule_match = re.match(r"^\s*RULE\s+(\w+)\s*:", stripped_norm)
             if rule_match:
                 _finish_sub_block()
                 current_rule = SESFRule(
@@ -753,7 +772,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 continue
 
             # ERROR detection (verbose form)
-            error_match = re.match(r"^\s*ERROR\s+(\w+)\s*:", stripped)
+            error_match = re.match(r"^\s*ERROR\s+(\w+)\s*:", stripped_norm)
             if error_match:
                 _finish_sub_block()
                 current_error = SESFError(
@@ -762,7 +781,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 continue
 
             # EXAMPLE detection (verbose form)
-            example_match = re.match(r"^\s*EXAMPLE\s+(\w+)\s*:", stripped)
+            example_match = re.match(r"^\s*EXAMPLE\s+(\w+)\s*:", stripped_norm)
             if example_match:
                 _finish_sub_block()
                 current_example = SESFExample(
@@ -812,7 +831,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
             # Lines inside a behavior that don't match sub-block patterns
             # (e.g., State/Flow, Audience notes, continuation lines)
             # Check if this line is actually a PRECEDENCE section starting
-            prec_match_inline = re.match(r"^PRECEDENCE\s*:", stripped)
+            prec_match_inline = re.match(r"^PRECEDENCE\s*:", stripped_norm)
             if prec_match_inline and not raw_line.startswith((" ", "\t")):
                 _finish_behavior()
                 current_section = "precedence"
@@ -829,7 +848,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 doc.sections["behaviors"].append(stripped)
 
             # --- Compact ERRORS: table detection inside procedure ---
-            if stripped.upper().startswith("ERRORS:") and not re.match(r"^\s*ERROR\s+\w+\s*:", stripped):
+            if stripped_norm.upper().startswith("ERRORS:") and not re.match(r"^\s*ERROR\s+\w+\s*:", stripped_norm):
                 _finish_proc_sub_block()
                 in_compact_errors = True
                 compact_errors_header_seen = False
@@ -869,7 +888,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 # Fall through to process this line normally
 
             # --- Compact EXAMPLES: detection inside procedure ---
-            if stripped.upper().startswith("EXAMPLES:") and not re.match(r"^\s*EXAMPLE\s+\w+\s*:", stripped):
+            if stripped_norm.upper().startswith("EXAMPLES:") and not re.match(r"^\s*EXAMPLE\s+\w+\s*:", stripped_norm):
                 _finish_proc_sub_block()
                 in_compact_examples = True
                 in_compact_errors = False
@@ -895,7 +914,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
             # --- Inline ERROR detection: ERROR name: severity → action, "message" ---
             inline_err_match = re.match(
                 r'^\s*ERROR\s+(\w+)\s*:\s*(\w+)\s*(?:→|->)\s*(.+?),\s*"([^"]*)"',
-                stripped,
+                stripped_norm,
             )
             if inline_err_match:
                 _finish_proc_sub_block()
@@ -912,7 +931,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
 
             # STEP detection (with $variable threading)
             # Matches both `STEP name:` and `STEP name -> $var1, $var2:`
-            step_match = re.match(r"^\s*STEP\s+(\w+)\s*(?:(?:->|\u2192)[^:]*)?:", stripped)
+            step_match = re.match(r"^\s*STEP\s+(\w+)\s*(?:(?:->|\u2192)[^:]*)?:", stripped_norm)
             if step_match:
                 _finish_proc_sub_block()
                 step_name = step_match.group(1)
@@ -935,7 +954,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 continue
 
             # ERROR detection (verbose form)
-            error_match = re.match(r"^\s*ERROR\s+(\w+)\s*:", stripped)
+            error_match = re.match(r"^\s*ERROR\s+(\w+)\s*:", stripped_norm)
             if error_match:
                 _finish_proc_sub_block()
                 current_error = SESFError(
@@ -944,7 +963,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 continue
 
             # EXAMPLE detection (verbose form)
-            example_match = re.match(r"^\s*EXAMPLE\s+(\w+)\s*:", stripped)
+            example_match = re.match(r"^\s*EXAMPLE\s+(\w+)\s*:", stripped_norm)
             if example_match:
                 _finish_proc_sub_block()
                 current_example = SESFExample(
@@ -992,7 +1011,7 @@ def parse_sesf(filepath: str) -> SESFDocument:
                 continue
 
             # Lines inside a procedure that don't match sub-block patterns
-            prec_match_inline = re.match(r"^PRECEDENCE\s*:", stripped)
+            prec_match_inline = re.match(r"^PRECEDENCE\s*:", stripped_norm)
             if prec_match_inline and not raw_line.startswith((" ", "\t")):
                 _finish_procedure()
                 current_section = "precedence"
@@ -2172,6 +2191,100 @@ def check_notation_section(doc: SESFDocument) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Markdown formatting check (MUST rules)
+# ---------------------------------------------------------------------------
+
+def check_markdown_formatting(doc: SESFDocument, filepath: str) -> list:
+    """Check that section headers use ### and block keywords use **bold**.
+
+    Per RULE markdown_formatting (MUST):
+    - Section headers (Behaviors, Procedures, etc.) MUST use ### heading syntax
+    - Block keywords (BEHAVIOR, PROCEDURE, RULE, STEP) MUST use **bold** syntax
+
+    Returns a list of ValidationResult objects.
+    """
+    results: list[ValidationResult] = []
+
+    try:
+        content = Path(filepath).read_text(encoding="utf-8")
+        content = _strip_yaml_frontmatter(content)
+        content = _strip_code_block(content)
+        lines = content.split("\n")
+    except Exception:
+        return results
+
+    section_fails = 0
+    keyword_fails = 0
+
+    for i, raw_line in enumerate(lines):
+        line_num = i + 1
+        stripped = raw_line.strip()
+
+        if not stripped or stripped.startswith("--"):
+            continue
+
+        # Section headers: unindented lines matching a known section name
+        # must have a ### prefix.
+        if not raw_line.startswith((" ", "\t")):
+            low = stripped.lower().rstrip(":")
+            if low in KNOWN_SECTIONS and not stripped.startswith("#"):
+                results.append(ValidationResult(
+                    category="markdown_formatting",
+                    status="FAIL",
+                    message=f"Section '{low}' must use '### {low.title()}' heading syntax",
+                    line_number=line_num,
+                ))
+                section_fails += 1
+
+        # Block keywords: BEHAVIOR, PROCEDURE (unindented) and RULE, STEP
+        # (indented inside blocks) must use **bold** syntax.
+        if re.match(r'^BEHAVIOR\s+\w+\s*:', stripped):
+            results.append(ValidationResult(
+                category="markdown_formatting",
+                status="FAIL",
+                message="BEHAVIOR must use '**BEHAVIOR**' bold syntax",
+                line_number=line_num,
+            ))
+            keyword_fails += 1
+
+        if re.match(r'^PROCEDURE\s+\w+\s*:', stripped):
+            results.append(ValidationResult(
+                category="markdown_formatting",
+                status="FAIL",
+                message="PROCEDURE must use '**PROCEDURE**' bold syntax",
+                line_number=line_num,
+            ))
+            keyword_fails += 1
+
+        if re.match(r'^RULE\s+\w+\s*:', stripped):
+            results.append(ValidationResult(
+                category="markdown_formatting",
+                status="FAIL",
+                message="RULE must use '**RULE**' bold syntax",
+                line_number=line_num,
+            ))
+            keyword_fails += 1
+
+        if re.match(r'^STEP\s+\w+', stripped):
+            results.append(ValidationResult(
+                category="markdown_formatting",
+                status="FAIL",
+                message="STEP must use '**STEP**' bold syntax",
+                line_number=line_num,
+            ))
+            keyword_fails += 1
+
+    if section_fails == 0 and keyword_fails == 0:
+        results.append(ValidationResult(
+            category="markdown_formatting",
+            status="PASS",
+            message="Section headers use ### and block keywords use **bold**",
+        ))
+
+    return results
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -2203,6 +2316,7 @@ def main():
     results.extend(check_route_completeness(doc))
     results.extend(check_error_table_structure(doc))
     results.extend(check_notation_section(doc))
+    results.extend(check_markdown_formatting(doc, filepath))
 
     # Print results grouped by category
     has_fail = False
