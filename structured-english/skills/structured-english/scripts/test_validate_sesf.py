@@ -27,6 +27,10 @@ from validate_sesf import (
     check_example_consistency,
     check_error_consistency,
     check_type_consistency,
+    detect_format_version,
+    validate_hsf,
+    check_hsf_structure,
+    check_hsf_route_tables,
 )
 
 
@@ -1463,6 +1467,565 @@ Constraints
 
 
 # ──────────────────────────────────────────────────────────────────────────
+# HSF v5 Tests
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class TestHSFValidation:
+    """Test cases for HSF v5 format validation."""
+
+    def test_valid_hsf_micro(self):
+        """A valid micro HSF v5 spec should pass with no failures."""
+        spec = """\
+# Daily Stand-up Summary Generator
+
+Produce a concise daily stand-up summary from team member updates.
+
+@config
+  team_size: 8
+  max_summary_length: 500
+
+## Instructions
+
+Read each team member's update. Extract blockers, completions, and plans.
+Combine them into a single summary grouped by project area.
+If a member has no update, note them as absent.
+Trim the summary to fit within $config.max_summary_length characters.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| no_updates | warning | Return empty summary with note |
+| malformed_input | fatal | Reject with parse error |
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = validate_hsf(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            assert len(failures) == 0, (
+                f"Expected no failures for valid micro HSF, got: "
+                f"{[r.message for r in failures]}"
+            )
+            print("  PASS  test_valid_hsf_micro")
+        finally:
+            os.unlink(path)
+
+    def test_valid_hsf_standard(self):
+        """A valid standard HSF v5 spec should pass with no failures."""
+        spec = """\
+# Invoice Reconciliation Engine
+
+Match incoming invoices against purchase orders and flag discrepancies.
+
+**Scope:** Accounts-payable pipeline for approved vendors only.
+
+@config
+  tolerance_pct: 5
+  currency: USD
+  auto_approve_below: 100.00
+  review_queue: finance-team
+
+@route match_strategy [first_match_wins]
+  exact PO match and amount within tolerance -> auto_approve
+  exact PO match but amount over tolerance  -> flag_for_review
+  fuzzy PO match (>90% similarity)          -> suggest_match
+  no PO match found                         -> route_to_manual
+
+## Instructions
+
+### Phase 1 — Ingest
+
+Parse the invoice PDF or EDI payload.  Extract vendor ID, PO number,
+line items, and total amount.  Normalize the currency to $config.currency.
+
+### Phase 2 — Match
+
+Look up the PO number in the purchase-order ledger.  Apply the
+@route match_strategy table to decide the next action.
+
+### Phase 3 — Disposition
+
+For auto-approved invoices, stamp them and forward to payment.
+For flagged invoices, enqueue to $config.review_queue with a
+discrepancy report attached.
+
+## Rules
+
+- **tolerance_check** — The invoice total MUST be within $config.tolerance_pct
+  percent of the PO total to qualify for auto-approval.
+- **duplicate_guard** — An invoice number that has already been processed
+  MUST be rejected with error duplicate_invoice.
+- **currency_normalize** — All monetary values MUST be converted to
+  $config.currency before comparison.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| duplicate_invoice | fatal | Reject and log |
+| po_not_found | warning | Route to manual queue |
+| amount_mismatch | warning | Flag for review |
+| parse_failure | fatal | Reject with details |
+
+## Examples
+
+**Example: exact match auto-approve**
+
+- Input: Invoice #1042, PO #A-200, amount $95.00, PO total $100.00
+- Expected: auto_approve (within 5% tolerance)
+
+**Example: fuzzy match suggestion**
+
+- Input: Invoice #1043, PO reference "A200" (no dash), amount $100.00
+- Expected: suggest_match with candidate PO #A-200
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = validate_hsf(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            assert len(failures) == 0, (
+                f"Expected no failures for valid standard HSF, got: "
+                f"{[r.message for r in failures]}"
+            )
+            print("  PASS  test_valid_hsf_standard")
+        finally:
+            os.unlink(path)
+
+    def test_valid_hsf_complex(self):
+        """A valid complex HSF v5 spec should pass with no failures."""
+        spec = """\
+# Multi-Tenant Access Control Evaluator
+
+Evaluate access-control requests against a hierarchical policy tree,
+returning permit/deny decisions with audit trails.
+
+**Scope:** Identity and access management (IAM) subsystem.  Covers
+role-based (RBAC) and attribute-based (ABAC) policies.
+
+**Inputs:**
+- $subject — the authenticated principal (user or service account)
+- $resource — the target resource path (e.g. /org/project/bucket/object)
+- $action — the requested operation (read, write, delete, admin)
+- $environment — contextual attributes (IP, time, device trust level)
+
+**Outputs:**
+- $decision — permit or deny
+- $audit_trail — ordered list of evaluated policy nodes with outcomes
+
+@config
+  default_effect: deny
+  max_policy_depth: 10
+  enable_abac: true
+  cache_ttl_seconds: 300
+  log_level: info
+
+@route policy_resolution [first_match_wins]
+  explicit deny at any level                   -> deny immediately
+  explicit permit and no higher deny           -> permit
+  ABAC condition met and RBAC role sufficient   -> permit
+  ABAC condition met but RBAC role insufficient -> deny
+  no matching policy found                      -> apply $config.default_effect
+
+## Instructions
+
+### Phase 1 — Resolve subject identity
+
+Look up $subject in the identity store.  Retrieve the role chain
+(direct roles plus inherited roles up to $config.max_policy_depth levels).
+Populate $roles with the flattened set.
+
+### Phase 2 — Build resource policy chain
+
+Walk $resource from root to leaf, collecting every attached policy node.
+Store them in $policy_chain ordered from most-specific to least-specific.
+Each node contains: effect (permit/deny), required roles, ABAC conditions.
+
+### Phase 3 — Evaluate RBAC
+
+For each node in $policy_chain, check whether $roles satisfies the
+required-roles set.  Record each evaluation step in $audit_trail.
+
+### Phase 4 — Evaluate ABAC (conditional)
+
+If $config.enable_abac is true, evaluate attribute conditions against
+$environment for every node that passed RBAC.  Conditions may reference
+IP ranges, time windows, and device trust scores.
+
+### Phase 5 — Resolve decision
+
+Apply @route policy_resolution to the combined RBAC and ABAC outcomes.
+Set $decision and finalize $audit_trail.
+
+### Phase 6 — Cache and log
+
+If $decision is permit, cache the grant for $config.cache_ttl_seconds.
+Emit a structured log entry at $config.log_level with the full
+$audit_trail.
+
+## Rules
+
+- **deny_overrides** — An explicit deny at any policy level MUST override
+  permits at lower levels, regardless of specificity.
+- **least_privilege** — When no policy matches, the evaluator MUST apply
+  $config.default_effect (deny by default).
+- **audit_completeness** — Every evaluated policy node MUST appear in
+  $audit_trail, including nodes that were skipped due to early termination.
+- **cache_invalidation** — Cached permits MUST be invalidated when the
+  subject's roles change or when a policy node is updated.
+- **depth_limit** — The evaluator MUST NOT traverse more than
+  $config.max_policy_depth levels of role inheritance.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| subject_not_found | fatal | Deny and log unknown principal |
+| policy_cycle_detected | fatal | Deny and alert ops team |
+| depth_limit_exceeded | warning | Truncate at max depth, log warning |
+| abac_eval_failure | warning | Skip ABAC, fall back to RBAC only |
+| cache_write_failure | warning | Continue without caching |
+| invalid_resource_path | fatal | Deny with malformed-path error |
+
+## Examples
+
+**Example: simple RBAC permit**
+
+- Input: $subject=alice (roles: [editor]), $resource=/org/proj/doc, $action=write
+- Expected: $decision=permit, $audit_trail shows editor role matched permit at /org/proj level
+
+**Example: deny overrides permit**
+
+- Input: $subject=bob (roles: [viewer, editor]), $resource=/org/proj/secret,
+  policy at /org/proj/secret has explicit deny for viewer
+- Expected: $decision=deny, $audit_trail shows deny-override at /org/proj/secret
+
+**Example: ABAC condition blocks access**
+
+- Input: $subject=carol (roles: [admin]), $resource=/org/prod/db,
+  ABAC condition requires device_trust >= high, $environment.device_trust=low
+- Expected: $decision=deny, $audit_trail shows ABAC failure on device_trust
+
+**Example: fallback to default deny**
+
+- Input: $subject=dave (roles: [guest]), $resource=/org/proj/internal, $action=read,
+  no matching policy
+- Expected: $decision=deny (default_effect), $audit_trail shows no matching policy
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = validate_hsf(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            assert len(failures) == 0, (
+                f"Expected no failures for valid complex HSF, got: "
+                f"{[r.message for r in failures]}"
+            )
+            print("  PASS  test_valid_hsf_complex")
+        finally:
+            os.unlink(path)
+
+    def test_hsf_forbidden_behavior_keyword(self):
+        """An HSF spec containing **BEHAVIOR** should FAIL with forbidden keyword."""
+        spec = """\
+# Validator Spec
+
+Validate incoming data.
+
+## Instructions
+
+Process and validate all fields.
+
+**BEHAVIOR** validate:
+  Check each field for correctness.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| invalid_field | warning | Skip field |
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = validate_hsf(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            forbidden_fails = [r for r in failures if "Forbidden keyword" in r.message]
+            assert len(forbidden_fails) > 0, (
+                f"Expected a 'Forbidden keyword' failure for BEHAVIOR in HSF, "
+                f"got failures: {[r.message for r in failures]}"
+            )
+            print("  PASS  test_hsf_forbidden_behavior_keyword")
+        finally:
+            os.unlink(path)
+
+    def test_hsf_forbidden_procedure_keyword(self):
+        """An HSF spec containing **PROCEDURE** should FAIL."""
+        spec = """\
+# Processor Spec
+
+Process incoming data.
+
+## Instructions
+
+Run the processing pipeline.
+
+**PROCEDURE** process:
+  Execute each stage in order.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| stage_failure | fatal | Abort pipeline |
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = validate_hsf(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            forbidden_fails = [r for r in failures if "Forbidden keyword" in r.message]
+            assert len(forbidden_fails) > 0, (
+                f"Expected a 'Forbidden keyword' failure for PROCEDURE in HSF, "
+                f"got failures: {[r.message for r in failures]}"
+            )
+            print("  PASS  test_hsf_forbidden_procedure_keyword")
+        finally:
+            os.unlink(path)
+
+    def test_hsf_empty_section(self):
+        """An HSF spec with an empty section should FAIL with 'Empty section'."""
+        spec = """\
+# Stubbed Spec
+
+Do something useful.
+
+## Instructions
+
+Follow the steps below.
+
+## Rules
+
+none
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| generic_error | warning | Log it |
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = validate_hsf(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            empty_fails = [r for r in failures if "Empty section" in r.message]
+            assert len(empty_fails) > 0, (
+                f"Expected an 'Empty section' failure, got failures: "
+                f"{[r.message for r in failures]}"
+            )
+            print("  PASS  test_hsf_empty_section")
+        finally:
+            os.unlink(path)
+
+    def test_hsf_route_under_threshold(self):
+        """An HSF spec with @route having only 2 branches should produce a WARNING."""
+        spec = """\
+# Binary Router
+
+Route requests to one of two endpoints.
+
+@route binary_choice [first_match_wins]
+  condition_a -> endpoint_alpha
+  condition_b -> endpoint_beta
+
+## Instructions
+
+Evaluate the incoming request and apply @route binary_choice.
+Forward to the selected endpoint.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| no_match | warning | Use default endpoint |
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = check_hsf_route_tables(spec)
+            warnings = [r for r in results if r.status == "WARN"]
+            branch_warns = [
+                r for r in warnings
+                if "2 branches" in r.message or "fewer than 3" in r.message
+            ]
+            assert len(branch_warns) > 0, (
+                f"Expected a warning about route branch count, got warnings: "
+                f"{[r.message for r in warnings]}"
+            )
+            print("  PASS  test_hsf_route_under_threshold")
+        finally:
+            os.unlink(path)
+
+    def test_hsf_over_line_budget(self):
+        """An HSF spec exceeding its inferred tier's line budget should WARN."""
+        # The tier detector infers complex for >200 non-empty lines (budget=400).
+        # Generate >400 non-empty lines to exceed the complex tier budget.
+        instruction_lines = "\n".join(
+            f"Step {i}: perform validation check number {i} on the input data."
+            for i in range(1, 410)
+        )
+        spec = f"""\
+# Overbudget Micro Spec
+
+Validate everything.
+
+## Instructions
+
+{instruction_lines}
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| generic | warning | Log it |
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = check_hsf_structure(spec, path)
+            warnings = [r for r in results if r.status == "WARN"]
+            budget_warns = [
+                r for r in warnings
+                if "exceeding" in r.message.lower() or "budget" in r.message.lower()
+            ]
+            assert len(budget_warns) > 0, (
+                f"Expected a warning about exceeding line budget, got warnings: "
+                f"{[r.message for r in warnings]}"
+            )
+            print("  PASS  test_hsf_over_line_budget")
+        finally:
+            os.unlink(path)
+
+    def test_sesf_v4_still_validates(self):
+        """An existing SESF v4 spec with BEHAVIOR/PROCEDURE blocks should still
+        validate correctly under v4 rules (backward compatibility)."""
+        spec = """\
+SESF v4 Backward Compat Spec
+
+Meta: Version 1.0.0 | Date: 2026-03-01 | Domain: Testing | Status: active | Tier: micro
+
+Purpose
+Verify that SESF v4 specs with BEHAVIOR and PROCEDURE blocks continue
+to validate correctly after HSF v5 support is added.
+
+**BEHAVIOR** validate_input: Validate incoming data
+
+  **RULE** check_required:
+    WHEN required field is missing
+    THEN reject with error missing_field
+
+  **RULE** check_format:
+    WHEN field format is invalid
+    THEN reject with error bad_format
+
+  EXAMPLE valid_input:
+    INPUT: name="Alice", age=30
+    EXPECTED: accepted
+
+  ERROR missing_field:
+    WHEN required field is absent
+    SEVERITY fatal
+    ACTION reject request
+    MESSAGE "Required field missing"
+
+Constraints
+* All required fields must be present before processing
+"""
+        path = _write_temp_spec(spec)
+        try:
+            doc = parse_sesf(path)
+            assert len(doc.behaviors) >= 1, (
+                f"Expected at least 1 behavior, got {len(doc.behaviors)}"
+            )
+            results = check_structural_completeness(doc)
+            # Should not have a failure about missing BEHAVIOR blocks
+            behavior_fails = [
+                r for r in results
+                if r.status == "FAIL" and "no behavior" in r.message.lower()
+            ]
+            assert len(behavior_fails) == 0, (
+                f"v4 spec should not fail on behavior presence, got: "
+                f"{[r.message for r in behavior_fails]}"
+            )
+            # Format detection should identify this as sesf_v4
+            fmt = detect_format_version(spec)
+            assert fmt == "sesf_v4", (
+                f"Expected format 'sesf_v4', got '{fmt}'"
+            )
+            print("  PASS  test_sesf_v4_still_validates")
+        finally:
+            os.unlink(path)
+
+    def test_format_detection(self):
+        """Test that detect_format_version() correctly identifies format types."""
+        # SESF v4: has BEHAVIOR keyword
+        sesf_v4_text = """\
+Some Title
+
+Meta: Version 1.0.0 | Tier: micro
+
+BEHAVIOR validate: Check input
+
+  RULE r1:
+    WHEN x THEN y
+"""
+        assert detect_format_version(sesf_v4_text) == "sesf_v4", (
+            "Text with BEHAVIOR should be detected as sesf_v4"
+        )
+
+        # SESF v4: has PROCEDURE keyword
+        sesf_v4_proc = """\
+Some Title
+
+Meta: Version 1.0.0 | Tier: micro
+
+PROCEDURE process: Run pipeline
+
+  STEP s1:
+    DO something
+"""
+        assert detect_format_version(sesf_v4_proc) == "sesf_v4", (
+            "Text with PROCEDURE should be detected as sesf_v4"
+        )
+
+        # HSF v5: has ## Instructions and @route, no formal blocks
+        hsf_v5_text = """\
+# Router Spec
+
+Route requests efficiently.
+
+@route dispatch [first_match_wins]
+  type_a -> handler_a
+  type_b -> handler_b
+  _      -> default_handler
+
+## Instructions
+
+Evaluate the request type and apply the routing table.
+"""
+        assert detect_format_version(hsf_v5_text) == "hsf_v5", (
+            "Text with ## Instructions and @route should be detected as hsf_v5"
+        )
+
+        # Unknown: plain text with no signals
+        plain_text = """\
+This is just a regular document.
+It has no special keywords or structure.
+Nothing to see here.
+"""
+        assert detect_format_version(plain_text) == "unknown", (
+            "Plain text should be detected as unknown"
+        )
+
+        print("  PASS  test_format_detection")
+
+
+# ──────────────────────────────────────────────────────────────────────────
 # Runner
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -1494,6 +2057,21 @@ def main():
         test_mixed_inline_and_compact_errors,
         test_inline_error_in_procedure,
     ]
+
+    # Add HSF v5 test methods from TestHSFValidation class
+    hsf_tests = TestHSFValidation()
+    tests.extend([
+        hsf_tests.test_valid_hsf_micro,
+        hsf_tests.test_valid_hsf_standard,
+        hsf_tests.test_valid_hsf_complex,
+        hsf_tests.test_hsf_forbidden_behavior_keyword,
+        hsf_tests.test_hsf_forbidden_procedure_keyword,
+        hsf_tests.test_hsf_empty_section,
+        hsf_tests.test_hsf_route_under_threshold,
+        hsf_tests.test_hsf_over_line_budget,
+        hsf_tests.test_sesf_v4_still_validates,
+        hsf_tests.test_format_detection,
+    ])
 
     passed = 0
     failed = 0

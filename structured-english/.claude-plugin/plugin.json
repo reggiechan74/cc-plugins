@@ -1,7 +1,7 @@
 {
   "name": "structured-english",
-  "version": "5.2.5",
-  "description": "Natural-language specification format with hybrid notation for declarative rules (BEHAVIOR), step-by-step workflows (PROCEDURE), decision tables (@route), and centralized configuration (@config).",
+  "version": "6.0.0",
+  "description": "Hybrid Specification Format (HSF) — natural-language specs with @route decision tables, @config parameters, $variable threading, consolidated error tables, and prose instructions. Replaces SESF v4 formal blocks with markdown headers and bold list items while preserving structured notation where it adds value.",
   "author": {
     "name": "Reggie Chan"
   },
@@ -9,12 +9,10 @@
   "keywords": [
     "specifications",
     "structured-english",
-    "SESF",
+    "hybrid-specification-format",
+    "HSF",
     "requirements",
-    "behavior-driven",
     "ai-agents",
-    "pseudocode",
-    "procedures",
     "natural-language",
     "hybrid"
   ]

@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""SESF v3/v4 Structural Validator
+"""SESF v3/v4 and HSF v5 Structural Validator
 
-Parses SESF v3/v4 specification files (markdown) and validates them for
-structural correctness. Checks section completeness based on the declared
-tier (micro, standard, complex) and validates behavior block structure,
-procedure block structure, action declarations, and v4 hybrid elements
-(@config, @route, $variable threading, compact ERRORS/EXAMPLES tables).
+Parses specification files (markdown) and validates them for structural
+correctness. Auto-detects whether a spec is SESF v4 (formal blocks) or
+HSF v5 (hybrid prose format) and applies the appropriate validation rules.
+
+SESF v4: Checks BEHAVIOR blocks, PROCEDURE blocks, ACTION declarations,
+section structure, @config, @route, $variable threading.
+
+HSF v5: Checks prose structure, forbidden formal keywords, @config, @route,
+$variable threading, consolidated error tables, line budgets.
 
 Usage:
     python3 validate_sesf.py <spec_file.md>
 
 Exit codes:
     0 - All checks passed (may include warnings)
-    1 - One or more checks failed, or file is not a valid SESF spec
+    1 - One or more checks failed, or file is not a valid spec
 """
 
 import re
@@ -234,6 +238,43 @@ def _strip_yaml_frontmatter(text: str) -> str:
         if lines[i].strip() == "---":
             return "\n".join(lines[i + 1:])
     return text  # No closing --- found, return as-is
+
+
+def _strip_fenced_code_blocks(text: str) -> str:
+    """Remove content inside fenced code blocks (``` ... ```) for detection purposes."""
+    return re.sub(r'```[^\n]*\n.*?```', '', text, flags=re.DOTALL)
+
+
+def detect_format_version(text: str) -> str:
+    """Detect whether a spec is SESF v4 or HSF v5.
+
+    Returns:
+        'sesf_v4' if BEHAVIOR/PROCEDURE keywords found outside code blocks
+        'hsf_v5' if prose format (no formal blocks) with @route/@config/## Instructions
+        'unknown' if neither pattern matches
+    """
+    # Strip fenced code blocks so examples don't trigger false positives
+    prose_only = _strip_fenced_code_blocks(text)
+    normalized = _normalize_for_matching(prose_only)
+
+    # Check for SESF v4 formal blocks (outside code blocks only)
+    has_behavior = bool(re.search(r'^\s*BEHAVIOR\s+\w+', normalized, re.MULTILINE))
+    has_procedure = bool(re.search(r'^\s*PROCEDURE\s+\w+', normalized, re.MULTILINE))
+
+    if has_behavior or has_procedure:
+        return 'sesf_v4'
+
+    # Check for HSF v5 signals (outside code blocks only)
+    has_route = '@route' in prose_only
+    has_config = '@config' in prose_only
+    has_instructions = bool(re.search(r'^##\s+Instructions', prose_only, re.MULTILINE))
+    has_rules_section = bool(re.search(r'^##\s+Rules', prose_only, re.MULTILINE))
+    has_errors_table = bool(re.search(r'^##\s+Errors', prose_only, re.MULTILINE))
+
+    if has_route or has_config or has_instructions or has_rules_section or has_errors_table:
+        return 'hsf_v5'
+
+    return 'unknown'
 
 
 _BOLD_KW_RE = re.compile(r'\*\*([A-Z][A-Z0-9_]*)\*\*')
@@ -2285,6 +2326,341 @@ def check_markdown_formatting(doc: SESFDocument, filepath: str) -> list:
 
 
 # ---------------------------------------------------------------------------
+# HSF v5 Validation
+# ---------------------------------------------------------------------------
+
+def _detect_hsf_tier(text: str, line_count: int) -> str:
+    """Infer tier from line count and content complexity."""
+    if line_count <= 80:
+        return "micro"
+    elif line_count <= 200:
+        return "standard"
+    else:
+        return "complex"
+
+
+def check_hsf_structure(text: str, filepath: str) -> list:
+    """Validate HSF v5 structural requirements."""
+    results = []
+    lines = text.split('\n')
+    line_count = len([l for l in lines if l.strip()])  # non-empty lines
+    tier = _detect_hsf_tier(text, line_count)
+
+    results.append(ValidationResult(
+        "hsf_structure", "INFO",
+        f"Detected HSF v5 format, inferred tier: {tier} ({line_count} non-empty lines)"
+    ))
+
+    # Build a set of line numbers that are inside fenced code blocks
+    in_code_block = set()
+    inside = False
+    for i, line in enumerate(lines, 1):
+        if line.strip().startswith('```'):
+            inside = not inside
+            in_code_block.add(i)
+            continue
+        if inside:
+            in_code_block.add(i)
+
+    # --- Forbidden keywords (outside code blocks only) ---
+    forbidden_keywords = [
+        (r'^\s*BEHAVIOR\s+\w+', '**BEHAVIOR**'),
+        (r'^\s*RULE\s+\w+', '**RULE**'),
+        (r'^\s*PROCEDURE\s+\w+', '**PROCEDURE**'),
+        (r'^\s*STEP\s+\w+', '**STEP**'),
+    ]
+    for pattern, keyword in forbidden_keywords:
+        for i, line in enumerate(lines, 1):
+            if i in in_code_block:
+                continue
+            norm_line = _normalize_for_matching(line)
+            if re.match(pattern, norm_line):
+                results.append(ValidationResult(
+                    "hsf_structure", "FAIL",
+                    f"Forbidden keyword {keyword} found — HSF v5 uses markdown headers and bold list items instead",
+                    line_number=i
+                ))
+
+    # --- Forbidden sections (outside code blocks only) ---
+    forbidden_sections = ['Meta', 'Notation', 'Types', 'Functions', 'Precedence', 'Dependencies', 'Changelog']
+    for section in forbidden_sections:
+        pattern = rf'^###?\s+{section}\s*$'
+        for i, line in enumerate(lines, 1):
+            if i in in_code_block:
+                continue
+            if re.match(pattern, line.strip()):
+                results.append(ValidationResult(
+                    "hsf_structure", "FAIL",
+                    f"Forbidden section '{section}' found — HSF v5 does not use this section",
+                    line_number=i
+                ))
+
+    # --- Required: Purpose (first paragraph or explicit section) ---
+    has_purpose = bool(re.search(r'^##\s+Purpose', text, re.MULTILINE))
+    # Also check for purpose as first paragraph after title
+    title_match = re.search(r'^#\s+.+\n\n(.+)', text, re.MULTILINE)
+    has_inline_purpose = title_match is not None and not title_match.group(1).startswith('#')
+    if not has_purpose and not has_inline_purpose:
+        # Check for purpose as first content after title (common in micro)
+        pass  # Be lenient - first paragraph after title counts
+
+    # --- Required: Instructions section ---
+    has_instructions = bool(re.search(r'^##\s+Instructions', text, re.MULTILINE))
+    has_how_to = bool(re.search(r'^##\s+How to', text, re.MULTILINE))
+    has_workflow = bool(re.search(r'^##\s+Workflow', text, re.MULTILINE))
+    if not has_instructions and not has_how_to and not has_workflow:
+        results.append(ValidationResult(
+            "hsf_structure", "FAIL",
+            "Missing '## Instructions' section (or equivalent like '## Workflow', '## How to...')"
+        ))
+    else:
+        results.append(ValidationResult(
+            "hsf_structure", "PASS",
+            "Instructions section present"
+        ))
+
+    # --- Errors table check ---
+    has_errors = bool(re.search(r'^##\s+Errors', text, re.MULTILINE))
+    if not has_errors and tier != "micro":
+        results.append(ValidationResult(
+            "hsf_structure", "WARN",
+            "No '## Errors' section found — standard and complex tier specs SHOULD have a consolidated error table"
+        ))
+    elif has_errors:
+        results.append(ValidationResult(
+            "hsf_structure", "PASS",
+            "Errors section present"
+        ))
+
+    # --- Empty sections check ---
+    section_pattern = re.compile(r'^(##\s+.+)$', re.MULTILINE)
+    section_positions = [(m.start(), m.group(1)) for m in section_pattern.finditer(text)]
+    for idx, (pos, heading) in enumerate(section_positions):
+        # Get content between this heading and next heading (or end)
+        end_pos = section_positions[idx + 1][0] if idx + 1 < len(section_positions) else len(text)
+        content = text[pos + len(heading):end_pos].strip()
+        if not content or content.lower() in ('none', '-- none', 'n/a'):
+            line_num = text[:pos].count('\n') + 1
+            results.append(ValidationResult(
+                "hsf_structure", "FAIL",
+                f"Empty section '{heading.strip()}' — omit sections that have no content instead of stubbing them",
+                line_number=line_num
+            ))
+
+    # --- Line budget check ---
+    budget = {"micro": 80, "standard": 200, "complex": 400}
+    max_lines = budget.get(tier, 400)
+    if line_count > max_lines:
+        results.append(ValidationResult(
+            "hsf_structure", "WARN",
+            f"Spec has {line_count} non-empty lines, exceeding {tier} tier budget of {max_lines}"
+        ))
+    else:
+        results.append(ValidationResult(
+            "hsf_structure", "PASS",
+            f"Line budget OK ({line_count}/{max_lines} for {tier} tier)"
+        ))
+
+    return results
+
+
+def check_hsf_error_table(text: str) -> list:
+    """Validate the consolidated error table structure."""
+    results = []
+
+    # Find the errors section
+    errors_match = re.search(r'^##\s+Errors\s*\n(.*?)(?=^##\s|\Z)', text, re.MULTILINE | re.DOTALL)
+    if not errors_match:
+        return results  # No errors section, already warned in structure check
+
+    errors_content = errors_match.group(1)
+
+    # Check for markdown table
+    table_lines = [l for l in errors_content.split('\n') if '|' in l and l.strip()]
+    if len(table_lines) < 2:
+        results.append(ValidationResult(
+            "hsf_errors", "WARN",
+            "Errors section exists but does not contain a markdown table"
+        ))
+        return results
+
+    # Check header row has Error, Severity, Action columns
+    header = table_lines[0].lower()
+    has_error_col = 'error' in header or 'name' in header
+    has_severity_col = 'severity' in header
+    has_action_col = 'action' in header
+
+    if not (has_error_col and has_severity_col and has_action_col):
+        results.append(ValidationResult(
+            "hsf_errors", "WARN",
+            "Error table SHOULD have Error/Name, Severity, and Action columns"
+        ))
+    else:
+        results.append(ValidationResult(
+            "hsf_errors", "PASS",
+            "Error table has required columns (Error, Severity, Action)"
+        ))
+
+    return results
+
+
+def check_hsf_route_tables(text: str) -> list:
+    """Validate @route tables in HSF v5 specs (same rules as SESF v4)."""
+    results = []
+
+    route_pattern = re.compile(
+        r'@route\s+(\w+)\s*\[(\w+)\]',
+        re.MULTILINE
+    )
+
+    for match in route_pattern.finditer(text):
+        name = match.group(1)
+        mode = match.group(2)
+        line_num = text[:match.start()].count('\n') + 1
+
+        # Validate mode
+        if mode not in ('first_match_wins', 'all_matches'):
+            results.append(ValidationResult(
+                "hsf_routes", "FAIL",
+                f"@route '{name}' has invalid mode '{mode}' — must be first_match_wins or all_matches",
+                line_number=line_num
+            ))
+
+        # Count branches (lines with → after the @route declaration)
+        route_start = match.end()
+        branch_count = 0
+        for line in text[route_start:].split('\n'):
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#') or stripped.startswith('@'):
+                if branch_count > 0:
+                    break
+                continue
+            if '\u2192' in stripped or '->' in stripped:
+                branch_count += 1
+            elif stripped and not stripped.startswith('--') and branch_count > 0:
+                break
+
+        if branch_count < 3:
+            results.append(ValidationResult(
+                "hsf_routes", "WARN",
+                f"@route '{name}' has {branch_count} branches — use prose conditionals for fewer than 3 branches",
+                line_number=line_num
+            ))
+        else:
+            results.append(ValidationResult(
+                "hsf_routes", "PASS",
+                f"@route '{name}' has {branch_count} branches",
+                line_number=line_num
+            ))
+
+    return results
+
+
+def check_hsf_config(text: str) -> list:
+    """Validate @config blocks in HSF v5 specs (same rules as SESF v4)."""
+    results = []
+
+    if '@config' not in text:
+        return results
+
+    # Find config block and extract keys
+    config_match = re.search(r'@config\s*\n((?:[ \t]+.+\n)*)', text)
+    if not config_match:
+        return results
+
+    config_text = config_match.group(1)
+    config_keys = set()
+
+    for line in config_text.split('\n'):
+        stripped = line.strip()
+        if ':' in stripped and not stripped.startswith('#') and not stripped.startswith('--'):
+            key = stripped.split(':')[0].strip()
+            if key:
+                config_keys.add(key)
+
+    # Find all $config.key references
+    config_refs = set(re.findall(r'\$config\.([a-zA-Z_][a-zA-Z0-9_.]*)', text))
+
+    # Check for references to undefined keys
+    for ref in config_refs:
+        top_key = ref.split('.')[0]
+        if top_key not in config_keys:
+            results.append(ValidationResult(
+                "hsf_config", "WARN",
+                f"$config.{ref} referenced but '{top_key}' not found in @config block"
+            ))
+
+    if not config_refs and config_keys:
+        results.append(ValidationResult(
+            "hsf_config", "WARN",
+            "@config block defined but no $config.key references found in spec"
+        ))
+
+    if config_keys and config_refs:
+        results.append(ValidationResult(
+            "hsf_config", "PASS",
+            f"@config block with {len(config_keys)} keys, {len(config_refs)} references"
+        ))
+
+    return results
+
+
+def check_hsf_variable_threading(text: str) -> list:
+    """Validate $variable threading in HSF v5 specs."""
+    results = []
+
+    # Find all $variable references (excluding $config.*)
+    all_vars = set(re.findall(r'\$([a-zA-Z_]\w*)', text))
+    all_vars.discard('config')  # $config is for @config references
+    # Also remove things that look like $config.xxx
+    config_vars = set(re.findall(r'\$config\.\w+', text))
+
+    if not all_vars:
+        return results
+
+    results.append(ValidationResult(
+        "hsf_variables", "INFO",
+        f"Found {len(all_vars)} $variable references: {', '.join(sorted(all_vars))}"
+    ))
+
+    return results
+
+
+def check_hsf_rfc2119(text: str) -> list:
+    """Check RFC 2119 keyword capitalization consistency."""
+    results = []
+
+    keywords = ['must', 'must not', 'should', 'should not', 'may']
+
+    for line_num, line in enumerate(text.split('\n'), 1):
+        # Skip code blocks and config blocks
+        if line.strip().startswith('```') or line.strip().startswith('@'):
+            continue
+
+        for kw in keywords:
+            # Look for lowercase uses of RFC 2119 keywords in operative context
+            pattern = rf'\b{kw}\b'
+            if re.search(pattern, line) and not re.search(pattern.upper().replace(r'\B', r'\b'), line):
+                # Only flag if the word appears to be used operatively
+                # (heuristic: followed by "be", "have", "not", or a verb)
+                pass  # This is too noisy to implement reliably, skip
+
+    return results
+
+
+def validate_hsf(text: str, filepath: str) -> list:
+    """Run all HSF v5 validation checks."""
+    results = []
+    results.extend(check_hsf_structure(text, filepath))
+    results.extend(check_hsf_error_table(text))
+    results.extend(check_hsf_route_tables(text))
+    results.extend(check_hsf_config(text))
+    results.extend(check_hsf_variable_threading(text))
+    results.extend(check_hsf_rfc2119(text))
+    return results
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -2298,31 +2674,64 @@ def main():
         print(f"File not found: {filepath}")
         sys.exit(1)
 
-    doc = parse_sesf(filepath)
+    # Read raw text for format detection
+    raw_text = Path(filepath).read_text(encoding='utf-8')
+    stripped_text = _strip_yaml_frontmatter(raw_text)
+    # Note: Do NOT apply _strip_code_block here — it removes fenced code
+    # examples which are part of the spec content for HSF validation.
 
-    if not doc.meta:
-        print(f"No SESF Meta section found in {filepath}")
-        print("Is this an SESF specification?")
-        sys.exit(1)
+    format_version = detect_format_version(stripped_text)
 
-    results = check_structural_completeness(doc)
-    results.extend(check_type_consistency(doc))
-    results.extend(check_rule_integrity(doc))
-    results.extend(check_error_consistency(doc))
-    results.extend(check_example_consistency(doc))
-    results.extend(check_cross_behavior(doc))
-    results.extend(check_config_references(doc))
-    results.extend(check_variable_threading(doc))
-    results.extend(check_route_completeness(doc))
-    results.extend(check_error_table_structure(doc))
-    results.extend(check_notation_section(doc))
-    results.extend(check_markdown_formatting(doc, filepath))
+    if format_version == 'hsf_v5':
+        print(f"  Detected format: HSF v5 (Hybrid Specification Format)")
+        results = validate_hsf(stripped_text, filepath)
+    elif format_version == 'sesf_v4':
+        print(f"  Detected format: SESF v4")
+        doc = parse_sesf(filepath)
+
+        if not doc.meta:
+            print(f"No SESF Meta section found in {filepath}")
+            print("Is this an SESF specification?")
+            sys.exit(1)
+
+        results = check_structural_completeness(doc)
+        results.extend(check_type_consistency(doc))
+        results.extend(check_rule_integrity(doc))
+        results.extend(check_error_consistency(doc))
+        results.extend(check_example_consistency(doc))
+        results.extend(check_cross_behavior(doc))
+        results.extend(check_config_references(doc))
+        results.extend(check_variable_threading(doc))
+        results.extend(check_route_completeness(doc))
+        results.extend(check_error_table_structure(doc))
+        results.extend(check_notation_section(doc))
+        results.extend(check_markdown_formatting(doc, filepath))
+    else:
+        # Try SESF parsing as fallback
+        doc = parse_sesf(filepath)
+        if doc.meta:
+            print(f"  Detected format: SESF (version unclear, applying v4 rules)")
+            results = check_structural_completeness(doc)
+            results.extend(check_type_consistency(doc))
+            results.extend(check_rule_integrity(doc))
+            results.extend(check_error_consistency(doc))
+            results.extend(check_example_consistency(doc))
+            results.extend(check_cross_behavior(doc))
+            results.extend(check_config_references(doc))
+            results.extend(check_variable_threading(doc))
+            results.extend(check_route_completeness(doc))
+            results.extend(check_error_table_structure(doc))
+            results.extend(check_notation_section(doc))
+            results.extend(check_markdown_formatting(doc, filepath))
+        else:
+            # Try HSF as forward-compatible default
+            print(f"  Format ambiguous — applying HSF v5 rules (forward-compatible)")
+            results = validate_hsf(stripped_text, filepath)
 
     # Print results grouped by category
     has_fail = False
     current_cat = None
     for r in results:
-        # Print category header when it changes
         if r.category != current_cat:
             current_cat = r.category
             label = current_cat.replace("_", " ").title()

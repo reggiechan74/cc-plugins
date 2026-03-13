@@ -4,6 +4,40 @@ All notable changes to the `structured-english` plugin are documented here.
 
 ---
 
+## [6.0.0] — 2026-03-13 — Hybrid Format (HSF v5.0.0)
+
+### Breaking Changes
+- **New output format:** Hybrid Specification Format replaces SESF v4
+  - BEHAVIOR/RULE/PROCEDURE/STEP keywords removed
+  - Instructions written in natural language prose with markdown headers
+  - Rules stated inline where they apply, not in separate blocks
+  - Errors consolidated into a single table
+  - Meta/Notation/Types/Functions/Precedence/Dependencies/Changelog sections removed
+- **Line budgets reduced:** Micro ≤80, Standard ≤200, Complex ≤400
+- **Validator updated:** Auto-detects v4 vs v5 format, applies appropriate rules
+
+### What's Preserved from SESF v4
+- @route decision tables (3+ branch logic)
+- @config blocks (3+ static parameters)
+- $variable threading (complex data flows)
+- Named error taxonomy
+- Edge-case-only examples
+- RFC 2119 keyword precision (MUST/SHOULD/MAY)
+
+### Migration
+- `/update-spec` now handles SESF v4 → Hybrid v5 conversion
+- SESF v4 specs remain valid and validator-compatible (backward compat)
+
+### Evidence
+- A/B test on 130KB meeting transcript:
+  - Hybrid spec (336 lines) vs SESF spec (586 lines)
+  - Hybrid produced 65% more synthesis items (48 vs 29)
+  - Hybrid extracted nearly 2x ideas (35 vs 20)
+  - Both maintained identical rule compliance
+  - Hybrid consumed 55% fewer spec tokens
+
+---
+
 ## [5.2.5] — 2026-03-13
 
 ### Fixed

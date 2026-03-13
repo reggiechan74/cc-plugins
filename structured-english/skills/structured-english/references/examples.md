@@ -1,1591 +1,391 @@
-# SESF v4 Complete Examples
+# HSF v5 Complete Examples
 
-Seven complete specifications demonstrating every SESF v4 tier and style. Examples 1-3 are declarative (BEHAVIOR-centric), showing rules about what must be true. Examples 4-6 are procedural (PROCEDURE-centric), showing step-by-step processes. Example 7 is a real-world hybrid spec combining BEHAVIORs and PROCEDUREs. Together they cover the full range of SESF v4. Each is a working spec with concrete data, suitable as a reference when writing new specifications.
-
----
-
-## Example 1: Micro Tier -- Email Address Validator
-
-```
-Email Address Validator
-
-Meta: Version 1.0.0 | Date: 2026-03-01 | Domain: Input Validation | Status: active | Tier: micro
-
-Purpose
-Validate that a given string is a structurally valid email address before passing it to downstream systems.
-
-Behaviors
-
-BEHAVIOR validate_email: Check that an input string conforms to basic email address structure
-
-  RULE contains_at_sign:
-    input MUST contain exactly one "@" character
-
-  RULE has_domain:
-    WHEN input contains "@"
-    THEN the portion after "@" MUST contain at least one "." character
-         AND the portion after "@" MUST be at least 3 characters long
-
-  ERROR invalid_email: critical → reject input, "Invalid email address: does not meet structural requirements"
-
-  EXAMPLES:
-    valid_email: input="reggie.chan@tenebrus.ca" → { "valid": true }
-    missing_at_sign: input="reggie.chan.tenebrus.ca" → rejected with "Invalid email address: does not meet structural requirements"
-
-Constraints
-* Validation is structural only — does not verify that the domain exists or accepts mail
-```
+Three complete specifications demonstrating every Hybrid Specification Format tier. Example 1 is a micro-tier spec showing minimal structure with prose instructions. Example 2 is a standard-tier spec showing @route tables, @config blocks, and prose rules. Example 3 is a complex-tier spec demonstrating all hybrid features including $variable threading, multi-phase instructions, and worked edge-case examples. Each is a working spec with concrete data, suitable as a reference when writing new specifications.
 
 ---
 
-## Example 2: Standard Tier -- Commercial Lease Abstraction
+## Example 1: Micro Tier -- Webhook Signature Validator
 
 ```
 ---
-name: lease-abstraction
-description: "Extract structured data from commercial lease PDFs"
+title: Webhook Signature Validator
+description: "Validate HMAC-SHA256 signatures on incoming webhook payloads before processing."
+version: 1.0.0
+domain: API Security
+tier: micro
 ---
 
-# Commercial Lease Abstraction
+# Webhook Signature Validator
 
-Meta
-* Version: 2.1.0
-* Date: 2026-03-01
-* Domain: Real Estate / Document Processing
-* Status: active
-* Tier: standard
+Validate that incoming webhook requests carry a correct HMAC-SHA256 signature in the `X-Hub-Signature-256` header. Reject unsigned or incorrectly signed requests before any payload processing occurs.
 
-Notation
-* $ — references a variable or config value (e.g., $config.min_confidence)
-* @ — marks a structured block (@config for parameters, @route for decision tables)
-* → — means "produces" (in steps), "routes to" (in tables), or "yields" (in examples)
-* MUST/SHOULD/MAY/CAN — requirement strength keywords
+**Not in scope:** Payload parsing, retry logic, response body formatting, IP allowlisting.
 
-Purpose
-Extract structured data from commercial lease PDF documents to populate a standardized
-lease database for portfolio management and analysis. Focuses on the five core extraction
-concerns: parties, premises, term, rent, and overall confidence scoring.
+## Configuration
 
-Scope
-* IN SCOPE: Party identification (landlord, tenant), premises details,
-  lease term dates, rent and escalation terms, extraction confidence scoring
-* OUT OF SCOPE: Legal clause interpretation, market rent analysis,
-  negotiation recommendations, amendment tracking, estoppel generation
+Signing secret: `whsec_K8e2pQ9xVn3bRtYm` (loaded from `WEBHOOK_SECRET` env var).
+Signature tolerance window: 300 seconds.
 
-Inputs
-* lease_pdf: file - PDF document of a commercial lease agreement - required
-* property_id: string - portfolio identifier for the property - optional
+## Instructions
 
-Outputs
-* lease_data: LeaseData - structured lease information with all extracted fields
-* confidence: number - overall extraction confidence score (0.0 to 1.0)
-* warnings: list of string - issues encountered during extraction
+1. **Extract the signature header.** Read the `X-Hub-Signature-256` header from the incoming request. If the header is missing entirely, reject the request immediately with `missing_signature`.
+
+2. **Extract the timestamp.** Read the `X-Hub-Timestamp` header. Parse it as a Unix epoch integer. If absent or non-numeric, reject with `missing_timestamp`.
+
+3. **Check timestamp freshness.** Compute the absolute difference between the request timestamp and the current server time. If the difference exceeds 300 seconds, reject with `stale_request`. This prevents replay attacks using captured payloads.
+
+4. **Compute the expected signature.** Concatenate the timestamp, a literal period (`.`), and the raw request body as UTF-8. Compute HMAC-SHA256 over the concatenated string using the signing secret. Hex-encode the result and prepend `sha256=`.
+
+5. **Compare signatures.** Use a constant-time comparison function to compare the computed signature against the provided header value. If they do not match, reject with `invalid_signature`. Constant-time comparison MUST be used to prevent timing side-channel attacks.
+
+6. **Accept the request.** If all checks pass, forward the raw payload to the processing queue and return HTTP 200.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| missing_signature | critical | Return HTTP 401, body: `{"error": "missing_signature", "message": "X-Hub-Signature-256 header required"}` |
+| missing_timestamp | critical | Return HTTP 401, body: `{"error": "missing_timestamp", "message": "X-Hub-Timestamp header required"}` |
+| stale_request | critical | Return HTTP 403, body: `{"error": "stale_request", "message": "Request timestamp outside tolerance window"}` |
+| invalid_signature | critical | Return HTTP 403, body: `{"error": "invalid_signature", "message": "Signature verification failed"}`. Log the remote IP for monitoring. |
+```
+
+---
+
+## Example 2: Standard Tier -- Document Processing Pipeline
+
+```
+---
+title: Document Processing Pipeline
+description: "Classify, extract, and validate structured data from uploaded business documents."
+version: 1.0.0
+domain: Document Intelligence
+tier: standard
+---
+
+# Document Processing Pipeline
+
+Process uploaded business documents (PDFs and scanned images) through classification, data extraction, and validation. Each document is classified by type, routed to the appropriate extraction template, and validated against business rules before storage.
+
+**Not in scope:** Document storage/archival, user authentication, OCR engine selection, multi-language support (English-only), handwritten text recognition.
+
+## Configuration
 
 @config
-  min_confidence: 0.5
-  required_fields: [parties.landlord, parties.tenant, premises.address, premises.sqft, term.commencement, term.expiration, rent.base_amount]
-  sqft_range:
-    min: 100
-    max: 2000000
-  max_term_months: 300
+  ocr_confidence_threshold: 0.85
+  max_file_size_mb: 25
+  supported_formats: [pdf, png, jpg, tiff]
+  extraction_timeout_ms: 30000
+  validation_strict_mode: true
   output_format: json
-  currency_default: CAD
 
-Types
+## Document Classification
 
-LeaseData {
-  parties: Parties, required
-  premises: Premises, required
-  term: Term, required
-  rent: Rent, required
-}
+After OCR completes, classify the document to determine which extraction template to apply:
 
-Parties {
-  landlord: Party, required
-  tenant: Party, required
-}
+@route document_type [first_match_wins]
+  contains "Invoice" or "Bill To" or "Amount Due"      → invoice_extraction
+  contains "Purchase Order" or "PO Number"              → purchase_order_extraction
+  contains "Packing Slip" or "Shipping Label"           → shipping_doc_extraction
+  contains "W-9" or "Taxpayer Identification"           → tax_form_extraction
+  none of the above                                     → unclassified_review
 
-Party {
-  name: string, required
-  entity_type: enum [Individual, Corporation, LLC, Partnership, Trust], optional
-  address: string, optional
-}
+## Instructions
 
-Premises {
-  address: string, required
-  city: string, required
-  province_or_state: string, required
-  postal_code: string, optional
-  sqft: number, required
-  unit: string, optional
-  permitted_use: string, optional
-}
+### Phase 1: Intake and Pre-processing
 
-Term {
-  commencement: date, required
-  expiration: date, required
-  months: integer, required
-}
+Receive the uploaded file and validate it before processing:
 
-Rent {
-  base_amount: number, required
-  period: enum [monthly, annual, psf_annual], required
-  currency: enum [CAD, USD], default: $config.currency_default
-  escalations: list of Escalation, optional
-}
+1. **Check file format.** Confirm the file extension is one of the `supported_formats`. If not, reject with `unsupported_format`.
+2. **Check file size.** If the file exceeds `max_file_size_mb`, reject with `file_too_large`.
+3. **Run OCR.** Submit the document to the OCR engine. For each extracted text block, record the text content, bounding box coordinates, and confidence score.
+4. **Filter low-confidence blocks.** Any text block with a confidence score below `ocr_confidence_threshold` MUST be flagged as `low_confidence` in the extraction output. Do not discard these blocks — include them with the flag so downstream reviewers can assess them.
 
-Escalation {
-  effective_date: date, required
-  new_amount: number, required
-  method: enum [fixed, percentage, CPI], required
-}
+### Phase 2: Classification and Routing
 
-Functions
+Apply the `document_type` route table to the full extracted text. Use the first 500 characters of OCR output as the classification input — this avoids misclassification from boilerplate text in footers.
 
-FUNCTION months_between(start, end):
-  year_diff = end.year - start.year
-  month_diff = end.month - start.month
-  RETURNS (year_diff * 12) + month_diff
+If the document matches `unclassified_review`, halt automated processing and queue the document for human review. Do not attempt extraction on unclassified documents.
 
-FUNCTION annual_rent(rent, sqft):
-  IF rent.period = "monthly" THEN
-    result = rent.base_amount * 12
-  ELSE IF rent.period = "annual" THEN
-    result = rent.base_amount
-  ELSE IF rent.period = "psf_annual" THEN
-    result = rent.base_amount * sqft
-  RETURNS result
+### Phase 3: Field Extraction
 
-FUNCTION confidence_score(extracted, required_fields):
-  found = count of required_fields where value is not null
-  total = count of required_fields
-  RETURNS found / total
+Apply the matched extraction template to pull structured fields from the document. Each template defines its required and optional fields:
 
-Behaviors
+- **Invoice extraction:** `vendor_name`, `invoice_number`, `invoice_date`, `due_date`, `line_items[]` (description, quantity, unit_price, total), `subtotal`, `tax`, `total_due`, `payment_terms`.
+- **Purchase order extraction:** `buyer_name`, `po_number`, `order_date`, `vendor_name`, `line_items[]` (sku, description, quantity, unit_price), `shipping_address`, `total`.
+- **Shipping doc extraction:** `tracking_number`, `carrier`, `ship_date`, `origin_address`, `destination_address`, `package_count`, `weight_kg`.
+- **Tax form extraction:** `taxpayer_name`, `tin`, `business_name`, `address`, `tax_classification`, `signature_date`.
 
-BEHAVIOR party_extraction: Identify landlord and tenant entities from the lease document
+For each extracted field, record the source text span (character offsets in the OCR output) to enable audit tracing.
 
-  RULE landlord_required:
-    parties.landlord MUST be present
-    AND parties.landlord.name MUST NOT be empty
+### Phase 4: Validation
 
-  RULE tenant_required:
-    parties.tenant MUST be present
-    AND parties.tenant.name MUST NOT be empty
+Validate the extracted fields against business rules. When `validation_strict_mode` is true, any validation failure rejects the document. When false, failures are flagged as warnings but the document proceeds.
 
-  @route entity_type_classification [first_match_wins]
-    party name contains "Inc", "Corp", "Ltd", or "Limited"  → set entity_type to "Corporation"
-    party name contains "LLC" or "L.L.C."                    → set entity_type to "LLC"
-    party name contains "LP" or "L.P." or "Partnership"      → set entity_type to "Partnership"
-    *                                                         → set entity_type to "Individual"
+1. **Required field check.** Every required field for the document type MUST have a non-empty value. Missing required fields trigger `missing_required_field`.
+2. **Format validation.** Dates MUST parse as valid calendar dates. Currency amounts MUST be non-negative numbers. TINs MUST match the pattern `XX-XXXXXXX` or `XXX-XX-XXXX`.
+3. **Cross-field consistency.** For invoices: the sum of `line_items[].total` MUST equal `subtotal` within a tolerance of $0.01. `subtotal` + `tax` MUST equal `total_due` within $0.01.
+4. **Duplicate detection.** Check whether an identical `invoice_number` + `vendor_name` combination (or `po_number` + `buyer_name`) already exists in the system. If so, flag as `potential_duplicate`.
 
-  ERROR missing_landlord: critical → halt extraction, "Could not identify landlord in lease document"
-  ERROR missing_tenant: critical → halt extraction, "Could not identify tenant in lease document"
+## Rules
 
-  EXAMPLE successful_party_extraction:
-    INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
-    EXPECTED: {
-      "parties": {
-        "landlord": { "name": "Brookfield Asset Management Ltd.", "entity_type": "Corporation", "address": "181 Bay Street, Suite 300, Toronto, ON M5J 2T3" },
-        "tenant": { "name": "Northern Lights Coffee Inc.", "entity_type": "Corporation", "address": "456 Queen Street West, Toronto, ON M5V 2A8" }
-      }
-    }
-    NOTES: Both parties extracted with entity_type inferred from "Ltd." and "Inc." via @route entity_type_classification.
+### Data Quality
 
-  EXAMPLES:
-    missing_landlord_case: lease_pdf="damaged_scan_lease.pdf" → rejected with "Could not identify landlord in lease document"
+- **Source traceability:** Every extracted field value MUST include the character offset span from the OCR output. If a field is inferred rather than directly extracted, the `source` field MUST be set to `"inferred"` with a reason.
+- **Confidence propagation:** If any field in an extracted record was sourced from a low-confidence OCR block, the entire record MUST carry a `requires_review: true` flag.
+- **No silent defaults:** If a field cannot be extracted and no default is specified in the template, the field MUST be set to `null` — never to an empty string or zero.
 
+### Processing Integrity
 
-BEHAVIOR premises_extraction: Extract physical property details from the lease
+- **Idempotency:** Submitting the same file twice MUST produce identical extraction results. The pipeline MUST NOT incorporate randomness or time-dependent logic in extraction or validation.
+- **Timeout enforcement:** If extraction for any single document exceeds `extraction_timeout_ms`, abort and report `extraction_timeout`. Do not return partial results.
 
-  RULE sqft_positive:
-    premises.sqft MUST be greater than zero
+## Errors
 
-  RULE address_required:
-    premises.address MUST NOT be empty
-         AND premises.city MUST NOT be empty
+| Error | Severity | Action |
+|-------|----------|--------|
+| unsupported_format | critical | Reject upload. Return the list of `supported_formats` in the error response. |
+| file_too_large | critical | Reject upload. Return `max_file_size_mb` in the error response. |
+| ocr_failure | critical | Log the OCR engine error. Queue document for manual processing. |
+| extraction_timeout | critical | Abort extraction. Log elapsed time. Queue for retry with extended timeout (2x). |
+| missing_required_field | critical (strict) / warning (lenient) | In strict mode, reject. In lenient mode, flag and continue. Include the field name and document type. |
+| cross_field_mismatch | warning | Flag the discrepancy with both values. Route to human review. |
+| potential_duplicate | warning | Flag with the existing record ID. Do not block processing. |
+| unclassified_document | warning | Queue for human classification. Do not attempt extraction. |
 
-  RULE sqft_reasonableness:
-    premises.sqft SHOULD be between $config.sqft_range.min and $config.sqft_range.max
-    -- flag outliers for review
+## Examples
 
-  ERROR missing_sqft: warning → continue with flag, "Square footage not found -- may require manual review"
+low_confidence_propagation: OCR extracts invoice_number="INV-2024-0892" from a text block with confidence 0.72 (below 0.85 threshold). The field is included but the entire record carries `requires_review: true`, even though all other fields had confidence above 0.95. → Pass: confidence flag propagates correctly.
 
-  EXAMPLE complete_premises:
-    INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
-    EXPECTED: {
-      "premises": { "address": "456 Queen Street West, Unit 2B", "city": "Toronto", "province_or_state": "ON", "postal_code": "M5V 2A8", "sqft": 3200, "unit": "2B", "permitted_use": "Retail food service and ancillary uses" }
-    }
+cross_field_rounding: Invoice has line items totaling $1,249.995 (three items with unit prices that produce half-cent totals). Subtotal on document reads "$1,250.00". The $0.005 difference is within the $0.01 tolerance. → Pass: tolerance absorbs floating-point rounding.
 
-  EXAMPLES:
-    missing_sqft_case: lease_pdf="older_format_lease.pdf" → premises extracted with sqft=null and warning "Square footage not found -- may require manual review"
+cross_field_real_mismatch: Invoice line items total $4,200.00 but subtotal field reads "$4,800.00" — a $600.00 discrepancy. → Fail with `cross_field_mismatch`. The $600 gap far exceeds tolerance and likely indicates a missing line item.
 
+duplicate_different_vendor: Invoice number "INV-001" from "Acme Corp" already exists. A new upload has invoice number "INV-001" from "Beta Industries". → Pass: no duplicate flagged, because the vendor_name differs. Duplicate detection keys on the combination, not the invoice number alone.
 
-BEHAVIOR term_extraction: Extract and validate lease commencement and expiration dates
-
-  RULE expiration_after_commencement:
-    term.expiration MUST be after term.commencement
-
-  RULE months_calculation:
-    term.months MUST equal months_between(term.commencement, term.expiration)
-
-  RULE term_reasonableness:
-    term.months SHOULD be between 1 and $config.max_term_months
-    -- flag unusual terms for review
-
-  ERROR date_parse_failure: critical → halt extraction, "Could not parse lease term dates from document"
-
-  EXAMPLE valid_five_year_term:
-    INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
-    EXPECTED: {
-      "term": {
-        "commencement": "2026-07-01",
-        "expiration": "2031-06-30",
-        "months": 60
-      }
-    }
-    NOTES: Standard 5-year commercial term. months_between(2026-07-01, 2031-06-30) = 60.
-
-  EXAMPLES:
-    invalid_dates_case: lease_pdf="corrupted_dates_lease.pdf" → rejected with "Could not parse lease term dates from document"
-
-
-BEHAVIOR rent_extraction: Extract base rent, payment period, and escalation schedule
-
-  RULE positive_rent:
-    rent.base_amount MUST be greater than zero
-
-  RULE escalation_chronology:
-    WHEN rent.escalations is present
-    THEN EACH escalation.effective_date MUST be after term.commencement
-    AND escalation dates MUST be in ascending order
-
-  ERROR missing_rent: critical → halt extraction, "Could not extract base rent amount from document"
-
-  EXAMPLE psf_rent_with_escalations:
-    INPUT: { "lease_pdf": "456_queen_west_lease.pdf" }
-    EXPECTED: {
-      "rent": {
-        "base_amount": 32.50,
-        "period": "psf_annual",
-        "currency": "CAD",
-        "escalations": [
-          { "effective_date": "2027-07-01", "new_amount": 33.48, "method": "percentage" },
-          { "effective_date": "2028-07-01", "new_amount": 34.48, "method": "percentage" },
-          { "effective_date": "2029-07-01", "new_amount": 35.51, "method": "percentage" },
-          { "effective_date": "2030-07-01", "new_amount": 36.58, "method": "percentage" }
-        ]
-      }
-    }
-    NOTES: $32.50 PSF with ~3% annual escalations. annual_rent(rent, 3200) = $104,000 in year one.
-
-  EXAMPLES:
-    monthly_rent_no_escalations: lease_pdf="simple_retail_lease.pdf" → rent extracted with base_amount=4500.00, period="monthly", escalations=[]
-
-
-BEHAVIOR confidence_scoring: Compute overall extraction confidence based on field completeness
-
-  RULE confidence_calculation:
-    confidence MUST equal confidence_score(lease_data, $config.required_fields)
-
-  RULE confidence_range:
-    confidence MUST be between 0.0 and 1.0
-
-  EXAMPLES:
-    high_confidence: all 7 required fields extracted → { "confidence": 1.0 }
-    low_confidence: only 3 of 7 required fields found → { "confidence": 0.43 }
-
-Constraints
-* Extraction MUST handle PDFs up to 200 pages
-* OCR MUST be applied to scanned documents automatically
-* Processing time SHOULD NOT exceed 30 seconds per document
-* All monetary amounts MUST preserve precision to 2 decimal places
-* Date parsing MUST support formats: YYYY-MM-DD, MM/DD/YYYY, DD-Mon-YYYY, written-out months
-
-Dependencies
-* PDF processing library with OCR capability (e.g., Tesseract, Amazon Textract)
-* Date parsing library supporting multiple North American date formats
-* Text extraction engine with layout preservation for tabular rent schedules
+timeout_no_partial: A 200-page scanned PDF takes 45 seconds to extract (exceeds 30,000ms timeout). → Fail with `extraction_timeout`. No partial results are returned, even though 120 pages were already processed. Partial extractions create data integrity risks.
 ```
 
 ---
 
-## Example 3: Complex Tier -- Purchase Order Approval Workflow
+## Example 3: Complex Tier -- Multi-Phase Meeting Analysis
 
 ```
 ---
-name: po-approval
-description: "Route purchase orders through approval chains based on amount thresholds and urgency"
+title: Multi-Phase Meeting Analysis
+description: "Analyze meeting transcripts through structured phases to produce synthesis artifacts with ideas, second-order effects, frameworks, and actionable recommendations."
+version: 2.0.0
+domain: Knowledge Synthesis
+tier: complex
 ---
 
-# Purchase Order Approval Workflow
+# Multi-Phase Meeting Analysis
 
-Meta
-* Version: 3.0.0
-* Date: 2026-03-01
-* Domain: Finance / Procurement
-* Status: active
-* Tier: complex
+Analyze a meeting transcript through six sequential phases: extraction, second-order analysis, framework mapping, synthesis, contradiction resolution, and final deliverable assembly. Each phase produces a scratchpad artifact that the next phase consumes. The goal is to surface not just what was said, but what it implies — including ideas the speakers gestured toward but never stated explicitly.
 
-Notation
-* $ — references a variable or config value (e.g., $config.thresholds.tier_1)
-* @ — marks a structured block (@config for parameters, @route for decision tables)
-* → — means "produces" (in steps), "routes to" (in tables), or "yields" (in examples)
-* MUST/SHOULD/MAY/CAN — requirement strength keywords
+**Not in scope:** Real-time transcription, speaker diarization, sentiment analysis, meeting scheduling, action-item tracking (use a task manager for that), translation.
 
-Purpose
-Route purchase order requests through the appropriate approval chain based on dollar
-thresholds, department policies, and urgency levels. Manage notification dispatch,
-timeout escalation, and state transitions to ensure proper financial controls while
-allowing emergency overrides for time-critical needs.
+## Inputs
 
-Audience
-* AI agents: This spec drives an automated workflow engine. Each behavior is
-  self-contained. Process behaviors in PRECEDENCE order when a PO enters the system.
-* Human reviewers: Start with approval_routing to understand threshold logic,
-  then read notification_dispatch and timeout_escalation for the async flow.
-* Administrators: Threshold amounts and timeout durations are in @config.
-  Adjust these values when corporate policy changes.
+- `transcript`: string - The full meeting transcript, including speaker labels. Timestamps are optional but preserved if present. - required
+- `meeting_context`: string - A 1-3 sentence description of the meeting purpose and participants. - required
+- `focus_areas`: string[] - Optional list of topics to prioritize during extraction. If empty, all topics are weighted equally. - optional
+- `output_format`: enum [markdown, json] - Format for the final deliverable. Default: markdown. - optional
 
-Scope
-* IN SCOPE: PO validation, approval routing by amount threshold, emergency override,
-  notification dispatch (sequential and parallel), timeout escalation, state management
-* OUT OF SCOPE: Purchase order creation UI, vendor management, payment processing,
-  budget tracking, three-way matching
+## Outputs
 
-Inputs
-* purchase_order: PurchaseOrder - the PO requiring approval - required
-* requester: User - employee submitting the request - required
-* urgency: enum [standard, urgent, emergency] - processing priority - optional, default: standard
+- `deliverable`: file - The final synthesis document containing all findings, organized by theme. - required
+- `scratchpad/`: directory - Working artifacts from each phase, preserved for audit. - required
+- `metadata.json`: file - Processing statistics: token counts, phase durations, idea counts, confidence scores. - required
 
-Outputs
-* approval_status: ApprovalStatus - current workflow state and next steps
-* approval_chain: list of Approver - ordered list of approvers with their decisions
-* notifications: list of Notification - all messages dispatched during the workflow
+## Configuration
 
 @config
-  thresholds:
-    tier_1: 5000
-    tier_2: 25000
-    tier_3: 100000
-    emergency_max: 10000
-  timeouts:
-    standard_hours: 48
-    standard_reminder_hours: 24
-    urgent_hours: 4
-    emergency_hours: 2
-  notification:
-    max_retries: 3
-    dispatch_deadline_seconds: 60
-  escalation:
-    final_fallback: usr_cfo
-  budget_code_pattern: "[A-Z]{2}-[0-9]{4}-[0-9]{3}"
-
-Types
-
-PurchaseOrder {
-  id: string, required
-  amount: number, required
-  currency: enum [CAD, USD], default: CAD
-  vendor: string, required
-  description: string, required
-  department: enum [Engineering, Sales, Marketing, Operations, Finance, Legal], required
-  justification: string, required
-  budget_code: string, required
-  created_at: datetime, required
-}
-
-User {
-  id: string, required
-  name: string, required
-  email: string, required
-  department: enum [Engineering, Sales, Marketing, Operations, Finance, Legal], required
-  manager_id: string, optional
-}
-
-ApprovalStatus {
-  state: enum [pending, in_review, approved, rejected, info_requested], required
-  current_approver_id: string, optional
-  last_updated: datetime, required
-}
-
-Approver {
-  user_id: string, required
-  role: string, required
-  level: integer, required
-  decision: enum [pending, approved, rejected, info_requested], required
-  decided_at: datetime, optional
-  comments: string, optional
-}
-
-Notification {
-  id: string, required
-  recipient_email: string, required
-  type: enum [approval_request, approved, rejected, info_requested, escalation, reminder], required
-  po_id: string, required
-  sent_at: datetime, required
-  message: string, required
-}
-
-Functions
-
-FUNCTION get_department_head(department):
-  lookup department in org_directory
-  RETURNS user_id of the department head
-
-FUNCTION calculate_timeout(urgency):
-  IF urgency = "standard" THEN
-    timeout = $config.timeouts.standard_hours hours
-  ELSE IF urgency = "urgent" THEN
-    timeout = $config.timeouts.urgent_hours hours
-  ELSE IF urgency = "emergency" THEN
-    timeout = $config.timeouts.emergency_hours hours
-  RETURNS timeout
-
-Behaviors
-
-BEHAVIOR request_validation: Validate that a purchase order has all required fields
-  and a valid budget code before entering the approval workflow
-
-  RULE required_fields:
-    purchase_order.vendor MUST NOT be empty
-    AND purchase_order.description MUST NOT be empty
-    AND purchase_order.justification MUST NOT be empty
-    AND purchase_order.amount MUST be greater than zero
-
-  RULE budget_code_valid:
-    purchase_order.budget_code MUST match pattern $config.budget_code_pattern
-    -- Format: two-letter department prefix, four-digit cost center, three-digit account code
-    -- Example: EN-4200-310 = Engineering, cost center 4200, account 310
-
-  RULE requester_has_manager:
-    requester.manager_id MUST NOT be null
-    -- Every PO needs at least one approver in the chain
-
-  ERROR missing_required_fields: critical → reject PO and return to requester, "Purchase order is incomplete. All fields (vendor, description, justification, amount) are required."
-  ERROR invalid_budget_code: critical → reject PO and return to requester, "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)."
-
-  EXAMPLES:
-    valid_request: po with all required fields, budget_code="EN-4200-310" → { "validation": "passed", "next": "approval_routing" }
-    invalid_budget_code_case: budget_code="OPS-42" → rejected with "Budget code format invalid. Expected format: XX-0000-000 (e.g., EN-4200-310)."
-
-
-BEHAVIOR approval_routing: Determine the approval chain based on PO amount,
-  then route for review. Emergency purchases bypass the standard chain.
-
-  @route approval_chain_assignment [first_match_wins]
-    urgency = "emergency" AND amount <= $config.thresholds.emergency_max  → chain = [department_head] (emergency override)
-    amount <= $config.thresholds.tier_1                                   → chain = [manager]
-    amount <= $config.thresholds.tier_2                                   → chain = [manager, department_head]
-    amount <= $config.thresholds.tier_3                                   → chain = [manager, department_head, finance_director]
-    *                                                                     → chain = [manager, department_head, finance_director, $config.escalation.final_fallback]
-
-  RULE chain_progression:
-    WHEN current approver decision = "approved" AND next approver exists in chain
-    THEN advance current_approver_id to next approver in chain
-
-  RULE final_approval:
-    WHEN last approver in chain decision = "approved"
-    THEN approval_status.state = "approved"
-
-  RULE any_rejection:
-    WHEN ANY approver decision = "rejected"
-    THEN approval_status.state = "rejected"
-    AND remaining approvers are not consulted
-
-  ERROR missing_manager: critical → halt workflow, "Requester has no manager assigned. Cannot build approval chain."
-
-  EXAMPLE small_purchase_single_approver:
-    INPUT: {
-      "purchase_order": { "id": "PO-2026-00851", "amount": 2800.00, "department": "Sales" },
-      "requester": { "id": "usr_445", "name": "Dana Williams", "manager_id": "usr_220" },
-      "urgency": "standard"
-    }
-    EXPECTED: {
-      "approval_status": { "state": "in_review", "current_approver_id": "usr_220" },
-      "approval_chain": [
-        { "user_id": "usr_220", "role": "Direct Manager", "level": 1, "decision": "pending" }
-      ]
-    }
-    NOTES: $2,800 <= $config.thresholds.tier_1 ($5,000). Single approver: direct manager only.
-
-  EXAMPLE large_purchase_three_approvers:
-    INPUT: {
-      "purchase_order": { "id": "PO-2026-00852", "amount": 67000.00, "department": "Engineering" },
-      "requester": { "id": "usr_391", "name": "Priya Sharma", "manager_id": "usr_102" },
-      "urgency": "standard"
-    }
-    EXPECTED: {
-      "approval_status": { "state": "in_review", "current_approver_id": "usr_102" },
-      "approval_chain": [
-        { "user_id": "usr_102", "role": "Direct Manager", "level": 1, "decision": "pending" },
-        { "user_id": "usr_eng_head", "role": "Department Head", "level": 2, "decision": "pending" },
-        { "user_id": "usr_finance_director", "role": "Finance Director", "level": 3, "decision": "pending" }
-      ]
-    }
-    NOTES: $67,000 falls in the $25K-$100K band via @route. Three approvers required, processed sequentially.
-
-  EXAMPLE emergency_override_to_department_head:
-    INPUT: {
-      "purchase_order": { "id": "PO-2026-00853", "amount": 8500.00, "department": "Operations" },
-      "requester": { "id": "usr_205", "name": "Marcus Chen", "manager_id": "usr_088" },
-      "urgency": "emergency"
-    }
-    EXPECTED: {
-      "approval_status": { "state": "in_review", "current_approver_id": "usr_ops_head" },
-      "approval_chain": [
-        { "user_id": "usr_ops_head", "role": "Department Head", "level": 1, "decision": "pending" }
-      ]
-    }
-    NOTES: Emergency + amount <= $config.thresholds.emergency_max ($10K) triggers first @route row.
-           Bypasses manager, routes directly to department head. 2-hour timeout applies.
-
-  State/Flow
-    pending -> in_review: WHEN approval_chain_assignment matches and approver(s) notified
-    in_review -> approved: WHEN last approver in chain decision = "approved"
-    in_review -> rejected: WHEN ANY approver decision = "rejected"
-    in_review -> info_requested: WHEN ANY approver requests additional information
-
-
-BEHAVIOR notification_dispatch: Send approval request notifications to the
-  appropriate approvers. Standard urgency uses sequential notification; urgent
-  uses parallel.
-
-  @route notification_strategy [first_match_wins]
-    urgency = "standard"   → notify only the current approver; wait for decision before notifying next
-    urgency = "urgent"     → notify ALL approvers simultaneously; ALL MUST approve
-    urgency = "emergency"  → notify the single approver IMMEDIATELY with "EMERGENCY" prefix
-    *                      → notify only the current approver (fallback to sequential)
-
-  RULE notification_content:
-    notification.message MUST include PO id, amount, vendor, and requester name
-
-  ERROR notification_send_failure: warning → log failure, continue workflow, alert system administrator, "Failed to deliver notification to {recipient_email} after {$config.notification.max_retries} attempts"
-
-  EXAMPLE standard_sequential_notification:
-    INPUT: {
-      "po_id": "PO-2026-00851",
-      "approval_chain": [{ "user_id": "usr_220", "level": 1 }],
-      "urgency": "standard"
-    }
-    EXPECTED: {
-      "notifications": [
-        { "id": "ntf_90001", "recipient_email": "tom.park@company.ca", "type": "approval_request", "po_id": "PO-2026-00851", "sent_at": "2026-03-01T09:15:00-05:00", "message": "Approval required: PO-2026-00851 for $2,800.00 from Staples Business Advantage, submitted by Dana Williams." }
-      ]
-    }
-    NOTES: Standard urgency via @route notification_strategy -- only the current approver is notified. Next approver waits.
-
-  EXAMPLE urgent_parallel_notification:
-    INPUT: {
-      "po_id": "PO-2026-00852",
-      "approval_chain": [
-        { "user_id": "usr_102", "level": 1 },
-        { "user_id": "usr_eng_head", "level": 2 },
-        { "user_id": "usr_finance_director", "level": 3 }
-      ],
-      "urgency": "urgent"
-    }
-    EXPECTED: {
-      "notifications": [
-        { "id": "ntf_90002", "recipient_email": "raj.kumar@company.ca", "type": "approval_request", "sent_at": "2026-03-01T09:15:00-05:00" },
-        { "id": "ntf_90003", "recipient_email": "engineering.head@company.ca", "type": "approval_request", "sent_at": "2026-03-01T09:15:00-05:00" },
-        { "id": "ntf_90004", "recipient_email": "finance.director@company.ca", "type": "approval_request", "sent_at": "2026-03-01T09:15:01-05:00" }
-      ]
-    }
-    NOTES: Urgent via @route notification_strategy -- all three approvers notified
-           simultaneously with URGENT-prefixed messages. ALL MUST approve.
-
-
-BEHAVIOR timeout_escalation: Escalate to the next level of management when an
-  approver does not respond within the timeout window defined by urgency level.
-
-  @route escalation_action [first_match_wins]
-    urgency = "standard" AND no response within $config.timeouts.standard_hours hours    → send reminder; if no response within additional $config.timeouts.standard_reminder_hours hours, escalate to approver's manager
-    urgency = "urgent" AND no response within $config.timeouts.urgent_hours hours        → escalate IMMEDIATELY to approver's manager
-    urgency = "emergency" AND no response within $config.timeouts.emergency_hours hours  → escalate to $config.escalation.final_fallback with "EMERGENCY ESCALATION" prefix
-    *                                                                                     → no action (timeout not yet reached)
-
-  ERROR approver_unavailable: critical → escalate to $config.escalation.final_fallback as final fallback, alert system administrator, "Approval chain broken: no available escalation target for PO {po_id}"
-
-  EXAMPLE standard_timeout_escalation:
-    INPUT: {
-      "po_id": "PO-2026-00851",
-      "current_approver": { "user_id": "usr_220", "manager_id": "usr_sales_head" },
-      "urgency": "standard",
-      "time_since_notification": "49 hours"
-    }
-    EXPECTED: {
-      "action": "reminder_sent",
-      "notification": {
-        "recipient_email": "tom.park@company.ca",
-        "type": "reminder",
-        "message": "Reminder: PO-2026-00851 for $2,800.00 is awaiting your approval. Please respond within 24 hours to avoid escalation."
-      }
-    }
-    NOTES: 49 hours > $config.timeouts.standard_hours (48). Reminder sent first.
-           If no response by hour 72, escalation to usr_sales_head occurs.
-
-  EXAMPLES:
-    urgent_escalation: po_id="PO-2026-00852", urgency="urgent", time_since_notification="5 hours" → escalated to usr_eng_head with "ESCALATION" prefix
-
-Precedence
-
-PRECEDENCE:
-  1. required_fields (from BEHAVIOR request_validation)
-  2. budget_code_valid (from BEHAVIOR request_validation)
-  3. approval_chain_assignment (from BEHAVIOR approval_routing)
-  4. notification_strategy (from BEHAVIOR notification_dispatch)
-  5. escalation_action (from BEHAVIOR timeout_escalation)
-  6. chain_progression (from BEHAVIOR approval_routing)
-  7. any_rejection (from BEHAVIOR approval_routing)
-
-Constraints
-* Approval decisions MUST be recorded with timestamp
-  and persisted to survive system restarts
-* Notifications MUST be dispatched within $config.notification.dispatch_deadline_seconds seconds of a state change
-* Timeout checks MUST run on a recurring schedule (EVERY 15 minutes at minimum)
-* All monetary amounts MUST be displayed with two decimal places and currency code
-* A user MUST NOT appear more than once in the same approval chain
-* Emergency override MUST NOT apply to POs exceeding $config.thresholds.emergency_max
-
-Dependencies
-* org_directory service for manager lookups and department head resolution
-* budget_code registry for validation against $config.budget_code_pattern
-* notification service (email gateway) with retry capability
-* workflow state persistence store (database or durable queue)
-* scheduled job runner for timeout escalation checks
-
-Changelog
-* 3.0.0: 2026-03-01 - Migrated to SESF v4 hybrid notation. Added @config, @route
-  tables, compact ERRORS, Notation section, State/Flow subsections, and updated
-  PRECEDENCE to reference only BEHAVIOR rules.
-* 2.1.0: 2026-02-15 - Migrated to SESF v2 behavior-centric format.
-  Added PRECEDENCE block and explicit PRIORITY tags to approval_routing rules.
-* 2.0.0: 2026-01-18 - Added emergency override rule for amounts under $10K.
-  Added timeout escalation behavior.
-* 1.1.0: 2025-11-22 - Added parallel notification for urgent requests
-* 1.0.0: 2025-09-01 - Initial version with sequential approval only
-```
-
----
-
-## Example 4: Micro Tier -- Daily Sales Report Generator (PROCEDURE)
-
-```
-Daily Sales Report Generator
-
-Meta: Version 1.0.0 | Date: 2026-03-01 | Domain: Reporting | Status: active | Tier: micro
-
-Purpose
-Generate a daily summary of sales transactions and distribute it to the management team.
-
-PROCEDURE generate_daily_report: Compile sales data and produce a summary report
-
-  STEP gather_data → $transactions, $total_revenue, $transaction_count:
-    Read all sales transactions for the current date from the database → $transactions
-    Set $total_revenue to 0
-    Set $transaction_count to 0
-
-  STEP calculate_totals → $average_sale:
-    For each transaction in $transactions:
-      Add transaction.amount to $total_revenue
-      Add 1 to $transaction_count
-    Calculate $average_sale as $total_revenue divided by $transaction_count
-
-  STEP generate_report → $report_path:
-    Write the summary to /reports/daily/YYYY-MM-DD.pdf → $report_path
-    Send the report to the management distribution list
-
-  ERROR no_transactions: warning → generate an empty report noting "No transactions recorded", "No sales transactions found for {date}"
-  ERROR database_unavailable: critical → notify the on-call engineer and skip report generation, "Cannot generate daily report: database connection failed"
-
-  EXAMPLES:
-    typical_day: date="2026-03-01" → { "total_revenue": 15420.50, "transaction_count": 47, "average_sale": 328.10, "report_path": "/reports/daily/2026-03-01.pdf" }
-    no_sales: date="2026-01-01" → { "total_revenue": 0, "transaction_count": 0, "report_path": "/reports/daily/2026-01-01.pdf", "warning": "No sales transactions found for 2026-01-01" }
-
-Constraints
-* Report generation SHOULD complete within 60 seconds
-* All monetary amounts MUST be rounded to 2 decimal places
-```
-
----
-
-## Example 5: Standard Tier -- Customer Onboarding Workflow (mixed BEHAVIOR + PROCEDURE)
-
-```
----
-name: customer-onboarding
-description: "Validate customer data, provision account, send welcome package, and schedule follow-up"
----
-
-# Customer Onboarding Workflow
-
-Meta
-* Version: 2.0.0
-* Date: 2026-03-01
-* Domain: Customer Success
-* Status: active
-* Tier: standard
-
-Notation
-* $ -- references a variable or config value (e.g., $config.scoring.personalized_threshold)
-* @ -- marks a structured block (@config for parameters)
-* → -- means "produces" (in steps) or "yields" (in examples)
-* MUST/SHOULD/MAY/CAN -- requirement strength keywords
-
-Purpose
-Validate incoming customer data, provision a new account, send a welcome package,
-and schedule a follow-up call. Combines declarative validation rules with a
-procedural onboarding flow.
-
-Scope
-* IN SCOPE: Customer data validation, account provisioning, welcome email dispatch,
-  onboarding score calculation, follow-up scheduling
-* OUT OF SCOPE: Billing setup, product configuration, CRM data migration,
-  contract generation, identity verification
-
-Inputs
-* customer: Customer - the new customer to onboard - required
-* plan: enum [starter, professional, enterprise] - selected subscription plan - required
-* referral_code: string - promotional referral code - optional
-
-Outputs
-* result: OnboardingResult - summary of the onboarding outcome
-* notifications: list of Notification - all messages sent during onboarding
-
-@config
-  scoring:
-    base_score: 50
-    phone_bonus: 10
-    large_company_bonus: 15
-    large_company_threshold: 50
-    enterprise_bonus: 25
-    professional_bonus: 15
-    personalized_threshold: 75
-  templates:
-    welcome_email: "/templates/welcome_email.html"
-    followup_reminder: "/templates/followup_reminder.html"
-    internal_alert: "/templates/internal_alert.html"
-  provisioning:
-    timeout_seconds: 30
-    email_deadline_minutes: 5
-  followup:
-    enterprise_days: 2
-    professional_days: 5
-    starter_days: 10
-
-Types
-
-Customer {
-  name: string, required
-  email: string, required
-  company: string, required
-  phone: string, optional
-  industry: enum [Technology, Healthcare, Finance, Retail, Manufacturing, Other], required
-  employee_count: integer, required
-}
-
-OnboardingResult {
-  account_id: string, required
-  status: enum [active, pending_verification, failed], required
-  onboarding_score: number, required
-  welcome_sent: boolean, required
-  followup_date: date, required
-}
-
-Notification {
-  recipient: string, required
-  type: enum [welcome_email, internal_alert, followup_reminder], required
-  sent_at: datetime, required
-  message: string, required
-}
-
-Account {
-  id: string, required
-  customer_name: string, required
-  customer_email: string, required
-  plan: enum [starter, professional, enterprise], required
-  provisioned_at: datetime, required
-  region: string, required
-}
-
-Functions
-
-FUNCTION calculate_onboarding_score(customer, plan):
-  Start with $score at $config.scoring.base_score
-  IF customer.phone is present THEN add $config.scoring.phone_bonus to $score
-  IF customer.employee_count is at least $config.scoring.large_company_threshold THEN add $config.scoring.large_company_bonus to $score
-  IF plan = "enterprise" THEN add $config.scoring.enterprise_bonus to $score
-  ELSE IF plan = "professional" THEN add $config.scoring.professional_bonus to $score
-  RETURNS $score
-  -- Score ranges: 50 (bare minimum) to 100 (enterprise with phone and 50+ employees)
-
-FUNCTION determine_region(customer):
-  IF customer.industry = "Healthcare" or customer.industry = "Finance"
-    THEN $region = "us-east-1"
-    -- regulated industries default to US East for compliance
-  ELSE $region = "us-west-2"
-  RETURNS $region
-
-FUNCTION calculate_followup_date(plan):
-  IF plan = "enterprise" THEN $followup = $config.followup.enterprise_days business days from today
-  ELSE IF plan = "professional" THEN $followup = $config.followup.professional_days business days from today
-  ELSE $followup = $config.followup.starter_days business days from today
-  RETURNS $followup
-
-ACTION send_welcome_package(customer, account, onboarding_score):
-  Generate the welcome email from $config.templates.welcome_email
-  If onboarding_score is at least $config.scoring.personalized_threshold:
-    Append a personalized note from the account manager
-  Send the email to customer.email
-  Log: "Welcome package sent to {customer.email} for account {account.id}"
-  RETURNS the delivery confirmation
-
-
-BEHAVIOR validate_customer_data: Ensure the customer record is complete
-  and well-formed before onboarding begins
-
-  RULE email_format:
-    customer.email MUST contain exactly one "@" character
-    AND the portion after "@" MUST contain at least one "." character
-
-  RULE company_required:
-    customer.company MUST NOT be empty
-
-  RULE employee_count_positive:
-    customer.employee_count MUST be greater than zero
-
-  RULE enterprise_needs_phone:
-    WHEN plan = "enterprise"
-    THEN customer.phone MUST be present
-    -- enterprise customers require a phone number for dedicated support
-
-  ERROR invalid_email: critical → reject onboarding and return the error to the submitter, "Invalid email address: {customer.email}"
-  ERROR missing_company: critical → reject onboarding, "Company name is required for all customers"
-  ERROR enterprise_missing_phone: critical → reject onboarding, "Enterprise customers must provide a phone number"
-
-  EXAMPLES:
-    valid_professional_customer: customer={ "name": "Alicia Torres", "email": "alicia@brightpath.io", "company": "Brightpath Solutions", "phone": "+1-416-555-0199", "industry": "Technology", "employee_count": 120 }, plan="professional" → { "validation": "passed" }
-    enterprise_missing_phone: customer={ "name": "James Whitfield", "email": "j.whitfield@meridian.com", "company": "Meridian Health Group", "industry": "Healthcare", "employee_count": 500 }, plan="enterprise" → rejected with "Enterprise customers must provide a phone number"
-
-
-PROCEDURE onboard_customer: Walk through each onboarding step in order,
-  from account creation to follow-up scheduling
-
-  STEP validate → $validation_result:
-    Validate the customer data using the validate_customer_data behavior → $validation_result
-    Stop processing if $validation_result indicates failure
-
-  STEP provision_account → $account, $account_id:
-    Calculate the region using determine_region(customer) → $region
-    Create a new account with the customer's name, email, selected plan, and $region → $account
-    Record $account.id as $account_id for the remaining steps
-
-  STEP score → $onboarding_score:
-    Calculate $onboarding_score using calculate_onboarding_score(customer, plan)
-
-  STEP send_welcome → $welcome_sent:
-    Send a welcome email to the customer using send_welcome_package(customer, $account, $onboarding_score)
-    Set $welcome_sent to true
-    If $onboarding_score is at least $config.scoring.personalized_threshold:
-      Include a personalized note from the account manager in the welcome email
-
-  STEP schedule_followup → $followup_date:
-    Calculate $followup_date using calculate_followup_date(plan)
-    Send a follow-up reminder to the assigned account manager
-    Send an internal alert to the customer success team with the onboarding summary
-
-  ERROR account_provisioning_failure: critical → notify the infrastructure team and mark onboarding as failed, "Account provisioning failed for {customer.email}. Infrastructure team notified."
-  ERROR welcome_email_failure: warning → log the failure, continue onboarding, and flag for manual follow-up, "Welcome email delivery failed for {customer.email}. Manual follow-up required."
-
-  EXAMPLE successful_professional_onboarding:
-    INPUT: {
-      "customer": { "name": "Alicia Torres", "email": "alicia@brightpath.io", "company": "Brightpath Solutions", "phone": "+1-416-555-0199", "industry": "Technology", "employee_count": 120 },
-      "plan": "professional"
-    }
-    EXPECTED: {
-      "result": {
-        "account_id": "acct_20260301_00142",
-        "status": "active",
-        "onboarding_score": 90,
-        "welcome_sent": true,
-        "followup_date": "2026-03-08"
-      },
-      "notifications": [
-        { "recipient": "alicia@brightpath.io", "type": "welcome_email" },
-        { "recipient": "csm-team@company.ca", "type": "internal_alert" },
-        { "recipient": "account-manager@company.ca", "type": "followup_reminder" }
-      ]
-    }
-    NOTES: Score = 50 base + 10 (phone) + 15 (120 employees >= 50) + 15 (professional) = 90.
-           Score >= $config.scoring.personalized_threshold (75) so welcome email includes personalized note.
-           Professional plan follow-up = $config.followup.professional_days (5) business days from Mar 1 = Mar 8.
-           Technology industry -> us-west-2 region.
-
-  EXAMPLES:
-    starter_minimal_customer: customer={ "name": "Sam Nguyen", "email": "sam@tinycorp.io", "company": "TinyCorp", "industry": "Retail", "employee_count": 3 }, plan="starter" → { "account_id": "acct_20260301_00143", "status": "active", "onboarding_score": 50, "welcome_sent": true, "followup_date": "2026-03-15" }
-
-Constraints
-* Account provisioning MUST complete within $config.provisioning.timeout_seconds seconds
-* Welcome email MUST be sent within $config.provisioning.email_deadline_minutes minutes of account creation
-* Follow-up date MUST be a business day (skip weekends and statutory holidays)
-* Onboarding score MUST be between 0 and 100
-
-Dependencies
-* Account provisioning service (internal API)
-* Email delivery service with retry capability
-* Calendar service for business day calculations
-* Customer success team notification channel
-```
-
----
-
-## Example 6: Complex Tier -- Data Pipeline Processor (PROCEDURE-heavy)
-
-```
----
-name: data-pipeline
-description: "Ingest, validate, transform, and load data files into the warehouse with retry and recovery"
----
-
-# Data Pipeline Processor
-
-Meta
-* Version: 4.0.0
-* Date: 2026-03-01
-* Domain: Data Engineering
-* Status: active
-* Tier: complex
-
-Notation
-* $ -- references a variable or config value (e.g., $config.file_size_limit)
-* @ -- marks a structured block (@config for parameters)
-* → -- means "produces" (in steps) or "yields" (in examples)
-* MUST/SHOULD/MAY/CAN -- requirement strength keywords
-
-Purpose
-Ingest data files from an upload directory, validate their structure, transform
-the records, and load them into the data warehouse. Track each file through its
-lifecycle (queued, validating, transforming, loading, completed, failed) with
-retry logic and error recovery.
-
-Scope
-* IN SCOPE: File ingestion, schema validation, data transformation, warehouse
-  loading, state tracking, retry logic, error recovery, pipeline monitoring
-* OUT OF SCOPE: File upload mechanism, warehouse schema migrations, downstream
-  analytics, data access permissions, visualization
-
-Audience
-* AI agents: Process files by running ingest_file for each file in the upload
-  directory. Respect PRECEDENCE -- quarantine checks run before any processing.
-* Human operators: Start with the run_pipeline procedure for the end-to-end flow.
-  Review the state lifecycle (queued -> validating -> transforming -> loading ->
-  completed) to understand where a file is at any time.
-* Data engineers: Transformation rules are in transform_records. Add new
-  transformations as additional steps within that procedure.
-
-Inputs
-* upload_directory: string - path to the directory where new files arrive - required
-* warehouse_connection: string - connection string for the target warehouse - required
-* max_retries: integer - maximum retry attempts per file - optional, default: 3
-* batch_size: integer - number of records to process at a time - optional, default: 500
-
-Outputs
-* pipeline_result: PipelineResult - summary of the entire pipeline run
-* file_results: list of FileResult - per-file outcome details
-* audit_log: list of AuditEntry - chronological record of all pipeline actions
-
-@config
-  file_size_limit: 500000000
-  format_whitelist: [csv, json, parquet]
-  duplicate_window_hours: 24
-  column_match_threshold: 0.95
-  warehouse:
-    connection_retries: 3
-    batch_size_min: 1
-    batch_size_max: 10000
-  quarantine_directory: "/data/quarantine"
-  upload_directory: "/data/uploads"
-
-Types
-
-PipelineResult {
-  run_id: string, required
-  started_at: datetime, required
-  completed_at: datetime, optional
-  files_processed: integer, required
-  files_succeeded: integer, required
-  files_failed: integer, required
-  total_records_loaded: integer, required
-  status: enum [completed, completed_with_errors, failed], required
-}
-
-FileResult {
-  file_name: string, required
-  file_size: integer, required
-  state: enum [queued, validating, transforming, loading, completed, failed, quarantined], required
-  records_in: integer, optional
-  records_out: integer, optional
-  errors: list of string, optional
-  retry_count: integer, required
-  started_at: datetime, optional
-  completed_at: datetime, optional
-}
-
-DataFile {
-  name: string, required
-  path: string, required
-  size: integer, required
-  format: enum [csv, json, parquet], required
-  uploaded_at: datetime, required
-}
-
-Record {
-  id: string, required
-  fields: list of Field, required
-  source_file: string, required
-  row_number: integer, required
-}
-
-Field {
-  name: string, required
-  value: string, optional
-  type: enum [string, number, date, boolean], required
-}
-
-Schema {
-  name: string, required
-  columns: list of ColumnDef, required
-  version: string, required
-}
-
-ColumnDef {
-  name: string, required
-  type: enum [string, number, date, boolean], required
-  required: boolean, required
-  pattern: string, optional
-}
-
-AuditEntry {
-  timestamp: datetime, required
-  file_name: string, required
-  action: string, required
-  detail: string, optional
-  severity: enum [info, warning, error], required
-}
-
-Functions
-
-FUNCTION detect_format(file_name):
-  IF file_name ends with ".csv" THEN $format = "csv"
-  ELSE IF file_name ends with ".json" THEN $format = "json"
-  ELSE IF file_name ends with ".parquet" THEN $format = "parquet"
-  ELSE $format = "unknown"
-  RETURNS $format
-
-FUNCTION select_schema(format, header_row):
-  Look up the schema registry for a schema matching the format and header_row columns
-  IF a matching schema is found THEN RETURNS the schema
-  ELSE RETURNS nothing
-
-FUNCTION calculate_batch_count(total_records, batch_size):
-  Calculate $count as total_records divided by batch_size, rounded up to the nearest whole number
-  RETURNS $count
-
-FUNCTION summarize_run(file_results):
-  Calculate $files_succeeded as the number of items in file_results where state is "completed"
-  Calculate $files_failed as the number of items in file_results where state is "failed" or state is "quarantined"
-  Calculate $total_records_loaded as the sum of records_out across file_results where state is "completed"
-  IF $files_failed is greater than 0 and $files_succeeded is greater than 0
-    THEN $status = "completed_with_errors"
-  ELSE IF $files_failed equals the number of items in file_results
-    THEN $status = "failed"
-  ELSE $status = "completed"
-  RETURNS { files_processed, $files_succeeded, $files_failed, $total_records_loaded, $status }
-
-
-BEHAVIOR quarantine_check: Determine whether a file should be quarantined
-  before any processing begins
-
-  RULE file_too_large:
-    WHEN file.size exceeds $config.file_size_limit
-    THEN quarantine the file
-    -- 500 MB limit protects against runaway resource consumption
-
-  RULE unsupported_format:
-    WHEN detect_format(file.name) returns a value not in $config.format_whitelist
-    THEN quarantine the file
-
-  RULE duplicate_file:
-    WHEN a record exists in the audit log where file_name equals file.name
-         and action equals "completed" and the entry is from the last $config.duplicate_window_hours hours
-    THEN quarantine the file
-    -- prevent reprocessing of recently completed files
-
-  ERROR quarantined_file: warning → move the file to $config.quarantine_directory, log the reason, notify the data team, "File {file.name} quarantined: {reason}"
-
-  EXAMPLES:
-    oversized_file: file={ "name": "huge_export.csv", "size": 750000000 } → { "state": "quarantined", "reason": "File size 750000000 exceeds 500 MB limit" }
-    unknown_format: file={ "name": "data.xlsx", "size": 1024000 } → { "state": "quarantined", "reason": "Unsupported file format: unknown" }
-    duplicate_recent: file={ "name": "daily_sales.csv", "size": 2048000 }, recent_completion=true → { "state": "quarantined", "reason": "Duplicate of file completed within last 24 hours" }
-
-
-PROCEDURE validate_file: Check that a file's structure matches the expected
-  schema before transformation
-
-  STEP detect → $format:
-    Determine the format using detect_format(file.name) → $format
-    Move the file from "queued" to "validating"
-    Log an audit entry: "Validation started for {file.name}"
-
-  STEP read_header → $header_row:
-    Read the first row of the file to extract the column names → $header_row
-    If the file is empty:
-      Stop processing and raise empty_file error
-
-  STEP match_schema → $schema:
-    Look up the schema using select_schema($format, $header_row) → $schema
-    If no schema is found:
-      Stop processing and raise schema_not_found error
-
-  STEP validate_columns → $error_list:
-    Set $error_list to empty
-    For each column defined in $schema:
-      If the column is marked as required and is missing from $header_row:
-        Add "Missing required column: {column.name}" to $error_list
-      If the column is present and has a pattern defined:
-        Check that at least $config.column_match_threshold of values in that column match the pattern
-        If fewer than $config.column_match_threshold match:
-          Add "Column {column.name}: {match_percentage}% of values match expected pattern (minimum 95%)" to $error_list
-    If $error_list is not empty:
-      Stop processing and raise validation_failed error
-
-  STEP record_stats → $records_in:
-    Count the total number of records in the file (excluding the header) → $records_in
-    Record $records_in on the file result
-    Log an audit entry: "Validation passed for {file.name}: {$records_in} records found"
-
-  ERROR empty_file: warning → move the file from "validating" to "failed", log the issue, "File {file.name} is empty -- no records to process"
-  ERROR schema_not_found: critical → move the file from "validating" to "failed", notify the data engineering team, "No schema found for {file.name} with format {$format}. Manual schema registration required."
-  ERROR validation_failed: critical → move the file from "validating" to "failed", attach $error_list to the file result, "Validation failed for {file.name}: {error_count} column issues found"
-
-  EXAMPLES:
-    valid_csv_file: file="orders_20260301.csv" with columns [order_id, customer_id, amount, order_date, status] → { "state": "validating", "records_in": 1250 }
-    missing_required_column: file={ "name": "orders_broken.csv", "format": "csv" }, header_row=["order_id", "amount", "order_date"] → { "state": "failed", "errors": ["Missing required column: customer_id", "Missing required column: status"] }
-
-
-PROCEDURE transform_records: Apply data transformations to validated records
-  before loading them into the warehouse
-
-  STEP prepare → $batch_count, $records_out, $current_batch:
-    Move the file from "validating" to "transforming"
-    Calculate the number of batches using calculate_batch_count($records_in, batch_size) → $batch_count
-    Set $records_out to 0 and $current_batch to 1
-    Log an audit entry: "Transformation started for {file.name}: {$batch_count} batches"
-
-  STEP process_batches → $records_out:
-    While $current_batch is at most $batch_count:
-      Read the next batch of records from the file
-      For each record in the batch:
-        Trim whitespace from all string fields
-        Convert date fields to ISO 8601 format (YYYY-MM-DD)
-        Convert all number fields to standard decimal notation
-        If any required field is missing or null:
-          Skip this record and add a warning to the audit log:
-            "Skipped record {record.row_number}: missing required field {field.name}"
-        Otherwise:
-          Add 1 to $records_out
-      Add 1 to $current_batch
-
-  STEP deduplicate → $records_out:
-    Sort the transformed records by record.id
-    Group the records by record.id
-    For each group with more than one record:
-      Keep only the first record in the group
-      Subtract the number of removed duplicates from $records_out
-      Log an audit entry: "Removed {duplicate_count} duplicate records from {file.name}"
-
-  STEP finalize:
-    Log an audit entry: "Transformation complete for {file.name}: {$records_out} of {$records_in} records ready to load"
-
-  ERROR batch_read_failure: critical → move the file from "transforming" to "failed", log the error with the batch number, "Failed to read batch {$current_batch} of {$batch_count} from {file.name}"
-
-  EXAMPLE successful_transformation:
-    INPUT: {
-      "file": { "name": "orders_20260301.csv", "records_in": 1250 },
-      "batch_size": 500
-    }
-    EXPECTED: {
-      "state": "transforming",
-      "batch_count": 3,
-      "records_out": 1247,
-      "audit_entries": [
-        "Transformation started for orders_20260301.csv: 3 batches",
-        "Skipped record 412: missing required field customer_id",
-        "Skipped record 889: missing required field amount",
-        "Removed 1 duplicate records from orders_20260301.csv",
-        "Transformation complete for orders_20260301.csv: 1247 of 1250 records ready to load"
-      ]
-    }
-    NOTES: 3 batches (500 + 500 + 250). Two records skipped for missing fields,
-           one duplicate removed. 1250 - 2 skipped - 1 duplicate = 1247 records out.
-
-  EXAMPLES:
-    all_records_skipped: file={ "name": "corrupt_data.json", "records_in": 15 }, batch_size=500 → { "state": "transforming", "batch_count": 1, "records_out": 0 }
-
-
-PROCEDURE load_to_warehouse: Load transformed records into the data warehouse
-  with retry logic for transient failures
-
-  STEP check_records:
-    If $records_out equals 0:
-      Log an audit entry: "No records to load for {file.name} -- skipping warehouse load"
-      Move the file from "transforming" to "completed"
-      Return the result
-      -- Zero records is not an error -- transformation may have filtered everything out
-
-  STEP connect → $connection:
-    Move the file from "transforming" to "loading"
-    Attempt to connect to the warehouse using warehouse_connection → $connection
-    If $connection fails:
-      Log the error and raise connection_failed error
-
-  STEP load_batches → $loaded_count:
-    Calculate the number of load batches using calculate_batch_count($records_out, batch_size) → $load_batch_count
-    Set $loaded_count to 0 and $current_batch to 1
-    While $current_batch is at most $load_batch_count:
-      Take the next batch of transformed records
-      Attempt to insert the batch into the warehouse:
-        If it succeeds:
-          Add the number of records in the batch to $loaded_count
-        If it fails:
-          Attempt the insert again up to max_retries times
-          If all retries fail:
-            Log the error with the batch number and raise load_failed error
-      Add 1 to $current_batch
-
-  STEP verify:
-    Query the warehouse to count the records just inserted for this file → $warehouse_count
-    If $warehouse_count does not equal $loaded_count:
-      Log a warning: "Record count mismatch: expected {$loaded_count}, found {$warehouse_count}"
-    Move the file from "loading" to "completed"
-    Log an audit entry: "Load complete for {file.name}: {$loaded_count} records inserted"
-
-  ERROR connection_failed: critical → move the file from "loading" to "failed", notify the infrastructure team, "Cannot connect to warehouse: {connection_error}. File {file.name} load aborted."
-  ERROR load_failed: critical → move the file from "loading" to "failed", record which batch failed, roll back any partially inserted records for this file, "Batch {$current_batch} failed after {max_retries} retries for {file.name}. Partial load rolled back."
-
-  EXAMPLES:
-    successful_load: file="orders_20260301.csv", records_out=1247, batch_size=500 → { "state": "completed", "loaded_count": 1247 }
-    retry_then_success: file={ "name": "products_20260301.json", "records_out": 800 }, batch_size=500, max_retries=3 → { "state": "completed", "loaded_count": 800, "retry_count": 1 }
-    permanent_failure: file={ "name": "events_20260301.parquet", "records_out": 5000 }, batch_size=500, max_retries=3 → { "state": "failed", "loaded_count": 0, "retry_count": 3 }
-
-
-PROCEDURE run_pipeline: Orchestrate the full ingestion pipeline from file
-  discovery through warehouse loading
-
-  STEP discover → $file_list:
-    Read the list of files in the upload_directory → $file_list
-    Keep only the files that have not been processed before
-      -- check the audit log for previous completions
-    Sort $file_list by uploaded_at, oldest first
-    If $file_list is empty:
-      Log an audit entry: "Pipeline run: no new files found"
-      Return an empty result
-
-  STEP initialize → $run_id, $started_at, $files_processed:
-    Generate a new $run_id
-    Record the $started_at timestamp
-    Set $files_processed to 0
-
-  STEP process_files → $file_results:
-    Set $file_results to empty list
-    For each file in $file_list:
-      Add 1 to $files_processed
-      Run quarantine_check on the file
-      If the file is quarantined:
-        Record the file result with state "quarantined" in $file_results and skip to the next file
-      Run validate_file on the file
-      If validation fails:
-        Record the file result with state "failed" in $file_results and skip to the next file
-      Run transform_records on the file
-      If transformation produces zero records:
-        Record the file result with state "completed" in $file_results and skip to the next file
-      Run load_to_warehouse on the file
-      Record the file result in $file_results
-
-  STEP summarize → $pipeline_result:
-    Calculate $pipeline_result using summarize_run($file_results)
-    Record the $completed_at timestamp
-    Log an audit entry: "Pipeline run {$run_id} complete: {$pipeline_result.files_succeeded} succeeded, {$pipeline_result.files_failed} failed, {$pipeline_result.total_records_loaded} records loaded"
-
-  ERROR pipeline_interrupted: critical → record partial results, log the interruption point, notify the data engineering team, "Pipeline run {$run_id} interrupted after processing {$files_processed} of {total_files} files"
-
-  EXAMPLE full_pipeline_run:
-    INPUT: {
-      "upload_directory": "/data/uploads",
-      "warehouse_connection": "warehouse://prod-cluster:5439/analytics",
-      "max_retries": 3,
-      "batch_size": 500,
-      "files_in_directory": [
-        { "name": "orders_20260301.csv", "size": 2048000, "uploaded_at": "2026-03-01T01:00:00Z" },
-        { "name": "huge_export.csv", "size": 750000000, "uploaded_at": "2026-03-01T01:05:00Z" },
-        { "name": "products_20260301.json", "size": 512000, "uploaded_at": "2026-03-01T01:10:00Z" }
-      ]
-    }
-    EXPECTED: {
-      "pipeline_result": {
-        "run_id": "run_20260301_001",
-        "status": "completed_with_errors",
-        "files_processed": 3,
-        "files_succeeded": 2,
-        "files_failed": 1,
-        "total_records_loaded": 2047
-      },
-      "file_results": [
-        { "file_name": "orders_20260301.csv", "state": "completed", "records_in": 1250, "records_out": 1247 },
-        { "file_name": "huge_export.csv", "state": "quarantined", "errors": ["File size 750000000 exceeds 500 MB limit"] },
-        { "file_name": "products_20260301.json", "state": "completed", "records_in": 820, "records_out": 800 }
-      ]
-    }
-    NOTES: Three files discovered. orders_20260301.csv processed successfully (1247 records).
-           huge_export.csv quarantined for exceeding $config.file_size_limit. products_20260301.json processed
-           successfully (800 records after transformation). Total loaded = 1247 + 800 = 2047.
-
-  EXAMPLES:
-    empty_upload_directory: upload_directory="/data/uploads", files_in_directory=[] → { "status": "completed", "files_processed": 0, "total_records_loaded": 0 }
-
-Precedence
-
-PRECEDENCE:
-  1. file_too_large (from BEHAVIOR quarantine_check)
-  2. unsupported_format (from BEHAVIOR quarantine_check)
-  3. duplicate_file (from BEHAVIOR quarantine_check)
-  -- Quarantine checks run first. Processing PROCEDUREs follow in document order.
-
-Constraints
-* File state transitions MUST follow the lifecycle: queued -> validating ->
-  transforming -> loading -> completed (or failed/quarantined at any point)
-* A file MUST NOT move backward in the state lifecycle
-* Batch size MUST be between $config.warehouse.batch_size_min and $config.warehouse.batch_size_max
-* All timestamps MUST use ISO 8601 format in UTC
-* Partial loads MUST be rolled back on failure -- no half-loaded files
-* The audit log MUST record every state transition for every file
-* Pipeline runs MUST be idempotent -- rerunning after a failure skips already completed files
-* Warehouse inserts MUST use transactions to ensure atomicity per batch
-
-Dependencies
-* File system access to the upload and quarantine directories
-* Schema registry service for column validation rules
-* Data warehouse with transactional insert support
-* Audit log persistence store
-* Notification service for team alerts
-* Scheduling service for recurring pipeline runs
-
-Changelog
-* 4.0.0: 2026-03-01 - Migrated to SESF v4 hybrid notation. Added @config,
-  $variable threading, compact ERRORS/EXAMPLES, Notation section, and fixed
-  PRECEDENCE to reference only BEHAVIOR rules.
-* 3.0.0: 2025-12-15 - Rewrote in SESF v3 procedural format. Added PROCEDURE
-  blocks for validate_file, transform_records, load_to_warehouse, and
-  run_pipeline. Added quarantine_check behavior with PRECEDENCE.
-* 2.0.0: 2025-10-01 - Added retry logic and batch processing. Introduced
-  state lifecycle tracking.
-* 1.1.0: 2025-08-01 - Added parquet format support and deduplication step
-* 1.0.0: 2025-06-01 - Initial version with CSV-only support
-```
-
----
-
-## Example 7: Standard Tier — GIST Newsletter Briefing (mixed BEHAVIOR + PROCEDURE)
-
-```
----
-name: GIST-update
-description: "Scan GIST newsletters from Gmail and update briefing file, GitHub issue, and email draft."
-allowed-tools: Bash, mcp__gmail__search_emails, mcp__gmail__read_email, mcp__gmail__draft_email, Read, Edit, Write
-model: sonnet
----
-
-# GIST School Newsletter Briefing
-
-Meta
-* Version: 4.0.0
-* Date: 2026-03-03
-* Domain: Family — School Communications
-* Status: active
-* Tier: standard
-
-Notation
-* $ — references a variable or config value
-* @ — marks a structured block (@config, @route)
-* → — means "produces", "routes to", or "yields"
-* MUST/SHOULD/MAY/CAN — requirement strength keywords
-
-Purpose
-Scan recent GIST newsletters from Gmail, update a single-source-of-truth briefing file for Izzy's school, sync state to GitHub issue #28, and draft an HTML email summary for Janice.
-
-Scope
-* IN SCOPE: searching Gmail for new newsletters, extracting dates/actions/registrations/curriculum/financial info, updating GIST_news.md, maintaining GitHub issue #28, drafting email to Janice
-* OUT OF SCOPE: sending emails (draft only), calendar integrations, parent-teacher communication, non-GIST communications
-
-@config
-  briefing_path: /workspaces/reggie-life-plan/00_STRATEGIC_CORE/GIST_news.md
-  email_to: jnyarkomensah@gmail.com
-  email_subject_template: "GIST School Updates - Izzy ({today})"
-  github_issue: 28
-  gmail_sender: info@gistonline.ca
-  gmail_query_template: "from:info@gistonline.ca after:{lastUpdated}"
-  gmail_max_results: 10
-  completed_items_max_age_days: 30
-  section_order: [Action Items, Upcoming Dates, Registration Status, Curriculum & School Notes, Financial Notes, Completed Items]
-  student: Izzy, GermanFasttrack, Grade 1/Primary
-
-Inputs
-* trigger: string - user invocation (e.g., "GIST update", "check GIST") - required
-
-Outputs
-* updated_briefing: file - the updated GIST_news.md
-* github_issue_update: string - updated issue body + changelog comment
-* email_draft: draft - HTML email draft for Janice
-* completion_summary: string - user-facing summary of changes
-
-Types
--- none: all data structures are inline within behavior and procedure blocks
-
-Functions
--- none: all logic is expressed directly in behavior rules and procedure steps
-
-Behaviors
-
-BEHAVIOR place_content: Determine the correct section for each extracted newsletter item
-
-  RULE single_source_of_truth:
-    every piece of information MUST appear in exactly ONE section
-    -- see $config.section_order for the canonical section list
-
-  RULE section_order:
-    sections MUST appear in this order: $config.section_order
-    -- Action Items before Upcoming Dates is intentional: "what to decide" > "what's on the calendar"
-
-  @route classify_item [first_match_wins]
-    requires_parent_action (register, log in, decide, pay)  → Action Items (numbered, ordered by due date)
-    has_specific_date                                        → Upcoming Dates (table row, self-contained Notes)
-    is_registration_decision                                 → Registration Status (update row in-place; values: Registered, Not registered, Received, Pending, Not registering)
-    is_teacher_change OR club_structure OR program_detail    → Curriculum & School Notes (appropriate subsection)
-    is_tuition OR tax_receipt OR assistance_program           → Financial Notes
-
-  RULE no_strikethrough:
-    resolved items MUST be removed entirely — MUST NOT use strikethrough
-    -- Completed Items serves as the archive
-
-  ERROR duplicate_placement: critical → choose ONE section per classify_item table, "Item '{item}' matches multiple sections. Use single-source rule."
-
-  EXAMPLES:
-    action_placed: item="Register for Code-It Hacks", type=parent_action → Action Items (numbered)
-    date_placed: item="March break", date="2026-03-16", type=event → Upcoming Dates (table row, NOT Action Items)
-    curriculum_placed: item="New German teacher starting after break", type=teacher_change → Curriculum & School Notes
-
-Procedures
-
-PROCEDURE scan_newsletters: Search Gmail for new GIST newsletters
-
-  STEP get_baseline → $today, $lastUpdated, $briefing
-    Run `TZ='America/New_York' date '+%Y-%m-%d'` → $today
-    Read $config.briefing_path → $briefing
-    Extract lastUpdated from YAML frontmatter of $briefing → $lastUpdated
-    If $briefing does not exist, set $lastUpdated to 30 days before $today
-    -- parallelizing the date command and file read saves a round trip
-
-  STEP search_gmail → $newsletters
-    Search Gmail: $config.gmail_query_template with $lastUpdated, maxResults=$config.gmail_max_results
-    -- Gmail after: uses slash format (2026/02/18), not dash format
-    If zero results: skip to maintain_briefing procedure, report "No new newsletters since $lastUpdated"
-
-  STEP filter_and_extract → $new_content
-    Skip any newsletter whose date appears in "Newsletters reviewed" footer of $briefing
-    For each remaining newsletter, extract: dates and deadlines, registration requirements, teacher and curriculum changes, parent action items, financial information
-
-  ERROR gmail_search_failed: critical → halt and inform user, "Gmail search failed. Check MCP server connection."
-  ERROR newsletter_unreadable: warning → skip that one, continue, "Could not read newsletter from {date}. Skipping."
-
-  EXAMPLES:
-    two_new: lastUpdated="2026-02-15", gmail_results=2 → read both, extract, proceed to place_content and maintain_briefing
-    none_found: lastUpdated="2026-02-28", gmail_results=0 → skip to maintain_briefing for maintenance only
-
-PROCEDURE maintain_briefing: Apply time-based maintenance to GIST_news.md
-
-  STEP move_past_events:
-    For each event in Upcoming Dates whose date is before $today:
-      Remove the row from Upcoming Dates
-      Add a one-line bullet to Completed Items with the date
-
-  STEP prune_completed:
-    Remove any Completed Items entries older than $config.completed_items_max_age_days
-
-  STEP prune_lunch_menu:
-    For each Wednesday Lunch Menu date that has passed, remove it from the lunch subtable
-
-  STEP update_metadata:
-    Update lastUpdated YAML field and "Last updated:" line to $today
-    Update footer with newsletters reviewed list and $today as generated date
-
-  EXAMPLES:
-    with_new_content: new_newsletters=2, past_events=1, stale_completed=3 → place new content, move 1 event, remove 3 stale, update metadata
-    maintenance_only: new_newsletters=0, past_events=2, stale_completed=1 → move 2 events, remove 1 stale, update metadata
-
-PROCEDURE sync_github_issue: Update GitHub issue #28 body and post changelog
-
-  STEP update_body:
-    Use `gh issue edit $config.github_issue --body` to replace the entire issue body
-    Body MUST mirror current GIST_news.md with: purpose + last synced date, Action Items as checkboxes (FIRST), Upcoming Dates (future only), Registration Status with emoji, condensed Curriculum notes, Financial Notes, Recent Completed (last 2 weeks only), footer
-    Body MUST NOT contain past events, resolved actions, or completed items > 2 weeks old
-
-  STEP post_changelog:
-    Post comment on issue $config.github_issue: newsletters scanned (count + date range), changes as bullet list, upcoming action items with near-term deadlines
-
-  ERROR github_unavailable: warning → log error, continue, "GitHub sync failed: {error}. Briefing file was updated."
-
-  EXAMPLES:
-    full_sync: scanned=2, changes=["added 3 dates", "moved 1 event", "updated registration"] → replace body + post changelog
-    github_down: gh_exit_code=1 → warn, continue (briefing file is priority)
-
-PROCEDURE draft_email: Draft HTML email to Janice
-
-  STEP load_template → $template
-    Read email-template.html from the skill directory → $template
-    If template cannot be read, proceed with basic HTML formatting
-
-  STEP populate_and_draft:
-    Populate $template with current data from updated $config.briefing_path
-    Action Items MUST appear before calendar dates in the email
-    Email MUST NOT include repo metadata (GitHub link, newsletters reviewed, generated date)
-    Address to $config.email_to with subject $config.email_subject_template
-    Email MUST include both body (plain text) and htmlBody (HTML) with mimeType "multipart/alternative"
-    -- Gmail MCP requires body even when htmlBody is provided; omitting causes validation error
-    Create draft using mcp__gmail__draft_email — MUST NOT send automatically
-
-  STEP report_completion:
-    Confirm to user: newsletters scanned (count + range), briefing file location, items changed, action items with deadlines, email draft created (remind to review before sending)
-
-  ERROR template_missing: warning → use basic HTML formatting, "Email template not found. Using basic formatting."
-  ERROR draft_failed: warning → inform user, "Email draft failed: {error}. Briefing updated."
-
-  EXAMPLES:
-    full_draft: template_loaded=true, briefing_updated=true → draft HTML email, report completion
-    no_template: template_loaded=false → draft basic HTML, warn about missing template
-
-Constraints
-* Information appears in exactly ONE section — never duplicated
-* Action Items before Dates in all outputs (file, issue body, email)
-* Tables for structured data (dates, registrations); bullets for prose (curriculum, completed)
-* Never strikethrough — remove resolved items entirely
-* Focus on $config.student relevant information
-* Run weekly or before major school events
-
-Dependencies
-* Gmail MCP server (search_emails, read_email, draft_email)
-* GitHub CLI (gh issue edit, gh issue comment)
-* Briefing file: $config.briefing_path
-* Email template: email-template.html (in skill directory)
-* GitHub Issue: #$config.github_issue
+  scratchpad_dir: /tmp/meeting-analysis/scratchpad
+  max_input_tokens: 200000
+  min_ideas_per_phase1: 15
+  min_second_order_per_idea: 2
+  framework_match_threshold: 0.7
+  contradiction_severity_levels: [minor, moderate, critical]
+  final_deliverable_max_sections: 8
+
+## Input Routing
+
+Before starting Phase 1, determine the processing strategy based on transcript length:
+
+@route token_routing [first_match_wins]
+  ≤ 25,000 tokens    → direct: process the full transcript in a single context window
+  ≤ 100,000 tokens   → chunked: split into 20,000-token overlapping chunks (2,000-token overlap), process each, then merge
+  ≤ 200,000 tokens   → delegated: create sub-agent tasks for each chunk, aggregate results
+  > 200,000 tokens   → reject with input_too_large
+
+For chunked and delegated strategies, the merge step MUST deduplicate ideas that appear in overlapping regions. Use the idea label and a text-similarity check (Jaccard similarity on the idea description, threshold 0.6) to identify duplicates.
+
+## Instructions
+
+### Setup
+
+Run `mkdir -p /tmp/meeting-analysis/scratchpad/`. Create all six phase tasks upfront, each blocking on the previous:
+
+1. Extract ideas
+2. Generate second-order effects
+3. Map to frameworks
+4. Synthesize themes
+5. Resolve contradictions
+6. Assemble deliverable
+
+Record the transcript token count in `$token_count` and apply the `token_routing` table to select the processing strategy. Record the selected strategy in `$processing_strategy`.
+
+### Phase 1: Idea Extraction → `phase1_extraction.md`
+
+Read the entire transcript without skimming. For chunked/delegated strategies, process each chunk fully before moving to the next. Produce a scratchpad artifact containing:
+
+- **Explicit ideas (E1, E2, E3...).** Statements where a speaker directly proposes, claims, or asserts something. Quote the relevant passage and attribute it to the speaker.
+- **Implicit ideas (I1, I2, I3...).** Ideas that are implied by the conversation but never stated outright. For example, if a speaker says "we tried that last quarter and it didn't work," the implicit idea is that the approach has a known failure mode. Each implicit idea MUST include a 1-sentence justification explaining the inference.
+- **Frameworks and mental models (F1, F2, F3...).** Any reasoning framework, analogy, or mental model a speaker employs. For example, if someone says "this is a classic chicken-and-egg problem," label that as a framework reference.
+- **Critical observations (C1, C2, C3...).** Claims that deserve scrutiny. For each, note what evidence supports it, what evidence contradicts it, and what information is missing.
+
+When a `focus_areas` list is provided, extraction MUST cover all focus areas. If a focus area has no relevant content in the transcript, explicitly state "No relevant content found for [area]" rather than omitting it silently.
+
+Examine every claim with equal skepticism. When a speaker asserts something is easy, obvious, or inevitable, ask: what evidence supports this? What could go wrong? Document both the claim and the counter-scenario.
+
+The extraction artifact MUST contain at least `min_ideas_per_phase1` labeled items across all categories. If the transcript genuinely contains fewer extractable ideas, include a note explaining why (e.g., "Transcript is a brief 5-minute standup with only procedural updates").
+
+Store the extraction artifact as `$phase1_output`.
+
+### Phase 2: Second-Order Effects → `phase2_effects.md`
+
+Read only `$phase1_output` — do not re-read the transcript. For every explicit and implicit idea, generate at least `min_second_order_per_idea` downstream effects:
+
+- **Direct consequences (D-E1.1, D-E1.2...).** What happens next if this idea is implemented or proves true?
+- **Indirect consequences (N-E1.1, N-E1.2...).** What happens two or three steps downstream? Who else is affected? What systems break or benefit?
+- **Interaction effects (X-E1-I3, X-E2-F1...).** Where do ideas from different speakers or categories interact? For instance, if E1 contradicts I3, or if F1 provides a framework for evaluating E2, label these connections.
+
+Every second-order effect MUST cite its source idea by label (e.g., "D-E1.1: If the API migration proposed in E1 proceeds..."). Effects without source citations are invalid.
+
+Store the result as `$phase2_output`.
+
+### Phase 3: Framework Mapping → `phase3_frameworks.md`
+
+Read `$phase1_output` and `$phase2_output`. Map each idea and effect to known analytical frameworks where the match confidence exceeds `framework_match_threshold`. Use these categories:
+
+1. **Strategic frameworks:** Porter's Five Forces, SWOT, Jobs-to-be-Done, Blue Ocean, Wardley Mapping.
+2. **Systems frameworks:** Feedback loops, stock-and-flow, leverage points, Cynefin domains.
+3. **Decision frameworks:** Expected value, reversibility test, regret minimization, opportunity cost.
+4. **Risk frameworks:** Pre-mortem, failure modes, Black Swan exposure, antifragility assessment.
+
+For each mapping, record: the idea/effect label, the framework name, the match confidence (0.0-1.0), and a 1-2 sentence explanation of why the framework applies. Mappings below `framework_match_threshold` SHOULD be omitted unless they reveal a non-obvious insight.
+
+Do not force-fit. If an idea does not map well to any standard framework, say so and move on. Spurious framework mappings degrade synthesis quality.
+
+Store the result as `$phase3_output`.
+
+### Phase 4: Theme Synthesis → `phase4_synthesis.md`
+
+Read `$phase1_output`, `$phase2_output`, and `$phase3_output`. Cluster the ideas, effects, and framework mappings into coherent themes. Each theme MUST:
+
+1. Have a descriptive title (not a generic label like "Theme A").
+2. Reference at least 2 source items by label.
+3. Include a 2-4 sentence narrative explaining why these items form a theme.
+4. Include a "so what?" statement explaining why this theme matters for the participants.
+
+Limit themes to `final_deliverable_max_sections` or fewer. If natural clustering produces more themes, merge the least distinct ones. If it produces fewer, that is fine — do not pad.
+
+Store the result as `$phase4_output`.
+
+### Phase 5: Contradiction Resolution → `phase5_contradictions.md`
+
+Read all prior phase outputs (`$phase1_output` through `$phase4_output`). Identify contradictions at three levels:
+
+- **Speaker-to-speaker contradictions.** Two speakers assert incompatible claims. Cite both by label. Assess which has stronger evidence. If neither does, state that explicitly.
+- **Idea-to-effect contradictions.** An idea's second-order effects undermine the idea itself. For example, E3 proposes cost reduction but D-E3.2 shows it increases support costs. Label these as paradoxes.
+- **Theme-to-theme tensions.** Two synthesized themes pull in opposite directions. Propose a resolution path or acknowledge the genuine tension.
+
+Classify each contradiction by severity: `minor` (cosmetic disagreement, easily resolved), `moderate` (substantive disagreement requiring discussion), `critical` (fundamental conflict that blocks action).
+
+Store the result as `$phase5_output`.
+
+### Phase 6: Deliverable Assembly → `deliverable.md`
+
+Read all phase outputs (`$phase1_output` through `$phase5_output`). Assemble the final deliverable:
+
+1. **Executive summary** (3-5 sentences). State the meeting's key outcome, the most important theme, and the most critical contradiction or risk.
+2. **Themes** (one section per theme from Phase 4). For each, include the narrative, supporting evidence with labels, second-order effects, and relevant framework mappings.
+3. **Contradictions and tensions** (from Phase 5). Present unresolved conflicts with recommended next steps.
+4. **Ideas not captured by themes** (orphan ideas from Phase 1 that did not cluster into any theme). These are often the most novel items.
+5. **Appendix: Full idea index** (all labeled items from Phase 1 with their downstream effects).
+
+Every claim in the deliverable MUST cite its source label. Unsourced assertions are forbidden — if you synthesized an insight that does not trace back to a labeled item, go back and label the source first.
+
+The deliverable MUST be in the format specified by `output_format`.
+
+## Rules
+
+### Intellectual Rigor
+
+- **No sycophantic synthesis:** The deliverable MUST NOT validate participants' ideas without challenge. If an idea has weaknesses, state them. If a claim lacks evidence, say so. Synthesis that only praises is incomplete.
+- **Equal scrutiny:** Apply the same level of critical analysis to every speaker's contributions, regardless of their apparent seniority or confidence. A CEO's assertion gets the same evidence check as an intern's suggestion.
+- **Inference transparency:** Every implicit idea (I-series) MUST include a justification. The reader MUST be able to evaluate whether the inference is reasonable without re-reading the transcript.
+- **Proportional confidence:** Strength of language MUST match strength of evidence. Use "suggests" for single-source inferences, "indicates" for multi-source, "demonstrates" only when evidence is direct and unambiguous.
+
+### Artifact Integrity
+
+- **Phase isolation:** Each phase reads only the outputs specified in its instructions. Phase 2 MUST NOT re-read the transcript. Phase 4 MUST NOT skip ahead to contradiction analysis. Violating phase boundaries produces circular reasoning.
+- **Label consistency:** Once an item is labeled (E1, I3, D-E1.2, etc.), that label MUST refer to the same item throughout all phases. Do not relabel or renumber between phases.
+- **Scratchpad preservation:** All intermediate artifacts MUST be preserved in `scratchpad_dir`. Do not delete or overwrite phase outputs during processing.
+
+### Citation Rules
+
+- **Derivation chains:** The final deliverable MUST support full derivation tracing: any claim in the deliverable → theme → source ideas/effects → transcript passage. If any link in this chain is broken, the claim is invalid.
+- **Cross-phase references:** When Phase N references an item from Phase M, use the original label. Do not summarize or paraphrase without citing. "As noted in E3" is acceptable; restating E3's content without attribution is not.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| input_too_large | critical | Reject the transcript. Return the `max_input_tokens` limit and the actual token count. Suggest splitting the meeting recording. |
+| insufficient_extraction | warning | Phase 1 produced fewer than `min_ideas_per_phase1` items. Continue processing but include a note in the deliverable explaining the low yield. |
+| missing_source_citation | critical | A claim in the deliverable cannot be traced to a labeled source. Halt assembly and backfill the citation before proceeding. |
+| broken_derivation_chain | critical | A derivation chain has a gap (e.g., theme references D-E5.1 but no such label exists). Halt assembly and repair the chain. |
+| phase_boundary_violation | critical | A phase accessed an input it should not have (e.g., Phase 2 re-read the transcript). Discard that phase's output and re-run from the correct inputs. |
+| low_framework_confidence | warning | A framework mapping scored below `framework_match_threshold` but was included anyway. Flag it in the deliverable with a confidence disclaimer. |
+| duplicate_idea_merge_conflict | warning | During chunk merging, two ideas had Jaccard similarity above 0.6 but substantively different content. Keep both with a note flagging the potential overlap. |
+| empty_focus_area | warning | A requested focus area produced no extraction results. Include in the deliverable: "No relevant content found for [area]." |
+| contradiction_deadlock | warning | A critical contradiction could not be resolved because both sides have equal evidence. Present both positions and recommend the specific additional information needed to break the tie. |
+
+## Examples
+
+implicit_idea_requires_justification:
+  Transcript contains: "Alice: We tried microservices last year. Bob: Right, and we ended up reverting after three months."
+  Extraction labels I4: "The team's microservices migration failed due to unspecified issues."
+  But I4 has no justification sentence.
+  → Fail with `missing_source_citation` rationale: implicit ideas MUST include a justification. Correct version: I4: "The team's microservices migration failed due to unspecified issues. Justification: Alice's 'tried' (past tense) and Bob's 'reverting after three months' together imply an unsuccessful attempt."
+
+orphan_idea_not_silently_dropped:
+  Phase 1 extracts E12: "The office lease expires in Q3 and has not been discussed."
+  Phase 4 synthesis produces 6 themes, none of which relate to real estate.
+  E12 does not appear in any theme section.
+  → Fail if E12 is absent from the deliverable. It MUST appear in section 4 ("Ideas not captured by themes"). Orphan ideas are often the most actionable items a meeting overlooked.
+
+chunked_deduplication:
+  A 90,000-token transcript is split into 5 overlapping chunks. Chunk 2 and Chunk 3 both extract: "The Q4 revenue target of $2.3M requires 40% growth."
+  Chunk 2 labels it E7. Chunk 3 labels it E14.
+  Jaccard similarity on the description text is 0.82 (above 0.6 threshold).
+  → Pass: E14 is merged into E7. All references to E14 in Chunk 3's output are relabeled to E7 during the merge step. Only E7 appears in the final extraction.
+
+contradiction_with_equal_evidence:
+  E2 (CTO): "Migrating to Kubernetes will reduce infrastructure costs by 30%."
+  E8 (VP Eng): "Our last container migration increased operational costs by 25% due to tooling and training."
+  Both cite concrete numbers. Neither has stronger evidence than the other.
+  Phase 5 classifies this as a `critical` contradiction.
+  → Pass: the deliverable presents both positions, notes the evidence stalemate, and recommends: "Request the finance team's actual cost comparison from the previous container migration before making a decision." This is a `contradiction_deadlock`.
+
+phase_boundary_violation_during_synthesis:
+  During Phase 4 (synthesis), the agent re-reads the original transcript to "check a quote" rather than relying on $phase1_output.
+  → Fail with `phase_boundary_violation`. Phase 4 reads $phase1_output through $phase3_output only. Re-reading the transcript introduces the risk of extracting new ideas during synthesis, which breaks derivation chains. The correct action is to discard Phase 4's output and re-run it using only the specified inputs.
+
+focus_area_with_no_content:
+  focus_areas includes "supply chain resilience" but the meeting transcript discusses only software architecture and hiring.
+  Phase 1 finds zero ideas related to supply chain.
+  → Pass only if the extraction artifact explicitly states: "No relevant content found for: supply chain resilience." Silently omitting the focus area is a fail — the requestor chose that focus area for a reason and needs to know it was not covered.
 ```

@@ -1,61 +1,61 @@
 ---
-description: Write a specification or procedural pseudocode using Structured English Specification Format (SESF v4)
+description: Write a specification using Hybrid Specification Format (HSF v5)
 argument-hint: <domain or topic to specify>
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
-# Write a Structured English Specification
+# Write a Hybrid Specification
 
-Generate a complete SESF v4 specification from a user request. SESF v4 supports both declarative rules (BEHAVIOR blocks) and step-by-step workflows (PROCEDURE blocks), with hybrid elements for configuration, routing, variable threading, and compact notation.
+Generate a complete HSF v5 specification from a user request. HSF v5 uses prose instructions with markdown headers, @route tables for multi-branch decisions, @config for centralized parameters, $variable threading for complex data flows, and consolidated error tables.
 
 ## Workflow
 
 ### Step 1: Load the Skill
 
-Use the `structured-english` skill — it contains all the rules, formats, and validation requirements for SESF v4 specifications. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/reference.md`.
+Use the `structured-english` skill — it contains all the rules, formats, and validation requirements for HSF v5 specifications. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/reference.md`.
 
 ### Step 2: Gather Requirements
 
 Always ask all three questions, even if the user provided a domain/topic in the arguments (use it as a starting point but confirm):
 
 1. **Domain**: "What system or process should this specification define?"
-2. **Nature**: "Is this primarily declarative rules (conditions that produce different outcomes) or a step-by-step workflow (do this, then this), or a mix of both?"
+2. **Nature**: "Is this primarily rules (conditions that produce different outcomes), a step-by-step workflow (do this, then this), or a mix of both?"
 3. **Complexity**: "How many distinct concerns does this involve?" (helps determine tier)
 
-### Step 3: Select Tier and Block Types
+### Step 3: Select Tier
 
-Based on the requirements, select the appropriate SESF tier:
+Based on the requirements, select the appropriate tier:
 
-- **Micro**: Single BEHAVIOR or single PROCEDURE containing 1-2 rules/steps within it, 20-40 lines
-- **Standard**: Multiple BEHAVIORs and/or PROCEDUREs sharing types, 100-300 lines. Requires a Notation section defining any symbols used.
-- **Complex**: Overlapping rules, state machines, mixed declarative+procedural, 300-600 lines. Requires a Notation section defining any symbols used.
+- **Micro** (20-80 lines): Single concern, ≤5 rules. Configuration + prose instructions. No formal blocks needed.
+- **Standard** (80-200 lines): Multiple concerns. Configuration + @route tables + prose rules + prose procedures. Named errors as table.
+- **Complex** (200-400 lines): Many concerns with complex interactions. Everything in Standard, plus @config, $variable threading, worked examples, system dynamics sections.
 
-Choose block types based on the nature of each concern:
+Also determine which notation elements will be used:
+- **@config** — only if 3+ configurable parameters
+- **@route** — only if 3+ branch decision logic
+- **$variable threading** — only if complex data flow between phases
+- **Worked examples** — only if chain integrity matters
 
-- **BEHAVIOR** — for declarative rules where conditions produce different outcomes (validation, classification, routing)
-- **PROCEDURE** — for ordered steps with decisions, loops, or side effects (workflows, pipelines, onboarding). Use `$variable` threading to pass intermediate results between steps.
-- **FUNCTION** — for pure calculations (no side effects)
-- **ACTION** — for reusable operations with side effects (sending emails, writing files, calling APIs)
-
-Also consider hybrid elements that reduce boilerplate:
-
-- **@config** — use for centralized parameters (thresholds, limits, feature flags) that are referenced across multiple blocks, rather than scattering magic values throughout rules
-- **@route** — use for conditionals with 3 or more branches as a compact alternative to deeply nested IF/ELSE IF chains
-- **$variable threading** — use in PROCEDURE steps to name intermediate results and pass them to subsequent steps (e.g., `$validated_input`, `$api_response`)
-- **Compact ERRORS** — default to `| Condition | Severity | Message |` table format for error definitions within blocks
-- **Compact EXAMPLES** — default to `| Input | Expected | Why |` table format for examples within blocks
-
-A spec can use any combination of these. If unsure about tier, default to standard.
-
-Present the selected tier and block types to the user for confirmation before proceeding to write the specification.
+Present the plan to the user before writing:
+- Tier (micro/standard/complex)
+- Estimated line count
+- Which notation elements will be used
+- Section outline
 
 ### Step 4: Write the Specification
 
 1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/template.md`
 2. Read the examples at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/references/examples.md` for the selected tier
-3. Follow the SESF v4 skill rules exactly — group rules/steps, errors, and examples by concern
-4. Use concrete values in all examples — never placeholders. Write edge cases only — boundary conditions, error paths, and non-obvious behavior. Do not write happy-path or obvious examples.
-5. Use natural English throughout — every line should read like an instruction to a human assistant, not programming syntax
+3. Follow the HSF v5 skill rules exactly:
+   - Use prose instructions with markdown headers, NOT BEHAVIOR/PROCEDURE blocks
+   - Include @route tables only for 3+ branch logic
+   - Include @config only for 3+ configuration values
+   - Consolidate errors into a single table at the end
+   - State rules inline where they apply, with a cross-cutting Rules section only for rules that span all phases
+   - Edge-case examples only — no happy-path examples
+   - NO empty sections (do not stub "none")
+4. Use concrete values in all examples — never placeholders
+5. Use natural English throughout — every line should read as an instruction to a competent assistant
 
 ### Step 5: Review
 

@@ -1,412 +1,205 @@
-# SESF v4 Templates
+# HSF v5 Templates
 
-Fill-in-the-blank starting points for each specification tier. Copy the template that matches your complexity, replace `[bracketed placeholders]` with your values, and delete any optional sections you do not need. Each tier includes both BEHAVIOR and PROCEDURE templates -- use whichever block type fits your problem, or combine them in the same spec.
+Fill-in-the-blank starting points for each specification tier. Copy the template that matches your complexity, replace `[bracketed placeholders]` with your values, and delete any optional sections you do not need.
 
-**What is new in v4:**
+**What is new in v5 (Hybrid Specification Format):**
 
-- YAML frontmatter (optional, for tooling integration)
-- Notation section (optional, for human readers)
-- @config block for centralized parameters
-- @route decision tables inside BEHAVIOR blocks (3+ branches)
-- $variable threading in PROCEDURE steps
-- Compact inline ERROR format
-- Compact EXAMPLES: one-line format
+- Natural language prose replaces BEHAVIOR/PROCEDURE/RULE/STEP blocks
+- Markdown headers and bold list items provide structure
+- @route tables, @config blocks, $variable threading preserved for when they add value
+- Errors consolidated into a single table
+- Reduced line budgets: Micro ≤80, Standard ≤200, Complex ≤400
 
 ---
 
-## Micro Tier Template
+## Micro Tier Template (~20-80 lines)
 
-> **Choosing a block type:** Use BEHAVIOR for declarative rules (conditions lead to outcomes). Use PROCEDURE for ordered steps (do this, then this). A spec can use either or both.
-
-### BEHAVIOR (Micro)
-
-```
+```markdown
 ---
-name: [skill-name]
-description: "[one-line description]"
+title: [Short title]
+description: "[One-line description]"
+[other frontmatter as needed]
 ---
 
-# [Specification Name]
+# [Spec Name]
 
-Meta: Version X.X.X | Date: YYYY-MM-DD | Domain: [context] | Status: [draft | active | deprecated] | Tier: micro
+[1-3 sentence purpose statement]
 
-Purpose
-[One or two sentences describing what this specification accomplishes.]
+**Not in scope:** [brief exclusions]
 
-Inputs
-* [name]: [type] - [description] - required
+## Configuration
 
-Outputs
-* [name]: [type] - [description]
+[Inline values or @config block if 3+ params]
 
-Behaviors
+## Instructions
 
-BEHAVIOR [behavior_name]: [Brief description of this behavior]
+[Prose instructions with clear sequencing. Use numbered lists for ordered steps,
+bullet lists for parallel concerns. Bold key terms.]
 
-  RULE [rule_name]:
-    WHEN [condition]
-    THEN [action]
-    ELSE [alternative action]
+## Errors
 
-  RULE [constraint_rule_name]:
-    [subject] MUST [requirement]
-
-  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
-
-  EXAMPLES:
-    [success_case]: [input description] → [expected outcome]
-    [failure_case]: [input description] → [expected error outcome]
-
-Constraints
-* [optional constraint statement]
-```
-
-**Alternatives for Micro tier:**
-
-- Full ERROR blocks may be used for complex recovery logic needing multiple sentences:
-  ```
-  ERROR [error_name]:
-    WHEN [condition that triggers this error]
-    SEVERITY [critical | warning | info]
-    ACTION [what to do when this error occurs]
-    MESSAGE "[user-facing error message]"
-  ```
-- Compact ERRORS: tables (5-column markdown) are accepted for backward compatibility.
-
-- Traditional EXAMPLE blocks may be used instead of compact EXAMPLES:
-  ```
-  EXAMPLE [example_name]:
-    INPUT: [concrete input value or object]
-    EXPECTED: [concrete expected output]
-  ```
-
-### PROCEDURE (Micro)
-
-```
----
-name: [skill-name]
-description: "[one-line description]"
----
-
-# [Specification Name]
-
-Meta: Version X.X.X | Date: YYYY-MM-DD | Domain: [context] | Status: [draft | active | deprecated] | Tier: micro
-
-Purpose
-[One or two sentences describing what this specification accomplishes.]
-
-Inputs
-* [name]: [type] - [description] - required
-
-Outputs
-* [name]: [type] - [description]
-
-Procedures
-
-PROCEDURE [procedure_name]: [Brief description of what this procedure does]
-
-  STEP [step_name] → $[output_var]
-    [natural English action] → $[output_var]
-
-  STEP [another_step]:
-    [natural English action using $output_var from prior step]
-
-  ERROR [error_name]: [critical/warning/info] → [recovery action], "[user-facing message]"
-
-  EXAMPLES:
-    [success_case]: [input description] → [expected outcome]
-    [failure_case]: [input description] → [expected error outcome]
-
-Constraints
-* [optional constraint statement]
+| Error | Severity | Action |
+|-------|----------|--------|
+| [name] | critical/warning | [what to do] |
 ```
 
 **Notes for Micro tier:**
 
 - YAML frontmatter is optional. Omit the `---` block if your tooling does not need it.
-- Inputs and Outputs are optional at micro tier. Include them when the spec has clear data boundaries.
-- $variable threading on STEP declarations is optional. Omit `→ $var` if steps have no meaningful outputs to pass forward.
-- Notation section is not required at micro tier. Include an abbreviated form only if hybrid symbols ($, @, →) appear and readers may need a glossary.
-- @config and @route are not recommended at micro tier (too small to benefit).
+- Configuration section is optional. Include it only when static params exist.
+- No @route tables or $variable threading at micro tier (too small to benefit).
+- No separate Rules or Examples sections needed — state constraints inline in Instructions.
 
 ---
 
-## Standard Tier Template
+## Standard Tier Template (~80-200 lines)
 
-> **Choosing a block type:** Use BEHAVIOR for declarative rules (conditions lead to outcomes). Use PROCEDURE for ordered steps (do this, then this). A spec can use either or both.
-
-```
+```markdown
 ---
-name: [skill-name]
-description: "[one-line description]"
-allowed-tools: [tool1, tool2]
+title: [Short title]
+description: "[One-line description]"
+[other frontmatter]
 ---
 
-# [Specification Name]
+# [Spec Name]
 
-Meta
-* Version: X.X.X
-* Date: YYYY-MM-DD
-* Domain: [context area]
-* Status: [draft | active | deprecated]
-* Tier: standard
+[Purpose — 1-3 sentences]
 
-Notation
-* $ — references a variable or config value
-* @ — marks a structured block (@config, @route)
-* → — means "produces", "routes to", or "yields"
-* MUST/SHOULD/MAY/CAN — requirement strength keywords
--- Notation is optional; include for human readers
+**Not in scope:** [exclusions]
 
-Purpose
-[Two to three sentences describing what this specification accomplishes and why it exists.]
-
-Scope
-* IN SCOPE: [what this specification covers]
-* OUT OF SCOPE: [what this explicitly does not cover]
-
-Inputs
-* [input_name]: [type] - [description] - [required | optional]
-* [input_name]: [type] - [description] - [required | optional, default: value]
-
-Outputs
-* [output_name]: [type] - [description]
+## Configuration
 
 @config
   [key]: [value]
   [key]: [value]
+  [key]: [value]
 
-Behaviors
+## [Processing/Routing] Logic
 
-BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
+@route [route_name] [first_match_wins]
+  [condition]  → [action]
+  [condition]  → [action]
+  [condition]  → [action]
 
-  @route [table_name] [first_match_wins]
-    [condition_1]  → [outcome_1]
-    [condition_2]  → [outcome_2]
-    [condition_3]  → [outcome_3]
-    -- include wildcard only when a meaningful default exists: * → [default_outcome]
+## Instructions
 
-  RULE [constraint_name]:
-    [subject] MUST [binary constraint]
+### [Phase/Step 1]: [Name]
 
-  -- include ERROR declarations only for failure modes not already covered by RULE logic
-  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
+[Prose instructions. Include the rules that apply to THIS phase inline,
+not in a separate rules section.]
 
-Procedures
+### [Phase/Step 2]: [Name]
 
-PROCEDURE [procedure_name]: [Brief description of what this procedure does]
+[Prose instructions.]
 
-  STEP [step_name] → $[output_var]
-    [action description] → $[output_var]
+## Rules
 
-  STEP [another_step]:
-    [action using $output_var from prior step]
+### [Rule Group Name]
 
-  -- include ERROR declarations only for failure modes not already covered by RULE logic
-  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
+- **[Rule name]:** [Natural language statement with MUST/SHOULD/MAY.]
+- **[Rule name]:** [Natural language statement.]
 
-Constraints
-* [constraint statement using MUST/SHOULD/MAY]
+## Errors
 
-Dependencies
-* [external system or resource this specification relies on]
+| Error | Severity | Action |
+|-------|----------|--------|
+| [name] | critical | [action] |
+| [name] | warning | [action] |
+
+## Examples
+
+[Edge cases only]
+[name]: [input] → [expected outcome — pass or fail and why]
 ```
-
-**Alternatives for Standard tier:**
-
-- Full ERROR blocks may be used for complex recovery logic needing multiple sentences:
-  ```
-  ERROR [error_name]:
-    WHEN [condition]
-    SEVERITY [critical | warning | info]
-    ACTION [what to do]
-    MESSAGE "[user-facing message]"
-  ```
-- Compact ERRORS: tables (5-column markdown) are accepted for backward compatibility.
-
-- Traditional EXAMPLE blocks may be used instead of compact EXAMPLES:
-  ```
-  EXAMPLE [example_name]:
-    INPUT: { [concrete input data] }
-    EXPECTED: { [concrete expected output] }
-    NOTES: [clarification if needed]
-  ```
-
-- Mixed usage is allowed: a block can have both compact and traditional ERROR/EXAMPLE entries.
 
 **Notes for Standard tier:**
 
 - YAML frontmatter is optional. Omit the `---` block if your tooling does not need it.
-- Notation section is optional. Include it when hybrid symbols ($, @, →) appear and human readers may need a glossary.
-- @config is optional. Omit it if the spec has no configurable parameters.
-- @route is for 3+ branch conditionals inside BEHAVIOR blocks. For binary conditions, use WHEN/THEN/ELSE rules.
-- $variable threading on STEP declarations is optional. Omit `→ $var` when steps have no meaningful outputs.
-- Types and Functions sections are optional. Include Types only when 2+ blocks share the same structure. Include Functions only when a calculation is used by multiple blocks. Omit both entirely if unused — do not add `-- none` stubs.
-- @route wildcard row (`*`) is optional. Include it only when a meaningful default action exists. Omit it when all cases are explicitly enumerated.
+- @config is optional. Omit if the spec has no configurable parameters (or fewer than 3).
+- @route is for 3+ branch conditionals only. For binary conditions, use prose conditionals.
+- $variable threading is optional. Use only when data flow between phases is complex.
+- Inputs/Outputs sections are optional. Include when the spec has clear data boundaries.
+- Rules section is for cross-cutting rules only. Phase-specific rules go inline in Instructions.
 
 ---
 
-## Complex Tier Template
+## Complex Tier Template (~200-400 lines)
 
-> **Choosing a block type:** Use BEHAVIOR for declarative rules (conditions lead to outcomes). Use PROCEDURE for ordered steps (do this, then this). A spec can use either or both.
-
-```
+```markdown
 ---
-name: [skill-name]
-description: "[one-line description]"
-allowed-tools: [tool1, tool2]
+title: [Short title]
+description: "[One-line description]"
+[other frontmatter]
 ---
 
-# [Specification Name]
+# [Spec Name]
 
-Meta
-* Version: X.X.X
-* Date: YYYY-MM-DD
-* Domain: [context area]
-* Status: [draft | active | deprecated]
-* Tier: complex
+[Purpose — 1-3 sentences]
 
-Notation
-* $ — references a variable or config value
-* @ — marks a structured block (@config, @route)
-* → — means "produces", "routes to", or "yields"
-* MUST/SHOULD/MAY/CAN — requirement strength keywords
--- Notation is optional; include for human readers
+**Not in scope:** [exclusions]
 
-Purpose
-[Two to three sentences describing what this specification accomplishes and why it exists.]
+## Inputs
 
-Audience
-* AI agents: [implementation guidance for literal interpretation]
-* Human readers: [context or rationale for understanding this specification]
+- `[param]`: [type] - [description] - required/optional
 
-Scope
-* IN SCOPE: [what this specification covers]
-* OUT OF SCOPE: [what this explicitly does not cover]
+## Outputs
 
-Inputs
-* [input_name]: [type] - [description] - [required | optional]
+- `[output]`: [type] - [description] - required/optional/conditional
 
-Outputs
-* [output_name]: [type] - [description]
+## Configuration
 
 @config
-  [key]: [value]
-  [key]: [value]
-  [nested_group]:
-    [key]: [value]
+  [structured config block]
 
-Behaviors
+## [Routing] Logic
 
-BEHAVIOR [behavior_name]: [Brief description of what this behavior does]
+@route [name] [first_match_wins]
+  [decision table]
 
-  @route [table_name] [first_match_wins]
-    [condition_1]  → [outcome_1]
-    [condition_2]  → [outcome_2]
-    [condition_3]  → [outcome_3]
-    -- include wildcard only when a meaningful default exists: * → [default_outcome]
+## Instructions
 
-  RULE [rule_name]:
-    WHEN [condition]
-    THEN [action]
-    ELSE [alternative action]
-    PRIORITY 1
+[Prose instructions organized by phase/step with ### headers.
+Include applicable rules inline within each phase.
+Use $variable threading if data flow between phases is complex.]
 
-  RULE [constraint_name]:
-    [subject] MUST [binary constraint]
-    PRIORITY 2
+### [Phase 1]: [Name] → `artifact_name`
 
-  -- include ERROR declarations only for failure modes not already covered by RULE logic
-  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
+[Instructions. State constraints that apply to this phase HERE,
+not in a separate rules section.]
 
-  State/Flow
-    [state_name] -> [next_state]: WHEN [transition condition]
-    [state_name] -> [terminal_state]: WHEN [completion condition]
+### [Phase 2]: [Name] → `artifact_name`
 
-  Audience notes
-    * AI agents: [implementation guidance for literal interpretation]
-    * Human readers: [context or rationale for this behavior]
+[Instructions. Constraints for this phase stated here.]
 
+## Rules
 
-BEHAVIOR [second_behavior_name]: [Brief description]
+### [Cross-cutting rule group — only for rules that apply across ALL phases]
 
-  RULE [rule_name]:
-    WHEN [condition]
-    THEN [action]
-    PRIORITY 1
+- **[Rule]:** [Statement]
+- **[Rule]:** [Statement]
 
-  -- include ERROR declarations only for failure modes not already covered by RULE logic
-  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
+## Errors
 
-Procedures
+| Error | Severity | Action |
+|-------|----------|--------|
+| [comprehensive error table] |
 
-PROCEDURE [procedure_name]: [Brief description of what this procedure does]
+## Examples
 
-  STEP [step_name] → $[output_var]
-    [action description] → $[output_var]
+[Edge-case worked examples with pass/fail]
 
-  STEP [another_step]:
-    [action using $output_var from prior step]
+[good_example]:
+  [multi-line worked example showing correct behavior]
 
-  STEP [final_step]:
-    [natural English action or actions]
-
-  -- include ERROR declarations only for failure modes not already covered by RULE logic
-  -- include EXAMPLES only for non-obvious edge cases, borderline decisions, or ambiguous routing
-
-  State/Flow
-    [state_name] -> [next_state]: WHEN [transition condition]
-    [state_name] -> [terminal_state]: WHEN [completion condition]
-
-  Audience notes
-    * AI agents: [implementation guidance for literal interpretation]
-    * Human readers: [context or rationale for this procedure]
-
-Precedence
-
-PRECEDENCE:
-  1. [rule_name] (from BEHAVIOR [behavior_name])
-  2. [rule_name] (from BEHAVIOR [second_behavior_name])
-
-Constraints
-* [constraint statement using MUST/SHOULD/MAY]
-
-Dependencies
-* [external system or resource this specification relies on]
-
-Changelog
-* [version]: [YYYY-MM-DD] - [changes]
+[bad_example]:
+  [multi-line showing incorrect behavior and why it fails]
 ```
-
-**Alternatives for Complex tier:**
-
-- Full ERROR blocks may be used for complex recovery logic needing multiple sentences:
-  ```
-  ERROR [error_name]:
-    WHEN [condition]
-    SEVERITY [critical | warning | info]
-    ACTION [what to do]
-    MESSAGE "[user-facing message]"
-  ```
-- Compact ERRORS: tables (5-column markdown) are accepted for backward compatibility.
-
-- Traditional EXAMPLE blocks may be used instead of compact EXAMPLES:
-  ```
-  EXAMPLE [example_name]:
-    INPUT: { [concrete input data] }
-    EXPECTED: { [concrete expected output] }
-    NOTES: [explain which behavior/rule takes priority and why]
-  ```
-
-- Mixed usage is allowed: a block can have both compact and traditional ERROR/EXAMPLE entries.
 
 **Notes for Complex tier:**
 
 - YAML frontmatter is optional. Omit the `---` block if your tooling does not need it.
-- Audience section at the top level is optional. Per-block Audience notes subsections are also optional.
-- State/Flow subsections are optional within BEHAVIOR and PROCEDURE blocks. Include them when the block manages state transitions.
-- PRECEDENCE is required at Complex tier when rules from different behaviors can match the same input. If no overlapping conditions exist, include a stub: `PRECEDENCE: -- none: no overlapping conditions between behaviors`.
-- @config, @route, and $variable threading follow the same rules as Standard tier.
-- Types and Functions sections are optional. Include only when 2+ blocks share the same structure or calculation. Omit entirely if unused — do not add `-- none` stubs.
-- @route wildcard row (`*`) is optional. Include it only when a meaningful default action exists. Omit it when all cases are explicitly enumerated.
-- PRIORITY tags on individual rules within a BEHAVIOR MUST NOT contradict the global PRECEDENCE block.
+- Inputs/Outputs sections are required at complex tier.
+- $variable threading is recommended when data flows between phases are complex enough to need explicit tracking.
+- Rules section is for cross-cutting rules that apply across ALL phases only. Phase-specific rules go inline in Instructions.
+- @route wildcard row (`*`) is optional. Include only when a meaningful default exists.
+- Worked examples SHOULD demonstrate edge cases with explicit pass/fail outcomes.

@@ -330,7 +330,7 @@ Generate and apply themed spinner verbs for Claude Code status messages. Include
 
 ### structured-english
 
-Natural-language specification format with hybrid notation for declarative rules (BEHAVIOR), step-by-step workflows (PROCEDURE), decision tables (@route), and centralized configuration (@config). SESF v4 introduces hybrid blocks that blend declarative and procedural styles within a single spec.
+Hybrid Specification Format (HSF) — natural-language specs with @route decision tables, @config parameters, $variable threading, consolidated error tables, and prose instructions. Replaces SESF v4 formal blocks with markdown headers and bold list items while preserving structured notation where it adds value.
 
 **Install:**
 ```bash
@@ -338,19 +338,20 @@ Natural-language specification format with hybrid notation for declarative rules
 ```
 
 **Features:**
-- Hybrid notation: Blend BEHAVIOR rules and PROCEDURE steps within a single specification
-- Decision tables: `@route` compact tabular notation for multi-condition branching
+- Prose instructions with markdown headers and bold list items — no formal BEHAVIOR/PROCEDURE blocks
+- Decision tables: `@route` compact notation for 3+ branch conditional logic
 - Centralized config: `@config` blocks for thresholds, feature flags, and environment settings
-- Variable threading: `$variable` sigil for explicit data flow across blocks
-- 3-tier scaling: Micro (20-40 lines), Standard (100-300 lines), Complex (300-600 lines)
-- Structural validator: Python script that checks section completeness, block structure, and tier compliance
-- Templates and examples: Fill-in-the-blank templates and 7 complete working examples covering declarative, procedural, and hybrid patterns
+- Variable threading: `$variable` for explicit data flow between phases (complex specs only)
+- Consolidated error tables: All errors in one scannable table (Error | Severity | Action)
+- 3-tier scaling: Micro (20-80 lines), Standard (80-200 lines), Complex (200-400 lines)
+- Structural validator: Auto-detects SESF v4 vs HSF v5, applies appropriate rules
+- Templates and examples: Fill-in-the-blank templates and 3 complete working examples
 
 **Commands:**
-- `/write-spec <domain>` - Guided SESF specification creation with block type selection, authoring, and validation
-- `/assess-doc <path>` - Evaluate whether a document would benefit from SESF conversion
+- `/write-spec <domain>` - Guided HSF specification creation with tier selection, authoring, and validation
+- `/assess-doc <path>` - Evaluate whether a document would benefit from HSF conversion
 - `/assess-inferred-intent <path>` - Review a spec for ambiguity, contradiction, and inferred intent, then resolve interactively
-- `/update-spec <path>` - Upgrade an existing SESF spec from any previous version to v4
+- `/update-spec <path>` - Upgrade from any previous version (including SESF v4) to HSF v5
 
 ---
 
