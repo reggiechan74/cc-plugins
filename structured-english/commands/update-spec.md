@@ -39,6 +39,23 @@ Also detect the tier from the Meta section or infer it:
 - **Standard**: Multiple blocks
 - **Complex**: Has PRECEDENCE, State, or Flow sections
 
+### Step 2.5: Determine Output Mode
+
+Before analyzing gaps, detect whether the file is a self-contained executable (Claude Code command or skill) or a standalone specification document.
+
+**Detection heuristic**: If the file has YAML frontmatter containing `allowed-tools` or `argument-hint`, it is a Claude Code command or skill — default-suggest "Self-contained" as the recommended option.
+
+Use `AskUserQuestion` to ask:
+
+"How should this specification be structured after the upgrade?"
+
+With these options:
+
+1. **Self-contained** (spec + executable in one file) — The document serves as both the SESF specification and the executable command/skill. The agent prompt, examples, and all operational content stay inline. Only the SESF format notation is upgraded. This is the correct choice when the file is a Claude Code command or skill that directly executes its own instructions. *(Recommended if the file has `allowed-tools` or `argument-hint` frontmatter)*
+2. **Split into spec + executable** — Create a pure SESF v4 specification document (declarative, non-executable — defines behaviors, types, rules) and a separate executable document (the agent prompt, procedures, operational instructions). The executable may or may not use SESF format. This is the correct choice when you want a clean separation between "what the system does" (spec) and "how to run it" (executable).
+
+Store the user's choice as `$output_mode` ("self-contained" or "split") for use in Step 5.
+
 ### Step 3: Analyze Gaps
 
 Compare the specification against v4 requirements. Build two lists:
@@ -85,6 +102,11 @@ Using the skill's v4 rules, rewrite the specification:
 2. Read the examples at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/references/examples.md` for reference
 3. Apply all format migrations
 4. Apply the user-approved suggestions (if any)
+
+**Apply output mode** based on `$output_mode`:
+
+- **self-contained**: Rewrite the file in-place. Preserve all content (agent prompts, examples, code blocks) inline within the SESF structure. Do NOT extract sections to separate files. The upgraded file must remain fully executable as a command or skill.
+- **split**: Extract operational content (agent prompt templates, code blocks, worked examples) into companion files. Have the main spec reference them via `$config.paths.*` entries. The main spec becomes a pure declarative SESF v4 document.
 
 **CRITICAL**: Preserve ALL domain logic exactly as written. Only change format and notation. Do not add, remove, or alter any business rules, conditions, steps, or outcomes.
 
