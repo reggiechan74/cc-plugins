@@ -105,7 +105,7 @@ Using the skill's v4 rules, rewrite the specification:
 
 **Apply output mode** based on `$output_mode`:
 
-- **self-contained**: Rewrite the file in-place. Preserve all content (agent prompts, examples, code blocks) inline within the SESF structure. Do NOT extract sections to separate files. The upgraded file must remain fully executable as a command or skill.
+- **self-contained**: Convert the existing prose workflow into SESF notation — the SESF PROCEDURE steps or BEHAVIOR rules ARE the operational content. Do NOT create a meta-specification layer on top of the existing prose. Do NOT produce a SESF block that describes a workflow section and then keep that section's original prose below it. The result must be one layer: SESF blocks only, no parallel prose. Do NOT extract sections to separate files. The upgraded file must remain fully executable as a command or skill.
 - **split**: Extract operational content (agent prompt templates, code blocks, worked examples) into companion files. Have the main spec reference them via `$config.paths.*` entries. The main spec becomes a pure declarative SESF v4 document.
 
 **Examples must be edge cases only**: Write or preserve only examples that demonstrate boundary conditions, error paths, or non-obvious behavior. Do not write happy-path or obvious examples.
