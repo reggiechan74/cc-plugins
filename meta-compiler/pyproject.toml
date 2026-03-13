@@ -16,3 +16,4 @@ packages = ["src/meta_compiler"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
