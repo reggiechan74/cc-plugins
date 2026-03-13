@@ -13,6 +13,8 @@ from meta_compiler.expr import (
     IndexExpr,
     NegExpr,
     SymbolRef,
+    SumExpr,
+    SetIterator,
 )
 
 
@@ -81,10 +83,8 @@ class SymbolProxy:
 
 def _to_node(value: object) -> ExprNode:
     """Convert a value to an expression node."""
-    if isinstance(value, (SymbolRef, IndexExpr, ArithExpr, CompareExpr)):
-        return value
-    from meta_compiler.expr import SumExpr, NegExpr as NE, SetIterator
-    if isinstance(value, (SumExpr, NE, SetIterator)):
+    if isinstance(value, (SymbolRef, IndexExpr, ArithExpr, CompareExpr,
+                          SumExpr, NegExpr, SetIterator)):
         return value
     if isinstance(value, SymbolProxy):
         return value._as_node()

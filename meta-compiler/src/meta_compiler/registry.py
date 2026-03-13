@@ -167,7 +167,7 @@ class Registry:
         self, fn: object, index: tuple[str, ...], context: str
     ) -> "ExprNode":
         """Call a lambda with symbolic placeholders to capture its expression tree."""
-        from meta_compiler.expr import ExprNode
+        from meta_compiler.expr import _EXPR_NODE_TYPES
 
         if not callable(fn):
             raise TypeError(f"{context}: definition must be callable, got {type(fn).__name__}")
@@ -181,7 +181,7 @@ class Registry:
                 f"{context}: failed to capture lambda expression: {e}"
             ) from e
 
-        if not isinstance(result, ExprNode):
+        if not isinstance(result, _EXPR_NODE_TYPES):
             raise TypeError(
                 f"{context}: lambda must return an expression tree node, "
                 f"got {type(result).__name__}"
