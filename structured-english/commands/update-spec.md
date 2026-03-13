@@ -64,7 +64,7 @@ Compare the specification against v4 requirements. Build two lists:
 
 - Section ordering to match v4 template
 - Verbose `ERROR` blocks → compact `ERRORS` tables (5 columns: name, when, severity, action, message)
-- Verbose `EXAMPLE` blocks → compact table format
+- Verbose `EXAMPLE` blocks → compact table format (edge cases only — remove or replace any happy-path or obvious examples)
 - Meta section `date` field update to today
 - `-- none` stubs for any missing optional sections
 - Notation section added for standard/complex tier specs
@@ -107,6 +107,8 @@ Using the skill's v4 rules, rewrite the specification:
 
 - **self-contained**: Rewrite the file in-place. Preserve all content (agent prompts, examples, code blocks) inline within the SESF structure. Do NOT extract sections to separate files. The upgraded file must remain fully executable as a command or skill.
 - **split**: Extract operational content (agent prompt templates, code blocks, worked examples) into companion files. Have the main spec reference them via `$config.paths.*` entries. The main spec becomes a pure declarative SESF v4 document.
+
+**Examples must be edge cases only**: Write or preserve only examples that demonstrate boundary conditions, error paths, or non-obvious behavior. Do not write happy-path or obvious examples.
 
 **CRITICAL**: Preserve ALL domain logic exactly as written. Only change format and notation. Do not add, remove, or alter any business rules, conditions, steps, or outcomes.
 

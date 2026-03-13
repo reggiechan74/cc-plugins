@@ -10,7 +10,11 @@ Evaluate an existing markdown document against SESF v4 suitability criteria and 
 
 ## Workflow
 
-### Step 1: Read the Document
+### Step 1: Load the Skill
+
+Use the `structured-english` skill — it contains all the rules, formats, and validation requirements for SESF v4 specifications. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/reference.md`.
+
+### Step 2: Read the Document
 
 If the user provided a file path in the arguments, read it. Otherwise, ask the user:
 
@@ -18,7 +22,7 @@ If the user provided a file path in the arguments, read it. Otherwise, ask the u
 
 Read the full file content before proceeding.
 
-### Step 2: Assess the Document
+### Step 3: Assess the Document
 
 Analyze the content for signals that indicate whether SESF would add value.
 
@@ -64,7 +68,7 @@ Analyze the content for signals that indicate whether SESF would add value.
 
 If neither applies, prose is simpler.
 
-### Step 3: Present the Assessment
+### Step 4: Present the Assessment
 
 Report your findings clearly:
 
@@ -76,24 +80,35 @@ Report your findings clearly:
   - Are there reusable calculations (FUNCTION) or side-effect operations (ACTION)?
 - **If not beneficial**: Explain what format suits the document better (prose, numbered list, outline, etc.) and why
 
-### Step 4: Offer Conversion
+### Step 5: Offer Conversion
 
-If the document would benefit from SESF, use `AskUserQuestion` to ask two questions:
+If the document would benefit from SESF, use `AskUserQuestion` to ask three questions:
 
 **Question 1** — Confirm conversion:
 
 - "Would you like me to convert this document to SESF format?"
 - Options:
-  - "Yes, convert it" — proceed to file handling question
+  - "Yes, convert it" — proceed to output mode question
   - "No, keep as-is" — stop, do not convert
 
 If the user declines, stop here.
 
-**Question 2** — File handling:
+**Question 2** — Output mode:
+
+Detect whether the file is a Claude Code command or skill by checking for `allowed-tools` or `argument-hint` in its YAML frontmatter. If found, default-suggest "Self-contained".
+
+- "How should the converted specification be structured?"
+- Options:
+  1. **Self-contained** (spec + executable in one file) — All content (agent prompts, examples, operational instructions) stays inline. This is the correct choice when the file is a Claude Code command or skill. *(Recommended if the file has `allowed-tools` or `argument-hint` frontmatter)*
+  2. **Split into spec + executable** — Create a pure SESF v4 specification document and a separate executable. This is the correct choice when you want a clean separation between "what the system does" (spec) and "how to run it" (executable).
+
+Store the user's choice as `$output_mode` ("self-contained" or "split").
+
+**Question 3** — File handling:
 
 - "How should I save the converted specification?"
 - Options:
   - "Overwrite the original file" — replace the source file in place (original recoverable via git history)
   - "Save as a new file" — write to `<original-name>-sesf.md` alongside the original
 
-After the user answers both questions, invoke the `structured-english` skill to perform the conversion, using the original document content as context for requirements gathering. Save the result according to the user's file handling choice.
+After the user answers all questions, convert the document using the skill's v4 rules, using the original document content as context for requirements gathering. Apply `$output_mode` to control whether content stays inline or is extracted to companion files. Write edge case examples only — boundary conditions, error paths, and non-obvious behavior. Save the result according to the user's file handling choice.

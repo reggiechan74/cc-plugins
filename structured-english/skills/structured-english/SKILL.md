@@ -7,7 +7,7 @@ description: Write specifications using Structured English Specification Format 
 
 Meta
 * Version: 4.0.0
-* Date: 2026-03-03
+* Date: 2026-03-13
 * Domain: Specification Authoring
 * Status: active
 * Tier: standard
@@ -196,7 +196,8 @@ BEHAVIOR write_behaviors: Compose BEHAVIOR blocks with rules, errors, and exampl
 
   RULE example_concreteness:
     EXAMPLE blocks MUST use concrete values in INPUT and EXPECTED -- never placeholders
-    AND MUST include both happy-path and error-triggering examples
+    AND MUST cover edge cases, boundary conditions, or error-triggering scenarios only
+    -- happy-path examples that restate what the rules already say are bloat — omit them
 
   RULE explicit_outcomes:
     every conditional branch MUST have an explicit outcome

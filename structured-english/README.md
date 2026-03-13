@@ -1,7 +1,7 @@
 # structured-english
 
 <!-- badges-start -->
-[![Plugin](https://img.shields.io/badge/plugin-v5.2.3-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
+[![Plugin](https://img.shields.io/badge/plugin-v5.2.4-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
 [![SESF](https://img.shields.io/badge/sesf-v4.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.8+-yellow)](https://www.python.org)
@@ -136,9 +136,9 @@ BEHAVIOR validate_payment: Check payment meets business rules
   ERROR unsupported_currency: critical -> reject payment, "Currency '{currency}' is not supported"
 
   EXAMPLES:
-    valid_payment: amount=49.99, currency="CAD" -> accepted
-    invalid_amount: amount=-10, currency="CAD" -> rejected with "Payment amount must be positive"
-    bad_currency: amount=25, currency="GBP" -> rejected with "Currency 'GBP' is not supported"
+    zero_amount: amount=0, currency="CAD" -> rejected with "Payment amount must be positive"
+    empty_currency: amount=25, currency="" -> rejected with "Currency required"
+    unsupported_currency: amount=25, currency="GBP" -> rejected with "Currency 'GBP' is not supported"
 ```
 
 ### PROCEDURE with $variable threading
@@ -166,14 +166,15 @@ PROCEDURE process_refund: Handle a customer refund request
   ERROR payment_failure: critical -> retry once then escalate to finance, "Refund failed for order {order.id}"
 
   EXAMPLES:
-    successful_refund: order="ORD-1234", total=89.99, restocking_fee=0 -> { "refund_amount": 89.99, "status": "processed" }
+    outside_window: order="ORD-1234", order_date=91_days_ago -> rejected with "Order outside refund window"
+    with_restocking_fee: order="ORD-1234", total=89.99, restocking_fee=15.00 -> { "refund_amount": 74.99, "status": "processed" }
 ```
 
 ## Versioning
 
 This plugin uses two version numbers:
 
-- **Plugin version** (5.2.3) tracks the package release -- plugin.json, README, commands, templates, examples, and validator.
+- **Plugin version** (5.2.4) tracks the package release -- plugin.json, README, commands, templates, examples, and validator.
 - **SESF format version** (4.0.0) tracks the specification language -- syntax rules, hybrid notation, section ordering, and keyword semantics defined in the reference and SKILL.md.
 
 The plugin version increments when any shipped file changes. The SESF format version increments only when the specification language itself changes (new block types, new notation, changed semantics).

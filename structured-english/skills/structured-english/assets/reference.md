@@ -274,15 +274,15 @@ Examples within a behavior or procedure demonstrate that block's rules, steps, a
 Use concrete values -- never placeholders:
 
 ```
-EXAMPLE valid_gold_discount:
-  INPUT: { "order": { "total": 750 }, "customer": { "tier": "gold" } }
-  EXPECTED: { "discount": 0.15, "final_total": 637.50 }
-  NOTES: Gold customer with order over 500 triggers 15% discount
+EXAMPLE boundary_at_threshold:
+  INPUT: { "order": { "total": 500 }, "customer": { "tier": "gold" } }
+  EXPECTED: { "discount": 0, "final_total": 500 }
+  NOTES: Gold customer at exactly 500 does not qualify — threshold is "over 500", not "at least 500"
 
-EXAMPLE standard_pricing_fallback:
-  INPUT: { "order": { "total": 750 }, "customer": { "tier": "silver" } }
-  EXPECTED: { "discount": 0, "final_total": 750 }
-  NOTES: Non-gold customer gets standard pricing via ELSE branch
+EXAMPLE tier_mismatch_at_boundary:
+  INPUT: { "order": { "total": 501 }, "customer": { "tier": "silver" } }
+  EXPECTED: { "discount": 0, "final_total": 501 }
+  NOTES: Order exceeds 500 but customer is not gold — both conditions required; neither alone triggers discount
 ```
 
 ### Markdown Formatting
@@ -974,9 +974,9 @@ EXAMPLES:
 **Example:**
 ```
 EXAMPLES:
-  valid_email: input="user@example.com" → accepted
   missing_domain: input="user@" → rejected with "missing domain"
   unicode_local: input="ü@example.com" → accepted (RFC 6531)
+  at_sign_only: input="@example.com" → rejected with "missing local part"
 ```
 
 ### Anti-Patterns for Hybrid Notation

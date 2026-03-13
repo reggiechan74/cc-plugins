@@ -4,6 +4,23 @@ All notable changes to the `structured-english` plugin are documented here.
 
 ---
 
+## [5.2.4] — 2026-03-13
+
+### Changed
+- `update-spec.md`: Added Step 2.5 — output mode selection (self-contained vs. split) before rewriting; prevents command/skill files from being incorrectly split when operational content must stay inline. Includes auto-detection heuristic for `allowed-tools`/`argument-hint` frontmatter.
+- `update-spec.md`: Step 3 EXAMPLE migration now explicitly removes happy-path examples (edge cases only). Step 5 adds edge-case-only constraint to rewriting.
+- `write-spec.md`: Step 1 now reads `reference.md` in addition to loading the skill (aligned with `update-spec.md`)
+- `write-spec.md`: Step 4 examples rule updated to edge cases only — boundary conditions, error paths, non-obvious behavior; happy-path constraint removed
+- `write-spec.md`: Removed "Warnings about example count are acceptable" from Step 6 validator note
+- `assess-doc.md`: Added Step 1 to load the skill and `reference.md` (was missing entirely); renumbered subsequent steps
+- `assess-doc.md`: Added output mode selection (self-contained vs. split) before conversion, matching `update-spec.md` Step 2.5
+- `SKILL.md`: `example_concreteness` rule — removed "MUST include both happy-path and error-triggering examples"; replaced with "MUST cover edge cases, boundary conditions, or error-triggering scenarios only". Resolves contradiction with `error_coverage` rule.
+- `SKILL.md`: Meta date updated to 2026-03-13
+- `reference.md`: Example Syntax section — replaced happy-path `valid_gold_discount` and `standard_pricing_fallback` examples with boundary-condition examples (`boundary_at_threshold`, `tier_mismatch_at_boundary`)
+- `reference.md`: Compact Examples section — removed happy-path `valid_email`; replaced with `at_sign_only` edge case
+
+---
+
 ## [5.2.3] — 2026-03-12
 
 ### Changed

@@ -12,7 +12,7 @@ Generate a complete SESF v4 specification from a user request. SESF v4 supports 
 
 ### Step 1: Load the Skill
 
-Use the `structured-english` skill — it contains all the rules, formats, and validation requirements for SESF v4 specifications. Read it fully before proceeding.
+Use the `structured-english` skill — it contains all the rules, formats, and validation requirements for SESF v4 specifications. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/reference.md`.
 
 ### Step 2: Gather Requirements
 
@@ -54,7 +54,7 @@ Present the selected tier and block types to the user for confirmation before pr
 1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/template.md`
 2. Read the examples at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/references/examples.md` for the selected tier
 3. Follow the SESF v4 skill rules exactly — group rules/steps, errors, and examples by concern
-4. Use concrete values in all examples — never placeholders
+4. Use concrete values in all examples — never placeholders. Write edge cases only — boundary conditions, error paths, and non-obvious behavior. Do not write happy-path or obvious examples.
 5. Use natural English throughout — every line should read like an instruction to a human assistant, not programming syntax
 
 ### Step 5: Review
@@ -69,7 +69,7 @@ Run the structural validator:
 python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <output-file>
 ```
 
-Show the validation results to the user. If there are failures, present each proposed fix and ask the user to approve before applying — especially when a fix would change something the user explicitly requested. Warnings about example count are acceptable.
+Show the validation results to the user. If there are failures, present each proposed fix and ask the user to approve before applying — especially when a fix would change something the user explicitly requested.
 
 ### Step 7: Save
 
