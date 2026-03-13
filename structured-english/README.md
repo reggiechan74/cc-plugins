@@ -1,7 +1,7 @@
 # structured-english
 
 <!-- badges-start -->
-[![Plugin](https://img.shields.io/badge/plugin-v5.2.4-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
+[![Plugin](https://img.shields.io/badge/plugin-v5.2.5-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
 [![SESF](https://img.shields.io/badge/sesf-v4.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.8+-yellow)](https://www.python.org)
@@ -174,7 +174,7 @@ PROCEDURE process_refund: Handle a customer refund request
 
 This plugin uses two version numbers:
 
-- **Plugin version** (5.2.4) tracks the package release -- plugin.json, README, commands, templates, examples, and validator.
+- **Plugin version** (5.2.5) tracks the package release -- plugin.json, README, commands, templates, examples, and validator.
 - **SESF format version** (4.0.0) tracks the specification language -- syntax rules, hybrid notation, section ordering, and keyword semantics defined in the reference and SKILL.md.
 
 The plugin version increments when any shipped file changes. The SESF format version increments only when the specification language itself changes (new block types, new notation, changed semantics).

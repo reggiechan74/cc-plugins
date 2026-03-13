@@ -4,6 +4,13 @@ All notable changes to the `structured-english` plugin are documented here.
 
 ---
 
+## [5.2.5] — 2026-03-13
+
+### Fixed
+- `update-spec.md`: Self-contained mode now explicitly requires converting prose workflow into SESF notation rather than wrapping SESF around existing prose. Guards against producing a SESF meta-layer alongside original operational content (one layer: SESF blocks only, no parallel prose).
+
+---
+
 ## [5.2.4] — 2026-03-13
 
 ### Changed
