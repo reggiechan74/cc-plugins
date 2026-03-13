@@ -42,17 +42,18 @@ Same source, different slices. Renders to PDF via standard tooling (Pandoc, etc.
 
 ### Artifact 2: The Codebase
 
-A standalone Python package extracted from the validation blocks:
+A standalone Python package extracted from the validation blocks. The compiler splits the single sequence of validation blocks into files by symbol type — each `Set()` call goes to `sets.py`, each `Parameter()` to `parameters.py`, etc. All files import the shared global registry from `registry.py`. Symbols are available globally after registration — `expressions.py` doesn't import from `parameters.py`, it accesses symbols via the registry (e.g., `S("W")`, `cap[i]`). The `__main__.py` entry point imports each module in dependency order (sets, parameters, variables, expressions, constraints, objectives) to rebuild the full registry state.
 
 ```
 model/
-  registry.py        # The symbol registry with all registrations in order
-  sets.py            # Set declarations
-  parameters.py      # Parameter declarations
-  variables.py       # Decision variable declarations
-  expressions.py     # Derived expressions
-  constraints.py     # All constraints
-  objectives.py      # Objective functions
+  registry.py        # The registry engine (not generated — part of the framework)
+  sets.py            # Set declarations (generated from Set() calls)
+  parameters.py      # Parameter declarations (generated from Parameter() calls)
+  variables.py       # Decision variable declarations (generated from Variable() calls)
+  expressions.py     # Derived expressions (generated from Expression() calls)
+  constraints.py     # All constraints (generated from Constraint() calls)
+  objectives.py      # Objective functions (generated from Objective() calls)
+  __main__.py        # Entry point: imports all modules in order, runs registry.run_tests()
   tests/
     test_integrity.py  # Full cumulative validation suite
 ```
@@ -76,11 +77,11 @@ The source document is a Markdown file with three interleaved block types:
 
 **Math blocks** — LaTeX in `$$...$$` or `$...$`. The formulas that appear in the final paper. Extracted for the paper artifact but not validated directly.
 
-**Validation blocks** — fenced Python code blocks tagged `` ```python:validate ``. The executable shadow of the math. The compiler runs these. Not included in the client-facing paper.
+**Validation blocks** — fenced Python code blocks opened with the literal tag ` ```python:validate ` (triple backtick, then `python:validate` with no space). The executable shadow of the math. The compiler runs these. Not included in the client-facing paper.
 
 Example source section:
 
-```markdown
+````markdown
 ### 2.1 Worker Capacity
 
 Each worker $i \in \mathcal{W}$ has a maximum available capacity
@@ -88,13 +89,12 @@ measured in effort-hours per period:
 
 $$cap_i \in \mathbb{R}^+, \quad \forall i \in \mathcal{W}$$
 
-` ` `python:validate
+```python:validate
 cap = Parameter("cap", index=["W"], domain="nonneg_real",
                 units="hours", description="Maximum capacity of worker i")
-registry.register(cap)
 registry.run_tests()
-` ` `
 ```
+````
 
 ## The Symbol Registry
 
@@ -117,23 +117,26 @@ The heart of the system. A Python object that accumulates state as the document 
 
 ### Cumulative Test Checks (on every `registry.run_tests()`)
 
-- **No orphans** — every registered symbol is referenced by at least one constraint, objective, or expression (warning during authoring, hard block at completion)
+- **No orphans** — every registered symbol is referenced by at least one constraint, objective, or expression. During authoring, orphans produce warnings (the symbol may be used in a later section). At compilation time (when `/model:compile` is run), orphans become hard blocks. The user explicitly triggers compilation when the document is complete.
 - **No phantoms** — every symbol used in an expression must be in the registry
-- **Dimensional consistency** — you can't sum hours with headcount without explicit conversion
+- **Dimensional consistency** — unit checking uses a simple unit algebra supporting base units (`hours`, `headcount`, `dollars`, `points`, `dimensionless`) and compound units formed by multiplication and division (e.g., `hours/headcount`, `dollars/hour`). When a parameter declares `units="hours"` and another declares `units="headcount"`, the registry rejects addition or comparison between them. Compound units propagate through expressions: `x` (dimensionless) times `h` (hours) yields hours. Custom base units can be declared via `Unit("effort_points")`. This is not a full physical units library — it is a lightweight tag system sufficient to catch the most common errors.
 - **Dependency cycle detection** — no circular references in derived expressions
 
 ## Registry API
 
-Six nouns, one verb:
+Six nouns, one verb. Constructors implicitly register with the global registry — no separate `register()` call needed. Each constructor returns a proxy object with overloaded `__getitem__` and comparison operators, enabling symbolic expressions in lambdas.
 
 ```python
 # Declare index sets
 Set("W", description="Workers")
 Set("P", description="Project types")
+Set("T", description="Time periods")
 
 # Declare parameters
 Parameter("cap", index=["W"], domain="nonneg_real",
           units="hours", description="Maximum capacity of worker i")
+Parameter("h", index=["P"], domain="nonneg_real",
+          units="hours", description="Effort-hours required per project type")
 
 # Declare decision variables
 Variable("x", index=["W", "P", "T"], domain="continuous",
@@ -141,7 +144,7 @@ Variable("x", index=["W", "P", "T"], domain="continuous",
 
 # Declare derived expressions
 Expression("load",
-    definition=lambda i: sum(x[i,j,p] * h[j] for j in S("P") for p in S("T")),
+    definition=lambda i: sum(x[i,j,t] * h[j] for j in S("P") for t in S("T")),
     index=["W"], units="hours",
     description="Total load on worker i")
 
@@ -153,8 +156,8 @@ Constraint("capacity_limit",
 
 # Declare objectives
 Objective("maximize_utility",
-    expr=lambda: sum(x[i,j,p] * U[i,j,p]
-                     for i in S("W") for j in S("P") for p in S("T")),
+    expr=lambda: sum(x[i,j,t] * U[i,j,t]
+                     for i in S("W") for j in S("P") for t in S("T")),
     sense="maximize",
     description="Maximize total weighted utility across assignments")
 
@@ -164,11 +167,13 @@ registry.run_tests()
 
 Design choices:
 
+- **Implicit registration** — constructors (`Set(...)`, `Parameter(...)`, etc.) auto-register with the global registry. No separate `register()` call. This keeps validation blocks concise.
+- **Proxy objects** — each constructor returns a proxy with overloaded `__getitem__` (for indexing like `x[i,j,t]`) and comparison operators (for constraints like `load[i] <= cap[i]`). These build symbolic expression trees — nested data structures (e.g., `CompareExpr(lhs=IndexExpr("load", ["i"]), op="<=", rhs=IndexExpr("cap", ["i"]))`) — that the registry walks to extract referenced symbols, validate index dimensions, and check unit compatibility. Lambdas are called once with symbolic placeholder arguments to capture the expression tree; they are never evaluated numerically during validation.
 - **Declarative** — you say what things are, not how to compute them
-- **Lambda expressions** — constraints and expressions use Python lambdas that mirror the LaTeX
+- **Lambda expressions** — constraints and expressions use Python lambdas that mirror the LaTeX. Loop variables must match set names: `i` for `W`, `j` for `P`, `t` for `T`.
 - **`S("P")` for set references** — a lightweight accessor that verifies the set exists at call time
 - **Everything takes a description** — these feed the validation report's symbol table and the paper's auto-generated notation table
-- **`registry.run_tests()` at the end of every block** — non-negotiable hard gate
+- **`registry.run_tests()` returns structured results** — a `TestResult` object with `.passed` (bool), `.errors` (list of blocking issues), and `.warnings` (list of advisory issues). The hook inspects `.passed` to determine hard block. Non-negotiable hard gate.
 
 ## Validation Pipeline
 
@@ -184,7 +189,7 @@ The compiler runs validation blocks sequentially, enforcing a natural ordering:
 - All referenced symbols exist
 - Index dimensions match
 - Units are compatible
-- Constraints reference at least one decision variable
+- Constraints that involve decision variables must reference at least one; parameter-only constraints are permitted as input validation checks
 
 **Stage 5: Objective Registration** — same checks as constraints, plus: must reference at least one decision variable, all terms must be dimensionally summable.
 
@@ -246,13 +251,14 @@ This is a Claude Code plugin with hooks and commands.
 
 ### Live Validation (PostToolUse Hook)
 
-When Claude writes or edits a `.math.md` file:
+When Claude writes or edits a file with the `.math.md` extension (the canonical extension for validated math documents):
 
-1. Hook detects the change
-2. Extracts any new validation blocks
-3. Runs them against the cumulative registry
-4. If validation fails — returns error message to Claude, forcing a fix
-5. If validation passes — conversation continues
+1. Hook detects the Write or Edit tool was used on a `.math.md` file
+2. Re-runs **all** validation blocks in the document from top to bottom, rebuilding the registry from scratch. This ensures consistency regardless of where the edit occurred (middle, beginning, or end). The registry is stateless between hook invocations — no serialization needed.
+3. If validation fails — returns the error message to Claude as hook feedback, forcing a fix before the conversation continues
+4. If validation passes — conversation continues
+
+The full re-run is acceptable because validation blocks are lightweight declarations, not heavy computations. For a 50-page paper, the full pipeline runs in under a second.
 
 ### Commands
 
@@ -261,6 +267,20 @@ When Claude writes or edits a `.math.md` file:
 - `/model:report` — generate validation report
 - `/model:status` — show current symbol table and defined/undefined/orphan status
 - `/model:compile` — produce all three artifacts
+
+## Implementation Order
+
+This spec covers three subsystems that should be built in sequence:
+
+1. **The symbol registry and validation engine** — the core Python library (`Set`, `Parameter`, `Variable`, `Expression`, `Constraint`, `Objective`, `registry.run_tests()`). This is the foundation. It can be built and tested standalone with no Claude Code dependency.
+
+2. **The artifact compiler** — the pipeline that reads a `.math.md` document, extracts validation blocks, runs them, and emits the three artifacts (paper, codebase, report). Depends on subsystem 1.
+
+3. **The Claude Code plugin** — the hooks and commands that integrate subsystems 1 and 2 into the live authoring workflow. Depends on subsystems 1 and 2.
+
+Each subsystem has a clear boundary: the registry is a Python library with a public API, the compiler is a CLI tool that reads files and emits files, and the plugin is a thin integration layer that calls the compiler on hook events.
+
+Each subsystem should be planned and implemented as a separate phase. This spec describes the full system; the implementation plan should break it into three sequential phases with separate deliverables and test criteria for each.
 
 ## Relationship to Original Design Document
 
