@@ -62,12 +62,16 @@ Runs independently. `python -m model` executes the full registry and reports pas
 
 ### Artifact 3: The Validation Report
 
-- Symbol table — every symbol, its type, index sets, domain, units, description, and which section introduced it
+MVP elements (generated directly from registry data):
+- Symbol table — every symbol, its type, index sets, domain, units, description
 - Dependency graph — what references what
-- Constraint catalog — hard vs soft, grouped by family, with cross-references to paper sections
 - Test results — full pass/fail log from the cumulative suite
 - Coverage audit — which symbols are used where, orphan status, phantom status
+
+Future additions (require compiler-level section tracking):
+- Constraint catalog with cross-references to paper sections
 - Epistemic status summary — which claims are definitions, assumptions, or derived
+- Section-level provenance — which paper section introduced each symbol
 
 ## Document Structure
 
@@ -170,8 +174,9 @@ Design choices:
 - **Implicit registration** — constructors (`Set(...)`, `Parameter(...)`, etc.) auto-register with the global registry. No separate `register()` call. This keeps validation blocks concise.
 - **Proxy objects** — each constructor returns a proxy with overloaded `__getitem__` (for indexing like `x[i,j,t]`) and comparison operators (for constraints like `load[i] <= cap[i]`). These build symbolic expression trees — nested data structures (e.g., `CompareExpr(lhs=IndexExpr("load", ["i"]), op="<=", rhs=IndexExpr("cap", ["i"]))`) — that the registry walks to extract referenced symbols, validate index dimensions, and check unit compatibility. Lambdas are called once with symbolic placeholder arguments to capture the expression tree; they are never evaluated numerically during validation.
 - **Declarative** — you say what things are, not how to compute them
-- **Lambda expressions** — constraints and expressions use Python lambdas that mirror the LaTeX. Loop variables must match set names: `i` for `W`, `j` for `P`, `t` for `T`.
-- **`S("P")` for set references** — a lightweight accessor that verifies the set exists at call time
+- **Lambda-to-index binding** — lambda parameters bind to index sets **positionally** based on the `index=` or `over=` declaration. For `Expression("load", index=["W"], definition=lambda i: ...)`, the parameter `i` binds to `W` because `W` is the first (and only) element of `index=["W"]`. For a two-index expression like `index=["W", "P"]`, `lambda i, j: ...` binds `i` to `W` and `j` to `P`. The variable names are cosmetic — `lambda w: load[w] <= cap[w]` works identically to `lambda i: load[i] <= cap[i]`. The registry uses the positional mapping, not the name.
+- **`S("P")` iteration semantics** — `S("P")` returns a symbolic set proxy. When used in a `for` loop (`for j in S("P")`), it yields a single symbolic placeholder element tagged with set `P`. Python's `sum()` calls `__add__` on the symbolic results, building a `SumExpr` node in the expression tree. The expression tree records "sum over set P" — it does not iterate over concrete elements. This means validation blocks never need real data; they operate entirely on symbolic structure.
+- **Allowed Python subset in lambdas** — validation-block lambdas are restricted to: arithmetic (`+`, `-`, `*`, `/`), comparisons (`<=`, `>=`, `==`), `sum()` with generator expressions, `S()` set lookups, and symbol indexing (`x[i,j,t]`). Python control flow (`if/else`), function calls (other than `sum` and `S`), and side effects are not supported and will produce a clear error: `"BLOCK: Unsupported operation in lambda — only arithmetic, comparisons, sum(), and S() are allowed."`
 - **Everything takes a description** — these feed the validation report's symbol table and the paper's auto-generated notation table
 - **`registry.run_tests()` returns structured results** — a `TestResult` object with `.passed` (bool), `.errors` (list of blocking issues), and `.warnings` (list of advisory issues). The hook inspects `.passed` to determine hard block. Non-negotiable hard gate.
 
@@ -191,7 +196,7 @@ The compiler runs validation blocks sequentially, enforcing a natural ordering:
 - Units are compatible
 - Constraints that involve decision variables must reference at least one; parameter-only constraints are permitted as input validation checks
 
-**Stage 5: Objective Registration** — same checks as constraints, plus: must reference at least one decision variable, all terms must be dimensionally summable.
+**Stage 5: Objective Registration** — same checks as constraints, plus: must reference at least one decision variable. Multi-term objectives (e.g., `alpha * cost + beta * satisfaction`) often combine terms with different semantic units (dollars, points). The objective is **exempt from cross-term unit checking** — each term is checked internally for consistency, but terms with different units may be summed if they are explicitly weighted by dimensionless coefficients. This matches standard practice in multi-criteria optimization where the weighting coefficients implicitly handle unit normalization.
 
 **Stage 6: Cumulative Integrity Check** — orphan scan, phantom scan, cycle detection, dimensional consistency across all expressions.
 
@@ -251,12 +256,14 @@ This is a Claude Code plugin with hooks and commands.
 
 ### Live Validation (PostToolUse Hook)
 
-When Claude writes or edits a file with the `.math.md` extension (the canonical extension for validated math documents):
+When Claude writes or edits a file with the `.math.md` extension (the canonical extension for validated math documents). The hook ignores all other file types — regular `.md` files are not validated.
 
 1. Hook detects the Write or Edit tool was used on a `.math.md` file
 2. Re-runs **all** validation blocks in the document from top to bottom, rebuilding the registry from scratch. This ensures consistency regardless of where the edit occurred (middle, beginning, or end). The registry is stateless between hook invocations — no serialization needed.
-3. If validation fails — returns the error message to Claude as hook feedback, forcing a fix before the conversation continues
-4. If validation passes — conversation continues
+3. The hook runs in **authoring mode**: symbol conflicts, undefined references, index mismatches, and dimensional errors are hard blocks. Orphan symbols produce warnings only (the symbol may be used in a later section).
+4. If validation fails — returns the error message to Claude as hook feedback, forcing a fix before the conversation continues
+5. If validation passes — conversation continues
+6. The hook also reports a **coverage metric**: the ratio of math blocks (`$$...$$`) to validation blocks. If the document contains math blocks without corresponding validation blocks, the hook warns: `"WARNING: 3 math blocks have no validation block. Unvalidated sections: 4.2, 5.1, 5.3"`. This catches Claude skipping validation.
 
 The full re-run is acceptable because validation blocks are lightweight declarations, not heavy computations. For a 50-page paper, the full pipeline runs in under a second.
 
