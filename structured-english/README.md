@@ -9,12 +9,16 @@
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-blueviolet)](https://claude.ai/claude-code)
 <!-- badges-end -->
 
-Write specifications in two formats optimized for different audiences:
+Most specifications fail not because the author forgot something, but because they *thought* they were clear. "Check that amounts look reasonable" feels complete — until three different people implement it three different ways. Prose hides ambiguity. The gaps only surface when someone (or some LLM) tries to execute the spec and fills each gap with their own assumptions.
 
-- **HSF v5** (LLM-facing) — prose instructions with markdown headers, optimized for LLM execution. Token-efficient, high compliance.
-- **SESF v4.1** (human-facing) — formal BEHAVIOR/PROCEDURE/RULE/STEP blocks with WHEN/THEN syntax, optimized for human reading and authoring. Visual scaffolding, scannable structure, rationale annotations.
+This plugin gives you a structured format for writing specifications where every rule has an explicit condition and outcome, every decision point names its branches, every threshold is a concrete number, and every failure mode has a severity and an action. The format forces you to answer the questions you didn't know you were skipping.
 
-Both formats share: @route decision tables, @config parameters, $variable threading, consolidated error tables, RFC 2119 keywords, and 3-tier scaling (Micro/Standard/Complex).
+Two formats, optimized for different readers:
+
+- **HSF v5** (LLM-facing) — prose instructions with markdown headers. Token-efficient, high compliance. What LLMs follow best.
+- **SESF v4.1** (human-facing) — formal BEHAVIOR/PROCEDURE/RULE/STEP blocks with WHEN/THEN syntax. Visual scaffolding, scannable structure, rationale annotations. What humans scan and maintain best.
+
+Both share: @route decision tables, @config parameters, $variable threading, consolidated error tables, RFC 2119 keywords, and 3-tier scaling (Micro/Standard/Complex).
 
 ## Installation
 
