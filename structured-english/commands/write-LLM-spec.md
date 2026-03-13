@@ -1,18 +1,26 @@
 ---
-description: Write a specification using Hybrid Specification Format (HSF v5)
+description: Write a specification optimized for LLM execution using HSF v5
 argument-hint: <domain or topic to specify>
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
-# Write a Hybrid Specification
+# Write an LLM-Facing Specification
 
-Generate a complete HSF v5 specification from a user request. HSF v5 uses prose instructions with markdown headers, @route tables for multi-branch decisions, @config for centralized parameters, $variable threading for complex data flows, and consolidated error tables.
+Generate a complete HSF v5 specification optimized for LLM consumption. The output uses prose instructions with markdown headers — the format LLMs follow best. Formal scaffolding is avoided because it consumes tokens without improving compliance.
+
+## Audience
+
+The primary reader of this spec is an LLM agent. Optimize for:
+
+- **Compliance** — clear, unambiguous instructions the LLM can follow without interpretation
+- **Token efficiency** — no notation legends, type definitions, or boilerplate sections
+- **Scannable structure** — markdown headers, bold list items, and RFC 2119 keywords for precision
 
 ## Workflow
 
 ### Step 1: Load the Skill
 
-Use the `structured-english` skill — it contains all the rules, formats, and validation requirements for HSF v5 specifications. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/reference.md`.
+Use the `hsf` skill — it contains all the rules, formats, and validation requirements for HSF v5 specifications. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/reference.md`.
 
 ### Step 2: Gather Requirements
 
@@ -44,8 +52,8 @@ Present the plan to the user before writing:
 
 ### Step 4: Write the Specification
 
-1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/template.md`
-2. Read the examples at `${CLAUDE_PLUGIN_ROOT}/skills/structured-english/references/examples.md` for the selected tier
+1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/template.md`
+2. Read the examples at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/references/examples.md` for the selected tier
 3. Follow the HSF v5 skill rules exactly:
    - Use prose instructions with markdown headers, NOT BEHAVIOR/PROCEDURE blocks
    - Include @route tables only for 3+ branch logic
@@ -57,6 +65,13 @@ Present the plan to the user before writing:
 4. Use concrete values in all examples — never placeholders
 5. Use natural English throughout — every line should read as an instruction to a competent assistant
 
+**LLM-specific optimizations:**
+
+- Minimize preamble — get to the instructions quickly
+- Use imperative mood ("Do X" not "You should do X")
+- Avoid explaining *why* a rule exists unless the rationale prevents a common misapplication
+- Prefer explicit enumeration over references ("validate vendor_name, amount, and date" not "validate the required fields listed above")
+
 ### Step 5: Review
 
 Present the finished specification to the user for review before saving. Allow them to request changes before proceeding.
@@ -66,7 +81,7 @@ Present the finished specification to the user for review before saving. Allow t
 Run the structural validator:
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py <output-file>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/hsf/scripts/validate_sesf.py <output-file>
 ```
 
 Show the validation results to the user. If there are failures, present each proposed fix and ask the user to approve before applying — especially when a fix would change something the user explicitly requested.

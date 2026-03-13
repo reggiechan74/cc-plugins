@@ -81,7 +81,19 @@ After all issues are resolved, revise the document to incorporate the user's dec
 - Preserve the document's existing structure and formatting style
 - Not introduce new content beyond what is needed to resolve the identified issues
 
-### Step 6: Save the Result
+### Step 6: Choose Target Format
+
+After applying clarifications, use `AskUserQuestion` to ask:
+
+- "What format should the clarified specification use?"
+- Options:
+  1. **SESF v4.1 (human-readable)** — formal BEHAVIOR/PROCEDURE/RULE/STEP blocks optimized for human readers. Use the `sesf` skill rules.
+  2. **HSF v5 (LLM-optimized)** — prose instructions with markdown headers optimized for LLM execution. Use the `hsf` skill rules.
+  3. **Keep current format** — preserve whatever format the document is already in
+
+If the user selects SESF or HSF, load the corresponding skill (`${CLAUDE_PLUGIN_ROOT}/skills/sesf/SKILL.md` or `${CLAUDE_PLUGIN_ROOT}/skills/hsf/SKILL.md`) and rewrite the clarified document to conform to that format's rules. Preserve all domain logic — only change the format.
+
+### Step 7: Save the Result
 
 Use `AskUserQuestion` to ask the user how to save:
 

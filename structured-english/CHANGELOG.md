@@ -4,6 +4,47 @@ All notable changes to the `structured-english` plugin are documented here.
 
 ---
 
+## [7.0.0] — 2026-03-13 — Dual-Audience Architecture (HSF + SESF)
+
+### Breaking Changes
+- **Two skills instead of one:** Plugin now contains two specification format skills under one package
+  - `hsf` — Hybrid Specification Format v5, optimized for LLM execution (prose instructions, markdown headers)
+  - `sesf` — Structured English Specification Format v4.1, optimized for human readers (formal BEHAVIOR/PROCEDURE/RULE/STEP blocks with WHEN/THEN syntax and rationale annotations)
+- **Skill renamed:** `structured-english` skill renamed to `hsf`; all internal paths changed from `skills/structured-english/` to `skills/hsf/`
+- **Commands replaced:** The 3 audience-agnostic commands (`/write-spec`, `/update-spec`, `/assess-doc`) are removed and replaced with 7 audience-specific commands
+
+### New Commands
+- `/write-LLM-spec` — write a spec optimized for LLM execution (uses `hsf` skill)
+- `/write-human-spec` — write a spec optimized for human reading (uses `sesf` skill, produces formal blocks)
+- `/assess-LLM-doc` — assess whether a document would benefit from LLM-facing HSF conversion
+- `/assess-human-doc` — assess whether a document would benefit from human-facing SESF conversion
+- `/update-LLM-spec` — upgrade an older spec to HSF v5 (LLM-optimized)
+- `/update-human-spec` — upgrade an older SESF spec (v1/v2/v3/v4) to SESF v4.1
+- `/convert-human-to-llm` — convert a SESF v4.1 spec to HSF v5 (the authoring pipeline bridge)
+
+### Updated
+- `/assess-inferred-intent` — after resolving ambiguity/contradictions, now asks whether to output as SESF v4.1 (human), HSF v5 (LLM), or keep current format
+
+### New: SESF v4.1 Skill
+- `skills/sesf/SKILL.md` — full skill definition with formal block syntax rules
+- `skills/sesf/assets/reference.md` — SESF v4.1 format specification with syntax docs and tier examples
+- `skills/sesf/assets/template.md` — fill-in-the-blank templates for all tiers using formal blocks
+- `skills/sesf/assets/authoring-guide.md` — 6-step thinking process guide for human spec authors
+- `skills/sesf/references/examples.md` — 3 complete SESF v4.1 examples (Micro, Standard, Complex)
+- `skills/sesf/scripts/validate_sesf.py` — validator (shared codebase, auto-detects format)
+
+### SESF v4.1 Format (What's New vs v4)
+- **Kept from v4:** BEHAVIOR/PROCEDURE/RULE/STEP blocks, WHEN/THEN/ELSE syntax, → $variable declarations, @route, @config
+- **Added:** Consolidated `## Errors` table (no more scattered inline ERROR declarations), rationale annotations (parenthetical after rules explaining *why*)
+- **Removed:** Meta, Notation, Types, Functions, Precedence, Dependencies, Changelog boilerplate sections
+
+### Design Rationale
+- LLMs follow prose better (65% more synthesis, 55% fewer tokens in A/B testing)
+- Humans benefit from formal blocks (visual scaffolding, explicit categorization, scannable WHEN/THEN alignment)
+- One format cannot serve both audiences well — the dual-skill architecture lets each optimize for its reader
+
+---
+
 ## [6.0.0] — 2026-03-13 — Hybrid Format (HSF v5.0.0)
 
 ### Breaking Changes

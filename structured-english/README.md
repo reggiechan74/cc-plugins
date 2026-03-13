@@ -1,26 +1,20 @@
 # structured-english
 
 <!-- badges-start -->
-[![Plugin](https://img.shields.io/badge/plugin-v6.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
-[![HSF](https://img.shields.io/badge/hsf-v5.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
+[![Plugin](https://img.shields.io/badge/plugin-v7.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
+[![HSF](https://img.shields.io/badge/HSF-v5.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english/skills/hsf)
+[![SESF](https://img.shields.io/badge/SESF-v4.1.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english/skills/sesf)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.8+-yellow)](https://www.python.org)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-blueviolet)](https://claude.ai/claude-code)
 <!-- badges-end -->
 
-Write specifications using **Hybrid Specification Format (HSF v5)** -- a natural-language format that combines prose instructions with structured notation for decision tables, centralized configuration, and explicit data flow. HSF specs are readable by both humans and AI systems -- use them to instruct an LLM, a junior analyst, or anyone who needs to follow branching logic precisely.
+Write specifications in two formats optimized for different audiences:
 
-## Features
+- **HSF v5** (LLM-facing) — prose instructions with markdown headers, optimized for LLM execution. Token-efficient, high compliance.
+- **SESF v4.1** (human-facing) — formal BEHAVIOR/PROCEDURE/RULE/STEP blocks with WHEN/THEN syntax, optimized for human reading and authoring. Visual scaffolding, scannable structure, rationale annotations.
 
-- **Prose instructions**: Natural language with markdown headers (`##`, `###`) and bold list items -- no formal BEHAVIOR/PROCEDURE blocks
-- **Structured notation**: @config for centralized parameters, @route for multi-branch decision tables (3+ branches), $variable threading for explicit data flow
-- **Consolidated error tables**: All errors in one scannable table (Error | Severity | Action)
-- **RFC 2119 precision**: MUST, SHOULD, MAY keywords for unambiguous requirement strength
-- **3-tier scaling**: Micro (20-80 lines), Standard (80-200 lines), Complex (200-400 lines)
-- **Edge-case examples**: Boundary conditions and error paths only -- no happy-path bloat
-- **Structural validator**: Python script that checks section completeness, @config/@route correctness, $variable threading, line budgets, and format compliance
-- **Templates and examples**: Fill-in-the-blank templates for all tiers, plus 3 complete working examples
-- **Backward compatible**: Validator still handles SESF v4 specs
+Both formats share: @route decision tables, @config parameters, $variable threading, consolidated error tables, RFC 2119 keywords, and 3-tier scaling (Micro/Standard/Complex).
 
 ## Installation
 
@@ -31,135 +25,218 @@ Add the marketplace, then install the plugin:
 /plugin install structured-english@cc-plugins
 ```
 
-## Usage
+## Commands
 
-### Slash commands
+### LLM-facing (HSF v5)
 
 ```
-/write-spec payment webhook handler
-/write-spec email classification agent
-/assess-doc path/to/existing-document.md
-/assess-inferred-intent path/to/spec.md
-/update-spec path/to/old-sesf-spec.md
+/write-LLM-spec payment webhook handler
+/assess-LLM-doc path/to/document.md
+/update-LLM-spec path/to/old-spec.md
+```
+
+### Human-facing (SESF v4.1)
+
+```
+/write-human-spec invoice processing pipeline
+/assess-human-doc path/to/document.md
+/update-human-spec path/to/old-sesf-spec.md
+```
+
+### Cross-format
+
+```
+/convert-human-to-llm path/to/sesf-spec.md
+/assess-inferred-intent path/to/any-spec.md
 ```
 
 ### Natural language triggers
 
-The skill activates automatically when you ask Claude to:
+The skills activate automatically:
 
-- "Write a spec for..."
-- "Create a specification..."
-- "Define requirements for..."
-- "Specify the behavior of..."
+- "Write a spec for..." / "Write an LLM spec..." → HSF skill
+- "Write a human spec..." / "Write a human-readable specification..." → SESF skill
 
 ## What's included
 
-| Component | Description |
-|-----------|-------------|
-| **Skill** | HSF v5 authoring rules -- tier selection, document structuring, prose instruction writing, @config/@route/$variable placement, quality assurance |
-| **Commands** | `/write-spec` -- guided specification creation; `/assess-doc` -- evaluate whether a document benefits from HSF conversion; `/assess-inferred-intent` -- review a spec for ambiguity and resolve interactively; `/update-spec` -- upgrade from any previous version to HSF v5 |
-| **Validator** | `validate_sesf.py` -- structural validation with pass/fail/warning output, auto-detects SESF v4 vs HSF v5 |
-| **Templates** | Fill-in-the-blank starting points for micro, standard, and complex tiers |
-| **Examples** | 3 complete specs covering all tiers (see table below) |
+| Component | HSF (LLM) | SESF (Human) |
+|-----------|-----------|--------------|
+| **Skill** | `hsf` — prose instruction rules, tier selection, @config/@route/$variable placement | `sesf` — formal block rules, WHEN/THEN syntax, STEP → $var, rationale annotations |
+| **Reference** | Format spec for prose output | Format spec for formal block output |
+| **Templates** | Micro/Standard/Complex with markdown headers | Micro/Standard/Complex with BEHAVIOR/PROCEDURE blocks |
+| **Examples** | 3 complete specs (Webhook, Document Pipeline, Meeting Analysis) | 3 complete specs (same domains, formal block syntax) |
+| **Authoring Guide** | — | 6-step thinking process for human authors |
+| **Validator** | `validate_sesf.py` (auto-detects format) | `validate_sesf.py` (auto-detects format) |
 
-### Examples
+## When to use which format
 
-| # | Name | Tier | Description |
-|---|------|------|-------------|
-| 1 | Webhook Signature Validator | Micro | Prose instructions with inline config and error table |
-| 2 | Document Processing Pipeline | Standard | @config, @route table, prose rules, phased instructions |
-| 3 | Multi-Phase Meeting Analysis | Complex | @config, @route, $variable threading, worked examples |
+| Audience | Format | Why |
+|----------|--------|-----|
+| LLM agent executing the spec | **HSF v5** | Prose is what LLMs follow best. Formal blocks consume tokens without improving compliance. |
+| Human reading/reviewing the spec | **SESF v4.1** | Formal blocks create visual chapters. WHEN/THEN creates alignment points. Rationale explains *why*. |
+| Human authoring → LLM executing | **SESF v4.1 → `/convert-human-to-llm`** | Author in formal blocks (easier to think through), then convert to prose for the agent. |
 
-## When to use HSF (and when not to)
-
-HSF adds value when ambiguity causes real failures -- whether the reader is an AI model, a junior team member, or a cross-functional stakeholder. The structured notation (@config, @route, $variable) makes conditional logic, configuration, and data flow explicit.
-
-### Use HSF for
+### Use HSF or SESF for
 
 Anything with **conditional logic that branches differently based on inputs**, or **step-by-step processes with decisions, loops, or side effects**:
 
 | Domain | Example |
 |--------|---------|
-| Data extraction | Lease abstraction -- which fields to extract, what validation to apply, what happens when a field is missing |
-| Approval workflows | Purchase orders -- dollar thresholds, escalation chains, timeout logic, emergency overrides |
-| Classification | Email triage -- what triggers each category, confidence scoring, priority sender rules |
-| API contracts | Webhook handler -- signature validation, idempotency checks, error codes per event type |
-| Business rules | Pricing tiers, eligibility criteria, discount logic, tax calculations |
-| Data pipelines | ETL processes -- extract, transform, load with validation gates and error recovery |
-| Agent task plans | Multi-step agent workflows with decision points, retries, and fallbacks |
+| Data extraction | Lease abstraction — fields, validation, missing-field handling |
+| Approval workflows | Purchase orders — thresholds, escalation, timeout logic |
+| Classification | Email triage — categories, confidence scoring, priority rules |
+| API contracts | Webhook handler — signature validation, idempotency, error codes |
+| Business rules | Pricing tiers, eligibility, discount logic, tax calculations |
+| Data pipelines | ETL with validation gates and error recovery |
+| Agent task plans | Multi-step agent workflows with decision points and retries |
 
-### Don't use HSF for
-
-Anything that's **narrative guidance or role descriptions without branching logic**:
+### Don't use HSF or SESF for
 
 | Content type | Why not | Use instead |
 |--------------|---------|-------------|
-| How-to guides | Steps are linear, not conditional | Numbered lists |
+| How-to guides | Linear steps, no branching | Numbered lists |
 | Style guides | Preferences, not rules with error handling | Bullet points |
-| Agent system prompts | Role and personality descriptions | Prose paragraphs |
-| README files | Documentation for humans | Markdown |
+| Agent system prompts | Role/personality descriptions | Prose paragraphs |
+| README files | Documentation | Markdown |
 
-### Rule of thumb
+## Before & after: how structured specs remove ambiguity
 
-Ask: **"Does the same input sometimes produce different outputs depending on conditions?"** or **"Is there a step-by-step process with decisions, loops, or side effects?"** If yes to either, HSF helps make those conditions and steps explicit. If the process is purely narrative with no branching, prose is simpler.
+A real-world prompt that looks clear but is riddled with hidden ambiguity:
 
-## HSF at a glance
+### Before (unstructured prose)
 
-### Rules as prose with bold list items
+```markdown
+# Expense Report Processor
+
+Process expense reports submitted by employees. Check that receipts are
+attached and amounts look reasonable. Reports over the limit need manager
+approval. If something looks wrong, flag it. Send approved reports to
+finance for reimbursement.
+```
+
+**What's wrong with this?** It *feels* complete — but try to implement it:
+
+| Phrase | Ambiguity |
+|--------|-----------|
+| "receipts are attached" | What if 3 of 4 line items have receipts? Reject the whole report or just those items? |
+| "amounts look reasonable" | Reasonable compared to what? What threshold? What happens at the boundary? |
+| "over the limit" | What limit? Per line item or total? Is it $500, $1,000, $5,000? |
+| "need manager approval" | The submitter's direct manager? What if the manager is unavailable? Timeout? |
+| "something looks wrong" | What specifically? Duplicate submissions? Missing fields? Suspicious patterns? |
+| "flag it" | Flag how? Block processing? Send an email? Add a warning and continue? |
+| "approved reports" | What makes a report "approved"? All items valid? Manager signed off? Both? |
+
+An LLM executing this spec would fill every gap with its own assumptions — different assumptions each time, producing inconsistent behavior.
+
+### After (HSF v5 — LLM-facing)
+
+```markdown
+# Expense Report Processor
+
+Validate employee expense reports, route for approval, and forward
+approved reports to finance. Reject malformed reports immediately;
+flag policy violations for manager review.
+
+**Not in scope:** Reimbursement processing, tax calculations, vendor payments.
+
+## Configuration
+
+@config
+  receipt_required_above: 25
+  line_item_limit: 500
+  total_report_limit: 5000
+  manager_approval_timeout_days: 5
+  duplicate_window_days: 90
+
+## Approval Routing
+
+@route approval_path [first_match_wins]
+  total ≤ $config.total_report_limit AND all items ≤ $config.line_item_limit  → auto-approve
+  total ≤ $config.total_report_limit AND any item > $config.line_item_limit   → manager approval
+  total > $config.total_report_limit                                          → manager + director approval
+  *                                                                           → finance review
+
+## Instructions
+
+### Phase 1: Validate Structure
+
+For EACH line item in the report:
+
+1. **Required fields:** MUST have description, amount, date, and category. If ANY field is missing, reject the entire report with `missing_field`.
+2. **Receipt check:** If amount > `$config.receipt_required_above`, a receipt MUST be attached. If missing, reject the line item (not the report) with `missing_receipt`.
+3. **Amount validation:** Amount MUST be positive and ≤ `$config.line_item_limit`. Amounts at exactly the limit pass (threshold is "exceeds", not "at or above").
+4. **Duplicate detection:** Check if a line item with the same amount, date, and vendor exists in reports submitted within `$config.duplicate_window_days`. If found, flag as `potential_duplicate` but continue processing.
+
+### Phase 2: Route for Approval
+
+Apply the `approval_path` route table using the report total and individual item amounts. If manager approval is required, notify the submitter's direct manager via email. If the manager does not respond within `$config.manager_approval_timeout_days`, escalate to their skip-level manager.
+
+### Phase 3: Forward to Finance
+
+After approval, forward the report to the finance reimbursement queue with: employee ID, approved line items, total approved amount, approval chain (who approved and when), and any flags.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| missing_field | critical | Reject entire report: "Line item {n} missing {field}." |
+| missing_receipt | warning | Reject line item only: "Receipt required for items over ${receipt_required_above}." Continue processing remaining items. |
+| potential_duplicate | info | Flag: "Possible duplicate of {existing_report_id}, submitted {date}." Do not block. |
+| approval_timeout | warning | Escalate to skip-level manager. Notify submitter: "Manager did not respond within {days} days." |
+| over_line_limit | critical | Reject line item: "Amount ${amount} exceeds per-item limit of ${line_item_limit}." |
+```
+
+Every ambiguity from the original is now resolved: thresholds are explicit numbers in @config, the approval path is a scannable @route table, error handling names each failure mode with a severity and action, and boundary conditions are specified ("at exactly the limit" passes).
+
+## HSF v5 at a glance (LLM format)
 
 ```markdown
 ## Validation Rules
 
 - **Positive amount:** payment.amount MUST be greater than zero.
-- **Currency required:** payment.currency MUST NOT be empty. When missing, reject with "Currency required".
-- **Supported currencies:** payment.currency MUST be one of [CAD, USD, EUR]. Unsupported currencies are rejected.
-```
+- **Currency required:** payment.currency MUST NOT be empty.
 
-### @route decision table (3+ branches)
-
-```markdown
-@route currency_check [first_match_wins]
-  payment.currency IN $config.supported_currencies  → accept
-  payment.currency is empty                         → reject with "Currency required"
-  *                                                 → reject with "Unsupported currency"
-```
-
-### Instructions as prose with phase headers
-
-```markdown
 ## Instructions
 
 ### Phase 1: Validate Input
 
 Read the payment request. Check amount is positive and currency is supported.
-If validation fails, halt and return the error from the error table.
 
 ### Phase 2: Process Payment
 
-Submit the validated payment to the gateway. If it fails with insufficient_funds,
-notify the customer. If it fails for any other reason, escalate to finance.
+Submit the validated payment to the gateway.
 ```
 
-### Consolidated error table
+## SESF v4.1 at a glance (Human format)
 
 ```markdown
-## Errors
+**BEHAVIOR** validate_payment: Ensure payment meets processing requirements
 
-| Error | Severity | Action |
-|-------|----------|--------|
-| invalid_amount | critical | reject payment, "Amount must be positive" |
-| unsupported_currency | critical | reject payment, "Currency not supported" |
-| payment_failure | critical | retry once then escalate to finance |
+  **RULE** positive_amount:
+    WHEN payment.amount ≤ 0
+    THEN reject with "Amount must be positive"
+    (Negative amounts indicate data entry errors or test data)
+
+  **RULE** currency_required:
+    WHEN payment.currency is null
+    THEN reject with "Currency is required"
+
+**PROCEDURE** process_payment: Submit validated payment
+
+  **STEP** validate: Check all payment rules
+    Apply BEHAVIOR validate_payment.
+
+  **STEP** submit: Send to gateway → $gateway_response
+    Submit the validated payment to the gateway.
 ```
 
 ## Versioning
 
-This plugin uses two version numbers:
+This plugin uses three version numbers:
 
-- **Plugin version** (6.0.0) tracks the package release -- plugin.json, README, commands, templates, examples, and validator.
-- **Format version** (HSF v5.0.0) tracks the specification language -- syntax rules, notation, section requirements, and keyword semantics defined in the reference and SKILL.md.
-
-The plugin version increments when any shipped file changes. The format version increments only when the specification language itself changes.
+- **Plugin version** (7.0.0) tracks the package release — commands, README, plugin.json
+- **HSF version** (v5.0.0) tracks the LLM-facing specification language
+- **SESF version** (v4.1.0) tracks the human-facing specification language
 
 ## License
 

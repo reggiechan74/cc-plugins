@@ -1,6 +1,6 @@
 ---
-name: structured-english
-description: Write specifications using Hybrid Specification Format (HSF v5), a natural-language format that combines prose instructions with structured notation (@route decision tables, @config parameters, $variable threading, consolidated error tables). Features 3-tier scaling (Micro/Standard/Complex) and integrated validation. Use when you need clear, unambiguous specifications. Triggers include "write a spec", "create a specification", "define requirements", "specify the behavior", "write a procedure".
+name: hsf
+description: Write specifications using Hybrid Specification Format (HSF v5), a prose-based format optimized for LLM consumption. Uses natural-language instructions with markdown headers, @route decision tables for multi-branch logic, @config for centralized parameters, $variable threading for complex data flows, and consolidated error tables. Features 3-tier scaling (Micro/Standard/Complex) and integrated validation. Use when writing specs for LLM agents. Triggers include "write a spec", "write an LLM spec", "create an HSF specification", "write a specification for an agent".
 ---
 
 # Hybrid Specification Format (HSF v5)
@@ -12,10 +12,10 @@ Generate well-structured hybrid specifications from user requests. Given a domai
 ## Configuration
 
 @config
-  validator_path: ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/scripts/validate_sesf.py
-  reference_path: ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/reference.md
-  template_path: ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/assets/template.md
-  examples_path: ${CLAUDE_PLUGIN_ROOT}/skills/structured-english/references/examples.md
+  validator_path: ${CLAUDE_PLUGIN_ROOT}/skills/hsf/scripts/validate_sesf.py
+  reference_path: ${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/reference.md
+  template_path: ${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/template.md
+  examples_path: ${CLAUDE_PLUGIN_ROOT}/skills/hsf/references/examples.md
   line_budget:
     micro: [20, 80]
     standard: [80, 200]
