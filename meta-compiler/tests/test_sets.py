@@ -18,14 +18,6 @@ def test_duplicate_set_raises(fresh_registry):
         Set("W", description="Different meaning")
 
 
-def test_s_function_returns_set_iterator(fresh_registry):
-    from meta_compiler import Set, S
-    Set("P", description="Projects")
-    it = S("P")
-    from meta_compiler.expr import SetIterator
-    assert isinstance(it, SetIterator)
-    assert it.set_name == "P"
-
 
 def test_s_undefined_set_raises(fresh_registry):
     from meta_compiler import S
@@ -39,3 +31,13 @@ def test_set_returns_proxy(fresh_registry):
     from meta_compiler.proxy import SymbolProxy
     result = Set("W", description="Workers")
     assert isinstance(result, SymbolProxy)
+
+
+def test_s_returns_real_set_members():
+    from meta_compiler import S
+    from meta_compiler.registry import registry
+    registry.reset()
+    registry.data_store["W"] = ["alice", "bob"]
+    registry.register_set("W", description="Workers")
+    members = S("W")
+    assert members == ["alice", "bob"]

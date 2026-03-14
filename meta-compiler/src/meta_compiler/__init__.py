@@ -5,56 +5,56 @@ from meta_compiler.registry import registry
 
 def Set(name: str, *, description: str = "") -> "SymbolProxy":
     """Declare an index set."""
-    return registry.register_set(name, description)
+    return registry.register_set(name, description=description)
 
 
 def Parameter(
     name: str,
     *,
-    index: list[str] | None = None,
+    index=None,
     domain: str = "real",
     units: str = "dimensionless",
     description: str = "",
 ) -> "SymbolProxy":
     """Declare a parameter."""
-    return registry.register_parameter(name, index or [], domain, units, description)
+    return registry.register_parameter(name, index=index, domain=domain, units=units, description=description)
 
 
 def Variable(
     name: str,
     *,
-    index: list[str] | None = None,
+    index=None,
     domain: str = "continuous",
     bounds: tuple[float | None, float | None] = (None, None),
     units: str = "dimensionless",
     description: str = "",
 ) -> "SymbolProxy":
     """Declare a decision variable."""
-    return registry.register_variable(name, index or [], domain, bounds, units, description)
+    return registry.register_variable(name, index=index, domain=domain, bounds=bounds, units=units, description=description)
 
 
 def Expression(
     name: str,
     *,
     definition: object,
-    index: list[str] | None = None,
+    index=None,
     units: str = "dimensionless",
     description: str = "",
 ) -> "SymbolProxy":
     """Declare a derived expression."""
-    return registry.register_expression(name, index or [], units, description, definition)
+    return registry.register_expression(name, definition=definition, index=index, units=units, description=description)
 
 
 def Constraint(
     name: str,
     *,
     expr: object,
-    over: list[str] | None = None,
+    over=None,
     type: str = "hard",
     description: str = "",
 ) -> None:
     """Declare a constraint."""
-    registry.register_constraint(name, over or [], type, description, expr)
+    registry.register_constraint(name, expr=expr, over=over, constraint_type=type, description=description)
 
 
 def Objective(
@@ -65,9 +65,9 @@ def Objective(
     description: str = "",
 ) -> None:
     """Declare an objective."""
-    registry.register_objective(name, sense, description, expr)
+    registry.register_objective(name, expr=expr, sense=sense, description=description)
 
 
-def S(name: str) -> "SetIterator":
-    """Return a symbolic set iterator for use in lambda for-loops."""
+def S(name: str):
+    """Return the members of a registered set for iteration."""
     return registry.s(name)
