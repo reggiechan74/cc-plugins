@@ -74,6 +74,14 @@ Same structure as v0.1: central accumulator with `register_set`, `register_param
 
 Key change: `expr` functions are stored as callables, not as captured expression trees. `_capture_lambda()` is eliminated.
 
+All v0.1 keyword arguments are preserved:
+
+- `Constraint(name, *, expr, over=None, type="hard", description="")` — `type` and `description` unchanged
+- `Objective(name, *, expr, sense="maximize", description="")` — `sense` and `description` unchanged
+- `Parameter`, `Variable`, `Expression` — all kwargs unchanged
+
+The example blocks in this spec omit optional kwargs for brevity.
+
 ### Proxy objects
 
 Proxies become data-backed instead of tree-building:
@@ -97,13 +105,35 @@ class SymbolProxy:
     def __getitem__(self, key):
         self._access_log.add(self.name)
         if self._data is None:
-            return _Sentinel(self.name, key)
+            raise RuntimeError(f"No fixture data for symbol '{self.name}'")
         return self._data[key]
 ```
 
-### Sentinel objects
+### Multi-indexed fixture data
 
-When no fixture data is provided, `__getitem__` returns a `_Sentinel` — a lightweight marker that records the access but cannot participate in arithmetic. The `expr` function is not called in structural mode, so sentinels are only used if needed for future expansion.
+Fixture data for multi-indexed symbols uses tuple keys:
+
+```python
+# In fixture block:
+x = {("alice", "projA"): 5, ("alice", "projB"): 10, ("bob", "projA"): 20, ...}
+```
+
+When `x[i, p]` is called in a lambda, Python passes a tuple `(i, p)` to `__getitem__`, which looks up `self._data[(i, p)]` directly. No nested dicts.
+
+### Namespace wiring (fixture → proxy)
+
+When the executor runs:
+
+1. Fixture blocks execute in their own namespace, producing a `data_store: dict[str, dict]` mapping symbol names to their fixture dicts (e.g., `{"cap": {"alice": 40, ...}, "x": {("alice", "projA"): 5, ...}}`)
+2. When a validate block calls `Set("W")`, `Parameter("cap", ...)`, etc., the registration function checks `data_store` for a matching key
+3. The returned `SymbolProxy` receives `data=data_store.get(name)` — if the fixture defined data for that symbol, the proxy is data-backed; if not, the proxy has `data=None`
+
+### `S()` behavior in v2
+
+In v0.1, `S("W")` returns a symbolic `SetIterator`. In v2:
+
+- **Numeric mode:** `S("W")` returns the actual set members from the fixture data (e.g., `["alice", "bob", "carol"]`), enabling real iteration in `for i in S("W")`
+- **Structural mode:** `S("W")` is not called (expr functions are not invoked). The symbol name `"W"` is detected via tokenized source text scanning for orphan/phantom checks.
 
 ## Execution Model
 
@@ -115,9 +145,9 @@ When no fixture data is provided, `__getitem__` returns a `_Sentinel` — a ligh
 2. Execute validate blocks sequentially in shared namespace
 3. `expr` functions are stored but not called
 4. Structural checks run on the registry alone:
-   - Orphans/phantoms: compare registered symbol names against names found in `expr` function source text (captured at parse time)
+   - Orphans/phantoms: the parser captures the raw source text of each `expr` lambda at parse time (from the fenced code block content). Symbol names are extracted by tokenizing the source with Python's `tokenize` module and collecting all `NAME` tokens that match registered symbol names. This avoids regex false positives (e.g., `cap` matching inside `capacity`).
    - Cycles: from registration-order dependency graph
-   - Unit boundary check: compare declared units using symbol names from source text
+   - Unit boundary check: compare declared units using symbol names extracted from tokenized source text
 
 **Numeric mode (fixture present):**
 
@@ -151,12 +181,12 @@ Two forms detected by arity:
 
 ### Phantoms
 - **Numeric mode:** symbols accessed at runtime (via access log) but not registered
-- **Structural mode:** symbol names found in `expr` source text but not registered
+- **Structural mode:** symbol names found in `expr` tokenized source text but not registered
 - Always an error
 
 ### Orphans
 - **Numeric mode:** symbols registered but never accessed at runtime
-- **Structural mode:** symbols registered but never mentioned in any `expr` source text
+- **Structural mode:** symbols registered but never mentioned in any `expr` tokenized source text
 - Authoring mode (`strict=False`): warning
 - Compilation mode (`strict=True`): error
 
@@ -196,7 +226,7 @@ Two forms detected by arity:
 
 ### Coverage metric
 
-Ratio of math blocks with a following validate block. Fixture blocks don't count toward coverage.
+Ratio of math blocks with a following validate block. Fixture blocks don't count toward coverage and don't interrupt math-to-validate association — a math block followed by a fixture block followed by a validate block counts as covered.
 
 ### CLI
 
@@ -264,8 +294,7 @@ Both `.math.md` (v0.1) and `.model.md` (v2) can exist in the same project. Hooks
 | Component | Purpose |
 |-----------|---------|
 | `FixtureBlock` dataclass in `parser.py` | Parsed fixture block |
-| `_Sentinel` class in `proxy.py` | Access recording without data |
-| Runner generator in `compiler/` | Single-file runner script output |
+| Runner generator in `compiler/` | Emits a single Python script: `#!/usr/bin/env python3` + imports meta_compiler + calls `check_document(open(path).read(), strict=True)` + prints result. ~20 lines. |
 | Fixture loader in `executor.py` | Executes fixture blocks, populates data store |
 
 ### Net effect
