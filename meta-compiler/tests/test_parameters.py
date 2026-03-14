@@ -42,3 +42,32 @@ def test_parameter_duplicate_raises(fresh_registry):
     Parameter("cap", index=["W"], units="hours", description="Capacity")
     with pytest.raises(ValueError, match="already registered"):
         Parameter("cap", index=["W"], units="headcount", description="Different")
+
+
+from meta_compiler.proxy import SymbolProxy
+
+def test_proxy_getitem_returns_real_value():
+    log = set()
+    proxy = SymbolProxy("cap", data={"alice": 40, "bob": 35}, access_log=log)
+    assert proxy["alice"] == 40
+    assert proxy["bob"] == 35
+
+def test_proxy_getitem_logs_access():
+    log = set()
+    proxy = SymbolProxy("cap", data={"alice": 40}, access_log=log)
+    proxy["alice"]
+    assert "cap" in log
+
+def test_proxy_getitem_no_data_raises():
+    log = set()
+    proxy = SymbolProxy("cap", data=None, access_log=log)
+    import pytest
+    with pytest.raises(RuntimeError, match="No fixture data"):
+        proxy["alice"]
+
+def test_proxy_multi_index_tuple_key():
+    log = set()
+    data = {("alice", "projA"): 5, ("bob", "projB"): 10}
+    proxy = SymbolProxy("x", data=data, access_log=log)
+    assert proxy["alice", "projA"] == 5
+    assert proxy["bob", "projB"] == 10
