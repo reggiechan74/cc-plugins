@@ -157,3 +157,35 @@ def test_full_pipeline_compile_to_disk(tmp_path):
     # Verify paper content
     paper = (out_dir / "paper.md").read_text()
     assert "python:validate" not in paper
+
+
+MODEL_DOC = '''# Workforce Model
+
+```python:fixture
+W = ["alice", "bob"]
+cap = {"alice": 40, "bob": 35}
+```
+
+$$\\text{cap}_i \\leq 100$$
+
+```python:validate
+Set("W", description="Workers")
+Parameter("cap", index="W", units="hours", description="Capacity")
+Constraint("check", over="W", expr=lambda i: cap[i] <= 100)
+```
+'''
+
+
+def test_compile_produces_paper_report_runner():
+    result = compile_document(MODEL_DOC)
+    assert "paper" in result
+    assert "report_text" in result
+    assert "runner" in result
+    assert "python:fixture" not in result["paper"]
+    assert "python:validate" not in result["paper"]
+    assert "check_document" in result["runner"]
+
+
+def test_compile_no_codebase_key():
+    result = compile_document(MODEL_DOC)
+    assert "codebase" not in result

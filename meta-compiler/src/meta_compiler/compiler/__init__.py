@@ -1,66 +1,39 @@
-"""Artifact compiler for .math.md documents."""
+"""High-level compiler API for .model.md documents."""
 
 from __future__ import annotations
 
-from meta_compiler.compiler.executor import ExecutionResult, execute_blocks
-from meta_compiler.compiler.paper import generate_paper
 from meta_compiler.compiler.parser import parse_document
+from meta_compiler.compiler.executor import execute_blocks, ExecutionResult
+from meta_compiler.compiler.paper import generate_paper
 from meta_compiler.compiler.report import generate_report
+from meta_compiler.compiler.runner import generate_runner
 
 
 def check_document(source: str, *, strict: bool = False) -> ExecutionResult:
-    """Parse and validate a .math.md document.
-
-    Args:
-        source: The document source text.
-        strict: If True, orphans are errors (compilation mode).
-
-    Returns:
-        ExecutionResult with pass/fail status and diagnostics.
-    """
+    """Parse and validate a .model.md document."""
     blocks = parse_document(source)
     return execute_blocks(blocks, strict=strict)
 
 
 def compile_document(
-    source: str,
-    *,
-    depth: str | None = None,
+    source: str, *, depth: str | None = None, filename: str = "model.model.md"
 ) -> dict:
-    """Compile a .math.md document into all three artifacts.
-
-    Args:
-        source: The document source text.
-        depth: Optional depth filter for paper artifact.
-
-    Returns:
-        Dict with keys 'paper' (str), 'codebase' (dict[str, str]),
-        'report' (Report object), and 'report_text' (str).
-    """
+    """Full compilation pipeline: validate, then generate artifacts."""
     blocks = parse_document(source)
 
-    # Execute in strict mode for compilation
     result = execute_blocks(blocks, strict=True)
     if not result.passed:
-        raise ValueError(
-            "Cannot compile: validation failed.\n"
-            + "\n".join(f"  {e}" for e in result.errors)
+        raise RuntimeError(
+            "Validation failed in strict mode:\n"
+            + "\n".join(f"  - {e}" for e in result.errors)
         )
 
     paper = generate_paper(blocks, depth=depth)
-    codebase = generate_codebase(result.registry)
-    # Pass the executor's test result to avoid re-running tests
-    from meta_compiler.registry import TestResult
-    test_result = TestResult(
-        passed=result.passed,
-        errors=result.errors,
-        warnings=result.warnings,
-    )
-    report = generate_report(result.registry, blocks, test_result=test_result)
+    report = generate_report(result.registry, blocks, test_result=result)
 
     return {
         "paper": paper,
-        "codebase": codebase,
         "report": report,
         "report_text": report.to_text(),
+        "runner": generate_runner(filename),
     }
