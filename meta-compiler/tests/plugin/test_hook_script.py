@@ -105,3 +105,56 @@ class TestHookValidation:
         output = json.loads(result.stdout)
         context = output.get("hookSpecificOutput", {}).get("additionalContext", "")
         assert "math block" in context.lower() or "unvalidated" in context.lower() or "coverage" in context.lower()
+
+
+class TestHookEdgeCases:
+    """Edge cases for the hook script."""
+
+    def test_handles_edit_tool(self, tmp_path):
+        """Hook should trigger on Edit tool, not just Write."""
+        doc = tmp_path / "test.math.md"
+        doc.write_text(
+            '```python:validate\n'
+            'Parameter("x", index=["MISSING"], domain="real",\n'
+            '          units="hours", description="Bad param")\n'
+            'registry.run_tests()\n'
+            '```\n'
+        )
+        result = run_hook("Edit", str(doc))
+        assert result.returncode == 0
+        output = json.loads(result.stdout)
+        assert output["decision"] == "block", "Edit tool should trigger validation, not be ignored"
+
+    def test_nonexistent_file_exits_cleanly(self):
+        """Hook should exit 0 when the .math.md file doesn't exist."""
+        result = run_hook("Write", "/tmp/nonexistent.math.md")
+        assert result.returncode == 0
+
+    def test_empty_document(self, tmp_path):
+        """Hook should handle an empty .math.md file gracefully."""
+        doc = tmp_path / "empty.math.md"
+        doc.write_text("")
+        result = run_hook("Write", str(doc))
+        assert result.returncode == 0
+
+    def test_document_with_only_prose(self, tmp_path):
+        """Hook should pass on a document with prose but no validation blocks."""
+        doc = tmp_path / "prose.math.md"
+        doc.write_text("# Title\n\nSome prose about math.\n")
+        result = run_hook("Write", str(doc))
+        assert result.returncode == 0
+
+    def test_valid_json_output_on_block(self, tmp_path):
+        """Block response must be valid JSON."""
+        doc = tmp_path / "bad.math.md"
+        doc.write_text(
+            '```python:validate\n'
+            'Parameter("x", index=["NONEXISTENT"], domain="real",\n'
+            '          units="hours", description="Bad param")\n'
+            'registry.run_tests()\n'
+            '```\n'
+        )
+        result = run_hook("Write", str(doc))
+        assert result.returncode == 0
+        output = json.loads(result.stdout)  # Must be valid JSON
+        assert output["decision"] == "block"
