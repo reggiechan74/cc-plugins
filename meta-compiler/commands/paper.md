@@ -22,7 +22,7 @@ Compile a clean paper from a `.math.md` document. Strips all validation blocks, 
 2. **Build the command:**
 
    ```bash
-   cd ${CLAUDE_PLUGIN_ROOT} && python3 -m meta_compiler.cli paper "<file_path>"
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli paper "<file_path>"
    ```
 
    Add `--depth <depth>` if a depth filter was specified.

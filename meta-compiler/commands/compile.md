@@ -27,7 +27,7 @@ This runs in **strict mode** — orphan symbols are hard errors. Use this when t
 2. **Build the command:**
 
    ```bash
-   cd ${CLAUDE_PLUGIN_ROOT} && python3 -m meta_compiler.cli compile "<file_path>" --output "<output_dir>"
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli compile "<file_path>" --output "<output_dir>"
    ```
 
    Add `--depth <depth>` if a depth filter was specified.

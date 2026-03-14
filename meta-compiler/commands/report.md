@@ -20,7 +20,7 @@ Produce a full validation report from a `.math.md` document including symbol tab
 2. **Run the report command:**
 
    ```bash
-   cd ${CLAUDE_PLUGIN_ROOT} && python3 -m meta_compiler.cli report "<file_path>"
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli report "<file_path>"
    ```
 
    Add `--output <output_path>` if an output path was specified.

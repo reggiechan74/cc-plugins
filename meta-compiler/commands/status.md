@@ -18,7 +18,7 @@ Display the current symbol table, dependency status, and coverage metric for a `
 2. **Run the validation report:** Execute:
 
    ```bash
-   cd ${CLAUDE_PLUGIN_ROOT} && python3 -m meta_compiler.cli report "<file_path>"
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli report "<file_path>"
    ```
 
 3. **Present the results:** Format the report output for the user, highlighting:

@@ -20,13 +20,13 @@ Run the meta-compiler validation pipeline against the specified `.math.md` file.
 2. **Run validation:** Execute the check command:
 
    ```bash
-   cd ${CLAUDE_PLUGIN_ROOT} && python3 -m meta_compiler.cli check "<file_path>"
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli check "<file_path>"
    ```
 
    If the `--strict` flag was requested, add it:
 
    ```bash
-   cd ${CLAUDE_PLUGIN_ROOT} && python3 -m meta_compiler.cli check --strict "<file_path>"
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli check --strict "<file_path>"
    ```
 
 3. **Report results:** Show the output to the user. If validation passed, confirm success and list any warnings. If validation failed, show the errors and offer to help fix them.
