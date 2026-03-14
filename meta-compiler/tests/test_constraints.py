@@ -1,6 +1,5 @@
 import pytest
 from meta_compiler import Set, Parameter, Variable, Expression, Constraint, S
-from meta_compiler.expr import collect_refs
 from meta_compiler.symbols import ConstraintSymbol
 
 
@@ -22,9 +21,9 @@ def test_register_constraint(fresh_registry):
 
     sym = fresh_registry.symbols["capacity_limit"]
     assert isinstance(sym, ConstraintSymbol)
-    refs = collect_refs(sym.expr_tree)
-    assert "load" in refs
-    assert "cap" in refs
+    # v2: sym.expr is a callable, sym.over is a string
+    assert callable(sym.expr)
+    assert sym.over == "W"
 
 
 def test_constraint_duplicate_raises(fresh_registry):

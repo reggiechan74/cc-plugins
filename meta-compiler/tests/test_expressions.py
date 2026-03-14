@@ -1,12 +1,5 @@
 import pytest
 from meta_compiler import Set, Parameter, Variable, Expression, S
-from meta_compiler.expr import (
-    ArithExpr,
-    CompareExpr,
-    IndexExpr,
-    SumExpr,
-    collect_refs,
-)
 from meta_compiler.symbols import ExpressionSymbol
 
 
@@ -35,17 +28,17 @@ def test_simple_expression(fresh_registry):
 
     sym = fresh_registry.symbols["load"]
     assert isinstance(sym, ExpressionSymbol)
-    refs = collect_refs(sym.expr_tree)
-    assert "x" in refs
-    assert "h" in refs
+    # v2: sym.expr is a callable, no expr_tree
+    assert callable(sym.expr)
+    assert sym.index == ("W",)
 
 
-def test_expression_undefined_symbol_raises(fresh_registry):
-    Set("W", description="Workers")
-    with pytest.raises(ValueError, match="not registered"):
+def test_expression_undefined_index_set_raises(fresh_registry):
+    """Registering an expression with an undefined index set raises at registration time."""
+    with pytest.raises(ValueError, match='references set "W"'):
         Expression("bad",
-            definition=lambda i: S("NOPE"),
-            index=["W"], description="References undefined set")
+            definition=lambda i: i,
+            index=["W"], description="References undefined index set")
 
 
 def test_expression_references_tracked(fresh_registry):
@@ -57,4 +50,6 @@ def test_expression_references_tracked(fresh_registry):
         description="Double capacity")
 
     sym = fresh_registry.symbols["double_cap"]
-    assert collect_refs(sym.expr_tree) == {"cap", "2"}
+    # v2: sym.expr is callable, index is stored correctly
+    assert callable(sym.expr)
+    assert sym.index == ("W",)

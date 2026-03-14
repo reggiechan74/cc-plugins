@@ -12,7 +12,7 @@ def test_register_parameter(fresh_registry):
     sym = fresh_registry.symbols["cap"]
     assert isinstance(sym, ParameterSymbol)
     assert sym.index == ("W",)
-    assert sym.units == parse_unit("hours")
+    assert sym.units == "hours"
 
 
 def test_parameter_undefined_set_raises(fresh_registry):
@@ -34,7 +34,7 @@ def test_parameter_no_index(fresh_registry):
     Parameter("alpha", domain="nonneg_real",
               units="dimensionless", description="Coefficient")
     sym = fresh_registry.symbols["alpha"]
-    assert sym.index == ()
+    assert sym.index is None
 
 
 def test_parameter_duplicate_raises(fresh_registry):

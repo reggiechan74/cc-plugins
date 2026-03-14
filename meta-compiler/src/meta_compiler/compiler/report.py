@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from meta_compiler.compiler.parser import Block, coverage_metric
-from meta_compiler.expr import collect_refs
 from meta_compiler.registry import Registry
 from meta_compiler.symbols import (
     ConstraintSymbol,
@@ -120,22 +119,22 @@ def _build_symbol_table(registry: Registry) -> list[dict]:
                 entry["type"] = "Set"
             case ParameterSymbol():
                 entry["type"] = "Parameter"
-                entry["index"] = list(sym.index)
+                entry["index"] = list(sym.index) if sym.index else []
                 entry["domain"] = sym.domain
                 entry["units"] = str(sym.units)
             case VariableSymbol():
                 entry["type"] = "Variable"
-                entry["index"] = list(sym.index)
+                entry["index"] = list(sym.index) if sym.index else []
                 entry["domain"] = sym.domain
                 entry["bounds"] = list(sym.bounds)
                 entry["units"] = str(sym.units)
             case ExpressionSymbol():
                 entry["type"] = "Expression"
-                entry["index"] = list(sym.index)
+                entry["index"] = list(sym.index) if sym.index else []
                 entry["units"] = str(sym.units)
             case ConstraintSymbol():
                 entry["type"] = "Constraint"
-                entry["over"] = list(sym.over)
+                entry["over"] = [sym.over] if sym.over else []
                 entry["constraint_type"] = sym.constraint_type
             case ObjectiveSymbol():
                 entry["type"] = "Objective"
@@ -145,18 +144,16 @@ def _build_symbol_table(registry: Registry) -> list[dict]:
 
 
 def _build_dependency_graph(registry: Registry) -> list[dict]:
-    """Build dependency edges from expressions/constraints/objectives to referenced symbols."""
+    """Build dependency edges from over/index fields."""
     edges: list[dict] = []
     for name in registry._registration_order:
         sym = registry.symbols[name]
-        if isinstance(sym, (ExpressionSymbol, ConstraintSymbol, ObjectiveSymbol)):
-            refs = collect_refs(sym.expr_tree)
-            for ref in sorted(refs):
-                # Skip numeric literals
-                try:
-                    float(ref)
-                    continue
-                except ValueError:
-                    pass
-                edges.append({"from": name, "to": ref})
+        refs = []
+        if hasattr(sym, "over") and sym.over:
+            refs.append(sym.over)
+        if hasattr(sym, "index") and sym.index:
+            for idx in (sym.index if isinstance(sym.index, tuple) else (sym.index,)):
+                refs.append(idx)
+        for ref in sorted(set(refs)):
+            edges.append({"from": name, "to": ref})
     return edges
