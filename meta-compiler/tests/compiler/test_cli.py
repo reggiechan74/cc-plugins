@@ -88,6 +88,23 @@ Parameter("cap", index=["W"], description="Missing set")
     assert "FAILED" in result.stdout or "BLOCK" in result.stdout
 
 
+def test_cli_check_model_md(tmp_path):
+    doc = tmp_path / "test.model.md"
+    doc.write_text('''# Model
+
+```python:validate
+Set("W", description="Workers")
+```
+''')
+    result = subprocess.run(
+        ["python3", "-m", "meta_compiler.cli", "check", str(doc)],
+        capture_output=True, text=True,
+        env={**os.environ, "PYTHONPATH": "src"},
+        cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    )
+    assert result.returncode == 0
+
+
 def test_cli_compile_writes_artifacts(tmp_path):
     """CLI compile command writes artifact files."""
     doc_path = tmp_path / "test.math.md"
