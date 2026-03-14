@@ -109,3 +109,58 @@ def test_coverage_metric_uncovered():
     assert result.total_math == 2
     assert result.covered_math == 1
     assert len(result.uncovered_sections) == 1
+
+
+from meta_compiler.compiler.parser import parse_document, FixtureBlock
+
+def test_parse_fixture_block():
+    source = '''# Model
+
+```python:fixture
+sets = {"W": ["alice", "bob"]}
+cap = {"alice": 40, "bob": 35}
+```
+'''
+    blocks = parse_document(source)
+    fixture_blocks = [b for b in blocks if isinstance(b, FixtureBlock)]
+    assert len(fixture_blocks) == 1
+    assert 'sets = {"W":' in fixture_blocks[0].code
+
+def test_parse_mixed_blocks():
+    source = '''# Model
+
+```python:fixture
+cap = {"alice": 40}
+```
+
+$$x + y = z$$
+
+```python:validate
+Set("W", description="Workers")
+```
+'''
+    blocks = parse_document(source)
+    from meta_compiler.compiler.parser import FixtureBlock, MathBlock, ValidationBlock, ProseBlock
+    types = [type(b).__name__ for b in blocks]
+    assert "FixtureBlock" in types
+    assert "MathBlock" in types
+    assert "ValidationBlock" in types
+
+def test_coverage_fixture_does_not_interrupt():
+    """A math block followed by fixture then validate counts as covered."""
+    source = '''# Model
+
+$$x = 1$$
+
+```python:fixture
+x_val = {"a": 1}
+```
+
+```python:validate
+Parameter("x", description="x value")
+```
+'''
+    from meta_compiler.compiler.parser import coverage_metric
+    blocks = parse_document(source)
+    result = coverage_metric(blocks)
+    assert result.covered_math == 1

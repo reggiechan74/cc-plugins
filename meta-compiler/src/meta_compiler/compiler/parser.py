@@ -33,7 +33,14 @@ class ValidationBlock:
     line_number: int  # For error reporting
 
 
-Block = ProseBlock | MathBlock | ValidationBlock
+@dataclass
+class FixtureBlock:
+    """A python:fixture fenced code block containing test data."""
+    code: str
+    line_number: int
+
+
+Block = ProseBlock | MathBlock | ValidationBlock | FixtureBlock
 
 
 def parse_document(source: str) -> list[Block]:
@@ -52,6 +59,22 @@ def parse_document(source: str) -> list[Block]:
 
     while i < len(lines):
         line = lines[i]
+
+        # Check for fixture block: ```python:fixture
+        if line.strip().startswith("```python:fixture"):
+            flush_prose()
+            code_lines: list[str] = []
+            start_line = i + 1
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code_lines.append(lines[i])
+                i += 1
+            blocks.append(FixtureBlock(
+                code="\n".join(code_lines),
+                line_number=start_line,
+            ))
+            i += 1  # Skip closing ```
+            continue
 
         # Check for validation block: ```python:validate
         if line.strip().startswith("```python:validate"):

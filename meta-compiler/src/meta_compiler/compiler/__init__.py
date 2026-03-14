@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from meta_compiler.compiler.codegen import generate_codebase
 from meta_compiler.compiler.executor import ExecutionResult, execute_blocks
 from meta_compiler.compiler.paper import generate_paper
 from meta_compiler.compiler.parser import parse_document
