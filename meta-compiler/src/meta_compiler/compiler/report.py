@@ -85,8 +85,6 @@ def generate_report(
     test_result: "TestResult | None" = None,
 ) -> Report:
     """Generate a validation report from registry state and parsed blocks."""
-    from meta_compiler.registry import TestResult as _TestResult
-
     symbol_table = _build_symbol_table(registry)
     dependencies = _build_dependency_graph(registry)
     cov = coverage_metric(blocks)
@@ -149,7 +147,8 @@ def _build_symbol_table(registry: Registry) -> list[dict]:
 def _build_dependency_graph(registry: Registry) -> list[dict]:
     """Build dependency edges from expressions/constraints/objectives to referenced symbols."""
     edges: list[dict] = []
-    for name, sym in registry.symbols.items():
+    for name in registry._registration_order:
+        sym = registry.symbols[name]
         if isinstance(sym, (ExpressionSymbol, ConstraintSymbol, ObjectiveSymbol)):
             refs = collect_refs(sym.expr_tree)
             for ref in sorted(refs):

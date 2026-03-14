@@ -138,9 +138,9 @@ def _cmd_compile(source: str, *, output: Path, depth: str | None) -> int:
     (output / "report.txt").write_text(artifacts["report_text"])
 
     print(f"Artifacts written to {output}/")
-    print(f"  paper.md")
+    print("  paper.md")
     print(f"  model/ ({len(artifacts['codebase'])} files)")
-    print(f"  report.txt")
+    print("  report.txt")
     return 0
 
 

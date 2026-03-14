@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from meta_compiler.compiler.parser import Block, MathBlock, ProseBlock, ValidationBlock
+from meta_compiler.compiler.parser import Block, MathBlock, ProseBlock
 
 
 def generate_paper(

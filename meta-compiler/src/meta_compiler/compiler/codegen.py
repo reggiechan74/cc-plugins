@@ -49,7 +49,7 @@ def _generate_sets(registry: Registry) -> str:
         "",
     ]
     for sym in _symbols_of_type(registry, SetSymbol):
-        lines.append(f'Set("{sym.name}", description="{sym.description}")')
+        lines.append(f'Set({sym.name!r}, description={sym.description!r})')
     return "\n".join(lines) + "\n"
 
 
@@ -61,12 +61,12 @@ def _generate_parameters(registry: Registry) -> str:
     ]
     for sym in _symbols_of_type(registry, ParameterSymbol):
         idx = list(sym.index) if sym.index else None
-        parts = [f'"{sym.name}"']
+        parts = [repr(sym.name)]
         if idx:
             parts.append(f"index={idx}")
-        parts.append(f'domain="{sym.domain}"')
-        parts.append(f'units="{sym.units}"')
-        parts.append(f'description="{sym.description}"')
+        parts.append(f"domain={sym.domain!r}")
+        parts.append(f"units={str(sym.units)!r}")
+        parts.append(f"description={sym.description!r}")
         lines.append(f'{sym.name} = Parameter({", ".join(parts)})')
     return "\n".join(lines) + "\n"
 
@@ -79,13 +79,13 @@ def _generate_variables(registry: Registry) -> str:
     ]
     for sym in _symbols_of_type(registry, VariableSymbol):
         idx = list(sym.index) if sym.index else None
-        parts = [f'"{sym.name}"']
+        parts = [repr(sym.name)]
         if idx:
             parts.append(f"index={idx}")
-        parts.append(f'domain="{sym.domain}"')
+        parts.append(f"domain={sym.domain!r}")
         parts.append(f"bounds={sym.bounds}")
-        parts.append(f'units="{sym.units}"')
-        parts.append(f'description="{sym.description}"')
+        parts.append(f"units={str(sym.units)!r}")
+        parts.append(f"description={sym.description!r}")
         lines.append(f'{sym.name} = Variable({", ".join(parts)})')
     return "\n".join(lines) + "\n"
 
@@ -146,12 +146,12 @@ def _generate_expressions(registry: Registry) -> str:
         idx = list(sym.index) if sym.index else None
         params = _lambda_params(sym.index)
         body = _render_expr(sym.expr_tree)
-        parts = [f'"{sym.name}"']
+        parts = [repr(sym.name)]
         parts.append(f"definition=lambda {params}: {body}")
         if idx:
             parts.append(f"index={idx}")
-        parts.append(f'units="{sym.units}"')
-        parts.append(f'description="{sym.description}"')
+        parts.append(f"units={str(sym.units)!r}")
+        parts.append(f"description={sym.description!r}")
         lines.append(f'{sym.name} = Expression({", ".join(parts)})')
     return "\n".join(lines) + "\n"
 
@@ -166,12 +166,12 @@ def _generate_constraints(registry: Registry) -> str:
         over = list(sym.over) if sym.over else None
         params = _lambda_params(sym.over)
         body = _render_expr(sym.expr_tree)
-        parts = [f'"{sym.name}"']
+        parts = [repr(sym.name)]
         parts.append(f"expr=lambda {params}: {body}")
         if over:
             parts.append(f"over={over}")
-        parts.append(f'type="{sym.constraint_type}"')
-        parts.append(f'description="{sym.description}"')
+        parts.append(f"type={sym.constraint_type!r}")
+        parts.append(f"description={sym.description!r}")
         lines.append(f'Constraint({", ".join(parts)})')
     return "\n".join(lines) + "\n"
 
@@ -184,10 +184,10 @@ def _generate_objectives(registry: Registry) -> str:
     ]
     for sym in _symbols_of_type(registry, ObjectiveSymbol):
         body = _render_expr(sym.expr_tree)
-        parts = [f'"{sym.name}"']
+        parts = [repr(sym.name)]
         parts.append(f"expr=lambda: {body}")
-        parts.append(f'sense="{sym.sense}"')
-        parts.append(f'description="{sym.description}"')
+        parts.append(f"sense={sym.sense!r}")
+        parts.append(f"description={sym.description!r}")
         lines.append(f'Objective({", ".join(parts)})')
     return "\n".join(lines) + "\n"
 

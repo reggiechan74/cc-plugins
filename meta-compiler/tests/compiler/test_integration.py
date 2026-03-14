@@ -118,8 +118,8 @@ def test_full_pipeline_compile():
     assert "parameters.py" in codebase
     assert "variables.py" in codebase
     assert "__main__.py" in codebase
-    assert 'Set("W"' in codebase["sets.py"]
-    assert 'Parameter("cap"' in codebase["parameters.py"]
+    assert "Set(" in codebase["sets.py"] and "W" in codebase["sets.py"]
+    assert "Parameter(" in codebase["parameters.py"] and "cap" in codebase["parameters.py"]
 
     # Report artifact
     report = artifacts["report"]

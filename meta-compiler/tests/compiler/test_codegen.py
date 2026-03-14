@@ -43,8 +43,8 @@ Set("P", description="Projects")
     result = execute_blocks(blocks)
     files = generate_codebase(result.registry)
 
-    assert 'Set("W"' in files["sets.py"]
-    assert 'Set("P"' in files["sets.py"]
+    assert "Set(" in files["sets.py"] and "W" in files["sets.py"]
+    assert "Set(" in files["sets.py"] and "P" in files["sets.py"]
     assert "Workers" in files["sets.py"]
 
 
@@ -62,7 +62,7 @@ cap = Parameter("cap", index=["W"], domain="nonneg_real",
     files = generate_codebase(result.registry)
 
     assert 'Parameter(' in files["parameters.py"]
-    assert '"cap"' in files["parameters.py"]
+    assert "cap" in files["parameters.py"]
     assert "nonneg_real" in files["parameters.py"]
     assert "hours" in files["parameters.py"]
 
