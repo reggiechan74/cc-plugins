@@ -1,6 +1,7 @@
 from meta_compiler.compiler.report import generate_report, Report
 from meta_compiler.compiler.parser import parse_document
 from meta_compiler.compiler.executor import execute_blocks
+from meta_compiler.registry import registry
 
 
 def test_report_symbol_table():
@@ -93,3 +94,17 @@ $$y = 2$$
 
     assert report.coverage["total_math"] == 2
     assert report.coverage["covered_math"] == 1
+
+
+def test_report_generates_without_expr_tree():
+    registry.reset()
+    registry.data_store = {"W": ["a"], "cap": {"a": 40}}
+    registry.register_set("W", description="Workers")
+    registry.register_parameter("cap", index="W", units="hours", description="Cap")
+    registry.register_constraint("check", over="W", constraint_type="hard",
+                                 description="Check", expr=lambda i: True)
+    blocks = parse_document("# test\n$$x$$\n```python:validate\nSet('W')\n```\n")
+    report = generate_report(registry, blocks)
+    assert report.symbol_table is not None
+    text = report.to_text()
+    assert "cap" in text
