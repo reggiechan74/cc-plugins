@@ -42,3 +42,28 @@ def test_constraint_duplicate_raises(fresh_registry):
 def test_constraint_undefined_set_raises(fresh_registry):
     with pytest.raises(ValueError, match='references set "W"'):
         Constraint("bad", expr=lambda i: i, over=["W"], description="Bad")
+
+
+from meta_compiler.registry import Registry
+
+def test_register_constraint_stores_callable():
+    reg = Registry()
+    reg.register_set("W", description="Workers")
+    fn = lambda i: True
+    reg.register_constraint("cap_check", over="W", constraint_type="hard",
+                            description="Check capacity", expr=fn)
+    sym = reg.symbols["cap_check"]
+    assert sym.expr is fn
+
+def test_registry_with_data_store():
+    reg = Registry()
+    reg.data_store["cap"] = {"alice": 40, "bob": 35}
+    reg.register_set("W", description="Workers")
+    proxy = reg.register_parameter("cap", index="W", units="hours", description="Cap")
+    # Proxy should be data-backed — returns real value, not RuntimeError
+    assert proxy["alice"] == 40
+
+def test_registry_access_log_exists():
+    reg = Registry()
+    assert hasattr(reg, "access_log")
+    assert isinstance(reg.access_log, set)

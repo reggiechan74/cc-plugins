@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from meta_compiler.expr import SetIterator
 from meta_compiler.proxy import SymbolProxy
 from meta_compiler.symbols import (
     ConstraintSymbol,
@@ -18,7 +17,7 @@ from meta_compiler.symbols import (
     Symbol,
     VariableSymbol,
 )
-from meta_compiler.units import Unit, parse_unit
+from meta_compiler.units import parse_unit
 
 
 @dataclass
@@ -35,11 +34,19 @@ class Registry:
     def __init__(self) -> None:
         self.symbols: dict[str, Symbol] = {}
         self._registration_order: list[str] = []
+        self.data_store: dict[str, dict] = {}
+        self.access_log: set[str] = set()
+        self._exec_namespace: dict | None = None  # set by executor
+        self._current_block_source: str | None = None  # set by executor per block
 
     def reset(self) -> None:
         """Clear all symbols — used between tests."""
         self.symbols.clear()
         self._registration_order.clear()
+        self.data_store.clear()
+        self.access_log.clear()
+        self._exec_namespace = None
+        self._current_block_source = None
 
     def _register(self, name: str, symbol: Symbol) -> None:
         """Register a symbol, raising on conflicts."""
@@ -53,9 +60,9 @@ class Registry:
         self.symbols[name] = symbol
         self._registration_order.append(name)
 
-    def _require_sets(self, index: tuple[str, ...], context: str) -> None:
-        """Verify that all index sets exist."""
-        for set_name in index:
+    def _require_sets(self, *set_names: str, context: str = "") -> None:
+        """Verify that all named sets exist."""
+        for set_name in set_names:
             if set_name not in self.symbols:
                 defined = ", ".join(sorted(self.symbols.keys()))
                 raise ValueError(
@@ -68,165 +75,153 @@ class Registry:
                     f"but it is registered as {type(self.symbols[set_name]).__name__}"
                 )
 
-    def register_set(self, name: str, description: str) -> SymbolProxy:
+    def _make_proxy(self, name: str) -> SymbolProxy:
+        """Create a data-backed proxy and auto-inject into exec namespace."""
+        proxy = SymbolProxy(name, data=self.data_store.get(name), access_log=self.access_log)
+        if self._exec_namespace is not None:
+            self._exec_namespace[name] = proxy
+        return proxy
+
+    def _normalize_index(self, index) -> tuple[str, ...] | None:
+        """Normalize index argument to tuple or None."""
+        if index is None:
+            return None
+        if isinstance(index, str):
+            return (index,)
+        if isinstance(index, (list, tuple)):
+            return tuple(index)
+        raise TypeError(f"index must be str, list, tuple, or None, got {type(index).__name__}")
+
+    def register_set(self, name: str, *, description: str = "") -> SymbolProxy:
         """Register an index set."""
         symbol = SetSymbol(name=name, description=description)
         self._register(name, symbol)
-        return SymbolProxy(name)
+        return self._make_proxy(name)
 
     def register_parameter(
         self,
         name: str,
-        index: list[str],
-        domain: str,
-        units: str,
-        description: str,
+        *,
+        index=None,
+        domain: str = "real",
+        units: str = "dimensionless",
+        description: str = "",
     ) -> SymbolProxy:
         """Register a parameter with index and unit validation."""
-        idx = tuple(index)
-        self._require_sets(idx, f'Parameter "{name}"')
+        idx = self._normalize_index(index)
+        if idx:
+            self._require_sets(*idx, context=f'Parameter "{name}"')
         symbol = ParameterSymbol(
             name=name, index=idx, domain=domain,
-            units=parse_unit(units), description=description,
+            units=units, description=description,
         )
         self._register(name, symbol)
-        return SymbolProxy(name)
+        return self._make_proxy(name)
 
     def register_variable(
         self,
         name: str,
-        index: list[str],
-        domain: str,
-        bounds: tuple[float | None, float | None],
-        units: str,
-        description: str,
+        *,
+        index=None,
+        domain: str = "continuous",
+        bounds: tuple[float | None, float | None] = (None, None),
+        units: str = "dimensionless",
+        description: str = "",
     ) -> SymbolProxy:
         """Register a decision variable with index validation."""
-        idx = tuple(index)
-        self._require_sets(idx, f'Variable "{name}"')
+        idx = self._normalize_index(index)
+        if idx:
+            self._require_sets(*idx, context=f'Variable "{name}"')
         symbol = VariableSymbol(
             name=name, index=idx, domain=domain, bounds=bounds,
-            units=parse_unit(units), description=description,
+            units=units, description=description,
         )
         self._register(name, symbol)
-        return SymbolProxy(name)
+        return self._make_proxy(name)
 
     def register_expression(
         self,
         name: str,
-        index: list[str],
-        units: str,
-        description: str,
+        *,
         definition: object,
+        index=None,
+        units: str = "dimensionless",
+        description: str = "",
     ) -> SymbolProxy:
-        """Register a derived expression by capturing its lambda."""
-        idx = tuple(index)
-        self._require_sets(idx, f'Expression "{name}"')
-        expr_tree = self._capture_lambda(definition, idx, f'Expression "{name}"')
-        symbol = ExpressionSymbol(
-            name=name, index=idx, units=parse_unit(units),
-            description=description, expr_tree=expr_tree,
+        """Register a derived expression by storing its callable directly."""
+        idx = self._normalize_index(index)
+        if idx:
+            self._require_sets(*idx, context=f'Expression "{name}"')
+        if self._current_block_source and not hasattr(definition, "_source_text"):
+            definition._source_text = self._current_block_source
+        sym = ExpressionSymbol(
+            name=name, index=idx, units=units,
+            description=description, expr=definition,
         )
-        self._register(name, symbol)
-        return SymbolProxy(name)
+        self._register(name, sym)
+        return self._make_proxy(name)
 
     def register_constraint(
         self,
         name: str,
-        over: list[str],
-        constraint_type: str,
-        description: str,
+        *,
         expr: object,
+        over=None,
+        constraint_type: str = "hard",
+        description: str = "",
     ) -> None:
-        """Register a constraint by capturing its lambda."""
-        over_tuple = tuple(over)
-        self._require_sets(over_tuple, f'Constraint "{name}"')
-        expr_tree = self._capture_lambda(expr, over_tuple, f'Constraint "{name}"')
-        symbol = ConstraintSymbol(
-            name=name, over=over_tuple, constraint_type=constraint_type,
-            description=description, expr_tree=expr_tree,
+        """Register a constraint by storing its callable directly."""
+        over_str = over if isinstance(over, str) or over is None else over[0] if over else None
+        if over_str:
+            self._require_sets(over_str, context=f'Constraint "{name}"')
+        if self._current_block_source and not hasattr(expr, "_source_text"):
+            expr._source_text = self._current_block_source
+        sym = ConstraintSymbol(
+            name=name, over=over_str, constraint_type=constraint_type,
+            description=description, expr=expr,
         )
-        self._register(name, symbol)
+        self._register(name, sym)
 
     def register_objective(
         self,
         name: str,
-        sense: str,
-        description: str,
+        *,
         expr: object,
+        sense: str = "maximize",
+        description: str = "",
     ) -> None:
-        """Register an objective by capturing its lambda."""
-        expr_tree = self._capture_lambda(expr, (), f'Objective "{name}"')
-        symbol = ObjectiveSymbol(
-            name=name, sense=sense, description=description,
-            expr_tree=expr_tree,
+        """Register an objective by storing its callable directly."""
+        if self._current_block_source and not hasattr(expr, "_source_text"):
+            expr._source_text = self._current_block_source
+        sym = ObjectiveSymbol(
+            name=name, sense=sense, description=description, expr=expr,
         )
-        self._register(name, symbol)
+        self._register(name, sym)
 
-    def _capture_lambda(
-        self, fn: object, index: tuple[str, ...], context: str
-    ) -> "ExprNode":
-        """Call a lambda with symbolic placeholders to capture its expression tree."""
-        from meta_compiler.expr import _EXPR_NODE_TYPES
-
-        if not callable(fn):
-            raise TypeError(f"{context}: definition must be callable, got {type(fn).__name__}")
-
-        # Create symbolic placeholder arguments bound positionally to index sets
-        placeholders = [_Placeholder(set_name) for set_name in index]
-        try:
-            result = fn(*placeholders)
-        except Exception as e:
-            raise ValueError(
-                f"{context}: failed to capture lambda expression: {e}"
-            ) from e
-
-        if not isinstance(result, _EXPR_NODE_TYPES):
-            raise TypeError(
-                f"{context}: lambda must return an expression tree node, "
-                f"got {type(result).__name__}"
-            )
-        return result
-
-    def s(self, set_name: str) -> SetIterator:
-        """Return a symbolic set iterator for use in for-loops within lambdas."""
-        if set_name not in self.symbols:
+    def s(self, name: str):
+        """Return the members of a registered set for iteration."""
+        self.access_log.add(name)
+        if name not in self.symbols:
             defined = ", ".join(sorted(self.symbols.keys()))
             raise ValueError(
-                f'BLOCK: S("{set_name}") references set "{set_name}" '
+                f'BLOCK: S("{name}") references set "{name}" '
                 f"which is not registered. Defined symbols: {defined}"
             )
-        if not isinstance(self.symbols[set_name], SetSymbol):
+        if not isinstance(self.symbols[name], SetSymbol):
             raise ValueError(
-                f'BLOCK: S("{set_name}") — "{set_name}" is not a Set'
+                f'BLOCK: S("{name}") — "{name}" is not a Set'
             )
-        return SetIterator(set_name)
+        if name in self.data_store:
+            data = self.data_store[name]
+            if isinstance(data, list):
+                return data
+            raise RuntimeError(f"Set '{name}' fixture data must be a list, got {type(data).__name__}")
+        raise RuntimeError(f"No fixture data for set '{name}'. Add a python:fixture block.")
 
     def run_tests(self, *, strict: bool = False) -> TestResult:
-        """Run cumulative integrity checks.
-
-        Args:
-            strict: If True, orphans are errors (compilation mode).
-                    If False, orphans are warnings (authoring mode).
-        """
+        """Run cumulative integrity checks."""
         from meta_compiler.checks import run_all_checks
         return run_all_checks(self, strict=strict)
-
-
-class _Placeholder:
-    """Symbolic placeholder for a lambda parameter bound to an index set.
-
-    Converts to its set name when used as a string (for IndexExpr indices).
-    """
-
-    def __init__(self, set_name: str) -> None:
-        self._set_name = set_name
-
-    def __str__(self) -> str:
-        return self._set_name
-
-    def __repr__(self) -> str:
-        return f"_Placeholder({self._set_name!r})"
 
 
 # Global registry instance
