@@ -182,3 +182,87 @@ def test_compile_produces_paper_report_runner():
 def test_compile_no_codebase_key():
     result = compile_document(MODEL_DOC)
     assert "codebase" not in result
+
+
+FULL_MODEL = '''# Workforce Assignment Model
+
+## Sets
+
+```python:fixture
+W = ["alice", "bob", "carol"]
+P = ["projA", "projB"]
+cap = {"alice": 40, "bob": 35, "carol": 40}
+demand = {"projA": 60, "projB": 45}
+x = {("alice", "projA"): 20, ("alice", "projB"): 15,
+     ("bob", "projA"): 20, ("bob", "projB"): 10,
+     ("carol", "projA"): 20, ("carol", "projB"): 20}
+```
+
+```python:validate
+Set("W", description="Workers")
+Set("P", description="Projects")
+```
+
+## Parameters
+
+$$c_i = \\text{weekly capacity for worker } i$$
+
+```python:validate
+Parameter("cap", index="W", units="hours", description="Weekly capacity")
+Parameter("demand", index="P", units="hours", description="Project demand")
+```
+
+## Decision Variables
+
+$$x_{i,p} = \\text{hours assigned}$$
+
+```python:validate
+Variable("x", index=("W", "P"), domain="continuous", bounds=(0, None), units="hours", description="Assignment hours")
+```
+
+## Constraints
+
+$$\\sum_{i \\in W} x_{i,p} \\geq d_p \\quad \\forall p \\in P$$
+
+```python:validate
+Constraint("meet_demand", over="P", expr=lambda p: sum(x[i, p] for i in S("W")) >= demand[p])
+```
+
+$$\\sum_{p \\in P} x_{i,p} \\leq c_i \\quad \\forall i \\in W$$
+
+```python:validate
+Constraint("respect_cap", over="W", expr=lambda i: sum(x[i, p] for p in S("P")) <= cap[i])
+```
+
+## Objective
+
+```python:validate
+Objective("min_hours", sense="minimize", expr=lambda: sum(x[i, p] for i in S("W") for p in S("P")))
+```
+'''
+
+
+def test_full_model_check_passes():
+    from meta_compiler.compiler import check_document
+    result = check_document(FULL_MODEL)
+    assert result.passed, f"Errors: {result.errors}"
+
+
+def test_full_model_compiles():
+    from meta_compiler.compiler import compile_document
+    output = compile_document(FULL_MODEL)
+    assert "Workforce" in output["paper"]
+    assert "python:fixture" not in output["paper"]
+    assert "python:validate" not in output["paper"]
+    assert len(output["report"].symbol_table) > 0
+
+
+def test_full_model_structural_mode():
+    """Same model without fixtures — structural checks only."""
+    import re
+    structural_doc = re.sub(
+        r'```python:fixture\n.*?```', '', FULL_MODEL, flags=re.DOTALL
+    )
+    from meta_compiler.compiler import check_document
+    result = check_document(structural_doc)
+    assert result.passed, f"Structural errors: {result.errors}"
