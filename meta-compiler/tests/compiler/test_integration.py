@@ -97,13 +97,13 @@ Objective("maximize_utility",
 
 
 def test_full_pipeline_check():
-    """Full document passes validation."""
+    """Full document passes validation (structural mode, no fixtures)."""
     result = check_document(WORKFORCE_DOC)
     assert result.passed, f"Errors: {result.errors}"
 
 
 def test_full_pipeline_compile():
-    """Full document compiles to all three artifacts."""
+    """Full document compiles to paper, runner, and report."""
     artifacts = compile_document(WORKFORCE_DOC)
 
     # Paper artifact
@@ -112,19 +112,14 @@ def test_full_pipeline_compile():
     assert "python:validate" not in paper
     assert "Parameter(" not in paper
 
-    # Codebase artifact
-    codebase = artifacts["codebase"]
-    assert "sets.py" in codebase
-    assert "parameters.py" in codebase
-    assert "variables.py" in codebase
-    assert "__main__.py" in codebase
-    assert "Set(" in codebase["sets.py"] and "W" in codebase["sets.py"]
-    assert "Parameter(" in codebase["parameters.py"] and "cap" in codebase["parameters.py"]
+    # Runner artifact (replaces codebase in v2)
+    assert "runner" in artifacts
+    assert "check_document" in artifacts["runner"]
 
     # Report artifact
     report = artifacts["report"]
     assert report.test_passed
-    assert len(report.symbol_table) == 10  # W, P, T, cap, h, x, load, U, capacity_limit, maximize_utility
+    assert len(report.symbol_table) == 10
     assert report.coverage["total_math"] > 0
 
 
@@ -138,7 +133,7 @@ def test_full_pipeline_paper_depth_executive():
 
 def test_full_pipeline_compile_to_disk(tmp_path):
     """Full compile writes files to disk via CLI."""
-    doc_path = tmp_path / "model.math.md"
+    doc_path = tmp_path / "model.model.md"
     doc_path.write_text(WORKFORCE_DOC)
 
     out_dir = tmp_path / "output"
@@ -150,11 +145,9 @@ def test_full_pipeline_compile_to_disk(tmp_path):
     )
     assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
     assert (out_dir / "paper.md").exists()
-    assert (out_dir / "model" / "sets.py").exists()
-    assert (out_dir / "model" / "parameters.py").exists()
+    assert (out_dir / "runner.py").exists()
     assert (out_dir / "report.txt").exists()
 
-    # Verify paper content
     paper = (out_dir / "paper.md").read_text()
     assert "python:validate" not in paper
 

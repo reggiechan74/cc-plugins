@@ -110,7 +110,7 @@ def _check_cycles(registry: "Registry", errors: list[str]):
         sym = registry.symbols[name]
         if sym.expr is not None:
             refs = _extract_names_from_source(sym.expr, registry)
-            adj[name] = refs & expr_names
+            adj[name] = (refs & expr_names) - {name}  # exclude self-references
 
     WHITE, GRAY, BLACK = 0, 1, 2
     color = {name: WHITE for name in expr_names}

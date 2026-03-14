@@ -47,11 +47,11 @@ load = Expression("load",
     result = execute_blocks(blocks)
     report = generate_report(result.registry, blocks)
 
-    # load depends on x and h
+    # In v2, dependency graph uses structural refs (index/over fields)
+    # load has index=("W",), so it depends on W
     load_deps = [e for e in report.dependencies if e["from"] == "load"]
     dep_targets = [e["to"] for e in load_deps]
-    assert "x" in dep_targets
-    assert "h" in dep_targets
+    assert "W" in dep_targets
 
 
 def test_report_to_text():
