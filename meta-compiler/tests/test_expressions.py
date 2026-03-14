@@ -10,6 +10,16 @@ from meta_compiler.expr import (
 from meta_compiler.symbols import ExpressionSymbol
 
 
+def test_expression_symbol_stores_callable():
+    fn = lambda: 42
+    sym = ExpressionSymbol(
+        name="total", index=None, units="hours",
+        description="Total hours", expr=fn,
+    )
+    assert sym.expr is fn
+    assert sym.name == "total"
+
+
 def test_simple_expression(fresh_registry):
     Set("W", description="Workers")
     Set("P", description="Projects")

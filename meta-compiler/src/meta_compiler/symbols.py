@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from meta_compiler.expr import ExprNode
-from meta_compiler.units import Unit
-
 
 @dataclass(frozen=True)
 class SetSymbol:
@@ -19,9 +16,9 @@ class SetSymbol:
 class ParameterSymbol:
     """A parameter like cap_i (capacity of worker i)."""
     name: str
-    index: tuple[str, ...]
+    index: tuple[str, ...] | None
     domain: str
-    units: Unit
+    units: str
     description: str
 
 
@@ -29,10 +26,10 @@ class ParameterSymbol:
 class VariableSymbol:
     """A decision variable like x_{ijp} (allocation fraction)."""
     name: str
-    index: tuple[str, ...]
+    index: tuple[str, ...] | None
     domain: str
     bounds: tuple[float | None, float | None]
-    units: Unit
+    units: str
     description: str
 
 
@@ -40,20 +37,20 @@ class VariableSymbol:
 class ExpressionSymbol:
     """A derived expression like load_i (total load on worker i)."""
     name: str
-    index: tuple[str, ...]
-    units: Unit
+    index: tuple[str, ...] | None
+    units: str
     description: str
-    expr_tree: ExprNode
+    expr: object  # callable in v2
 
 
 @dataclass(frozen=True)
 class ConstraintSymbol:
     """A constraint like capacity_limit (no worker exceeds capacity)."""
     name: str
-    over: tuple[str, ...]
+    over: str | None
     constraint_type: str  # "hard" or "soft"
     description: str
-    expr_tree: ExprNode
+    expr: object  # callable in v2
 
 
 @dataclass(frozen=True)
@@ -62,7 +59,7 @@ class ObjectiveSymbol:
     name: str
     sense: str  # "maximize" or "minimize"
     description: str
-    expr_tree: ExprNode
+    expr: object  # callable in v2
 
 
 # Union of all symbol types
