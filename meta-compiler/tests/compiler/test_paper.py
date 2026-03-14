@@ -1,5 +1,5 @@
 from meta_compiler.compiler.paper import generate_paper
-from meta_compiler.compiler.parser import parse_document
+from meta_compiler.compiler.parser import parse_document, FixtureBlock
 
 
 def test_paper_strips_validation_blocks():
@@ -84,3 +84,30 @@ def test_paper_no_depth_filter():
     paper = generate_paper(blocks)
     assert "Executive Summary" in paper
     assert "Appendix" in paper
+
+
+def test_paper_strips_fixture_blocks():
+    source = '''# Model
+
+Some prose.
+
+```python:fixture
+cap = {"alice": 40}
+```
+
+$$x + y$$
+
+```python:validate
+Set("W")
+```
+
+More prose.
+'''
+    blocks = parse_document(source)
+    paper = generate_paper(blocks)
+    assert "python:fixture" not in paper
+    assert "cap =" not in paper
+    assert "Some prose" in paper
+    assert "$$x + y$$" in paper
+    assert "More prose" in paper
+    assert "python:validate" not in paper

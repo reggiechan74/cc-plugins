@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from meta_compiler.compiler.parser import Block, MathBlock, ProseBlock
+from meta_compiler.compiler.parser import Block, MathBlock, ProseBlock, ValidationBlock, FixtureBlock
 
 
 def generate_paper(
@@ -30,8 +30,8 @@ def generate_paper(
             parts.append(block.content)
         elif isinstance(block, MathBlock):
             parts.append(block.raw)
-            parts.append("")  # Blank line after math
-        # ValidationBlocks are silently skipped
+            parts.append("")
+        # ValidationBlocks and FixtureBlocks are silently skipped
 
     return "\n".join(parts).strip() + "\n"
 
