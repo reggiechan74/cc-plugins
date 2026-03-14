@@ -47,6 +47,12 @@
       "version": "0.1.0"
     },
     {
+      "name": "model",
+      "source": "./meta-compiler",
+      "description": "Live validation for mathematical model documents (.math.md). Auto-validates on every edit, hard blocks on inconsistency.",
+      "version": "0.1.0"
+    },
+    {
       "name": "nano-banana",
       "source": "./nano-banana-plugin",
       "description": "AI image generation and presentation deck creation via Gemini API. 25 style presets, batch deck generation, and report-to-slides decomposition.",
