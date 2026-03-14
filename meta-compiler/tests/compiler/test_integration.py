@@ -112,9 +112,11 @@ def test_full_pipeline_compile():
     assert "python:validate" not in paper
     assert "Parameter(" not in paper
 
-    # Runner artifact (replaces codebase in v2)
+    # Runner artifact — standalone script with inlined fixture + validate code
     assert "runner" in artifacts
-    assert "check_document" in artifacts["runner"]
+    runner = artifacts["runner"]
+    assert "registry.run_tests" in runner
+    assert "Parameter(" in runner  # contains inlined validation code
 
     # Report artifact
     report = artifacts["report"]
@@ -176,7 +178,7 @@ def test_compile_produces_paper_report_runner():
     assert "runner" in result
     assert "python:fixture" not in result["paper"]
     assert "python:validate" not in result["paper"]
-    assert "check_document" in result["runner"]
+    assert "registry.run_tests" in result["runner"]
 
 
 def test_compile_no_codebase_key():

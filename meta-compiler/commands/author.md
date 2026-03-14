@@ -1,0 +1,218 @@
+---
+description: "Author a new math paper interactively — ideate, formalize, validate section-by-section"
+argument-hint: "[path-to-file.model.md]"
+allowed-tools: ["Bash", "Read", "Write", "Edit", "Glob"]
+arguments:
+  - name: "file"
+    description: "Path to a .model.md file (new or existing to resume)"
+---
+
+# Author a Math Paper
+
+Create a new `.model.md` document through interactive ideation. You describe concepts — Claude formalizes them into complete paper sections with prose, display math, and validated Python blocks. Each section is written and validated before moving on.
+
+## Step 1: Initialize
+
+**New paper** (no path given, or file doesn't exist):
+
+1. Ask the user to describe the problem domain. Accept anything from a vague concept ("I want to model workforce optimization under constraints") to a specific sketch ("I have sets I, J, P and an allocation variable x_ijp").
+2. Create the `.model.md` file with YAML frontmatter:
+   ```yaml
+   ---
+   title: <derived from user description>
+   date: <today>
+   author: <ask or infer>
+   version: 0.1
+   ---
+   ```
+3. Initialize an empty running symbol name registry (a list you maintain across sections).
+4. Proceed to Step 2.
+
+**Resume** (path to an existing `.model.md` file):
+
+1. Read the file.
+2. Run the meta-compiler check to rebuild the symbol state:
+   ```bash
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli check "<file_path>"
+   ```
+3. Rebuild the running symbol name registry from the existing validate blocks (read all symbol names already registered).
+4. Show the user a summary: number of sections, symbol count by type, any warnings.
+5. Ask where they want to continue. Proceed to the authoring loop (Step 3).
+
+## Step 2: Opening section
+
+Write an Introduction section into the `.model.md` file based on the user's initial description. This section contains:
+- A `#` heading and introductory prose explaining the problem domain
+- No math blocks or validation blocks (the Introduction frames the problem; formalization begins in subsequent sections)
+
+Write it to the file immediately. Ask the user to approve, revise, or redirect before continuing to the authoring loop.
+
+## Step 3: Authoring loop
+
+Repeat for each concept the user wants to formalize:
+
+### 3.1 Receive input
+
+The user provides the next concept. This can be:
+- A vague idea: "I need a way to measure employee reliability"
+- A specific sketch: "Define R_i as a proxy score on {0, 4, 8, 12}"
+- A relationship: "Total load should not exceed capacity"
+- A request for suggestion: "What would this model need next?"
+
+If the user asks what's needed next, review the current symbol registry and suggest what a complete model typically requires (e.g., "You have sets and parameters but no constraints or objective yet").
+
+### 3.2 Formalize
+
+Write a complete section consisting of:
+
+a. **Section heading** (`##` or `###` as appropriate)
+
+b. **Prose** — paper-quality narrative explaining the concept, its motivation, its relationship to previously defined symbols, and any assumptions or domain constraints.
+
+c. **Display math** — `$$...$$` blocks with the formal mathematical definitions.
+
+d. **`python:fixture` block** — realistic test data with 3-5 concrete members per set. Fixture data must cover ALL index combinations that will be accessed by the validate block. Reuse set members from earlier fixtures for consistency (e.g., if employees are `["alice", "bob", "carol"]` in section 1, use the same names throughout).
+
+e. **`python:validate` block** — register the symbols using the meta-compiler API:
+   - `Set`, `Parameter`, `Variable`, `Expression`, `Constraint`, `Objective`
+   - End with `registry.run_tests()`
+
+### 3.3 Check names
+
+Before presenting the section to the user, verify:
+- No proposed symbol name collides with any name in the running symbol name registry
+- All index sets referenced in `Parameter`, `Variable`, `Expression` are already registered (or being registered in this block)
+- Constraint names are distinct from all other symbol names (they share the global namespace)
+
+If a collision is detected, rename the new symbol before presenting.
+
+### 3.4 Present and get approval
+
+Show the complete section to the user. Ask them to approve, request changes, or skip.
+
+**Do not proceed until the user explicitly approves.**
+
+### 3.5 Write and validate
+
+After approval:
+
+1. Insert the section into the `.model.md` file at the end (before any Conclusion section if one exists).
+
+2. Run the meta-compiler check on the full document:
+   ```bash
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli check "<file_path>"
+   ```
+
+3. **If the check fails:** Show the errors, fix them in the `.model.md` file, and re-run. Repeat until the check passes (errors only — orphan warnings are expected). Do NOT proceed to the next section until the current one passes.
+
+4. **If the check passes:** Update the running symbol name registry with all newly registered names. Tell the user the section is validated and ask for the next concept.
+
+### 3.6 Between sections
+
+At any point between sections, the user may:
+
+- **View the symbol table:** Run `status` or show the running registry.
+- **Revise a previous section:** Edit the section in place (modify prose, math, or validation blocks), then re-run the full-document check to ensure consistency.
+- **Ask for suggestions:** Claude reviews the current model and suggests what's missing or what could be strengthened.
+- **Signal completion:** Say "done", "that's all", or similar. Proceed to Step 4.
+
+## Step 4: Completion
+
+When the user signals they are done:
+
+1. Run a final full-document check:
+   ```bash
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli check "<file_path>"
+   ```
+
+2. Show a summary:
+   - Total sections with math blocks
+   - Symbol count by type (Sets, Parameters, Variables, Expressions, Constraints, Objectives)
+   - Any warnings (orphan symbols, etc.)
+
+3. Ask the user:
+   > "Would you like me to compile now? This produces a clean paper (prose + math only), a standalone runner.py (all validation logic as a self-contained script), and a validation report. Or you can do this later with `/model:compile`."
+
+4. If the user wants to compile, run:
+   ```bash
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli compile "<file_path>" --output "<output_dir>"
+   ```
+   Show what was generated. If strict-mode validation fails (orphan errors), offer to fix or compile without strict.
+
+## API reference and known constraints
+
+```python
+from meta_compiler import Set, Parameter, Variable, Expression, Constraint, Objective, S, registry
+
+# Sets — fixture data must be a list
+Set("W", description="Set of workers")
+
+# Parameters (indexed, with units) — fixture data must be a dict
+Parameter("cap", index=["W"], domain="nonneg_real", units="hours",
+          description="Capacity per worker")
+
+# Variables (indexed, with bounds) — fixture data must be a dict
+Variable("x", index=["W", "T"], domain="continuous", bounds=(0, None),
+         units="hours", description="Hours assigned")
+
+# Expressions — define derived quantities
+# NOTE: Expression results are NOT available through proxy indexing.
+# You cannot do `load[i]` in a Constraint lambda — the proxy only
+# looks up fixture data, and Expressions have no fixture data.
+# Instead, inline the computation in Constraints/Objectives.
+Expression("load",
+           definition=lambda i: sum(x[i, t] for t in S("T")),
+           index=["W"], units="hours",
+           description="Total load per worker")
+
+# Constraints — lambda must take exactly ONE positional argument
+# The `over` parameter accepts a SINGLE set name (not a list of sets).
+# For multi-index iteration, use `over` for the outer set and iterate
+# inner sets inside the lambda body.
+Constraint("cap_limit",
+           expr=lambda i: sum(x[i, t] for t in S("T")) <= cap[i],
+           over="W",
+           description="Load cannot exceed capacity")
+
+# WRONG — multi-set `over` does not work:
+#   over=["W", "T"]  ← only uses first element, lambda gets 1 arg
+#
+# WRONG — Expression proxy indexing does not work:
+#   expr=lambda i: load[i] <= cap[i]  ← raises "No fixture data for 'load'"
+#
+# RIGHT — inline the expression computation:
+#   expr=lambda i: sum(x[i, t] for t in S("T")) <= cap[i]
+
+# For multi-set constraints, iterate inner sets inside the lambda:
+Constraint("demand",
+           expr=lambda j: all(
+               sum(x[i, j, p] for i in S("W")) >= d[j, p]
+               for p in S("P")
+           ),
+           over="J",
+           description="Demand coverage for every project type and team")
+
+# Scalar parameters in Objective/Constraint lambdas:
+# SymbolProxy does not support arithmetic operators (* + - /).
+# For scalar (non-indexed) parameters, extract the raw value:
+#   alpha_val = registry.data_store["alpha"]
+# Then use alpha_val (a plain float) in the lambda.
+
+# Objectives — lambda takes ZERO arguments
+Objective("total_output",
+          expr=lambda: sum(
+              sum(x[i, t] for t in S("T"))
+              for i in S("W")
+          ),
+          sense="maximize",
+          description="Maximize total productive hours")
+
+# Always end with
+registry.run_tests()
+```
+
+### Symbol naming rules
+
+All symbol types (Sets, Parameters, Variables, Expressions, Constraints, Objectives) share a **single global namespace**. A Constraint named `"capacity"` collides with a Parameter named `"capacity"`. Use distinct, descriptive names:
+- Constraints: `"cap_limit"`, `"demand_coverage"`, `"effort_capacity"`
+- Parameters: `"cap"`, `"capacity_hours"`, `"d_min"`

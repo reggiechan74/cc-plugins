@@ -1,7 +1,7 @@
 # Reggie Chan's Claude Code Plugins
 
 <!-- badges-start -->
-[![Plugins](https://img.shields.io/badge/plugins-13-blue)](https://github.com/reggiechan74/cc-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-14-blue)](https://github.com/reggiechan74/cc-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-marketplace-blueviolet)](https://claude.ai/claude-code)
 [![GitHub Stars](https://img.shields.io/github/stars/reggiechan74/cc-plugins?style=flat&color=yellow)](https://github.com/reggiechan74/cc-plugins/stargazers)
@@ -32,21 +32,15 @@ Multi-agent verification system implementing organizational intelligence for pro
 - Multi-layer verification with independent critics implementing the Swiss cheese model
 - Specialized critic agents: planner, code-critic, security-critic, domain-critic
 - Domain specializations: financial, healthcare, legal
-- Automatic verification gates via PreToolUse and PostToolUse hooks
 - Per-project configuration with `.claude/code-coherence.local.md`
+- Hierarchical veto authority -- any critic can reject
 
-**Skills:**
+**Commands:**
 - `/coherence-check` - Full multi-agent verification workflow
 - `/plan-review` - Review execution plans with acceptance criteria
 - `/audit-trail` - Bidirectional decision history with search
 - `/acceptance-criteria` - Define and enforce success criteria
 - `/swiss-cheese-validation` - Multi-layer error checking with independence verification
-
-**Agents:**
-- **Planner** - Creates execution DAGs with pre-declared acceptance criteria
-- **Code Critic** - Validates syntax, logic, performance, style, complexity
-- **Security Critic** - OWASP Top 10, data exposure, timing attacks, supply chain
-- **Domain Critic** - Business logic validation (financial, healthcare, legal specializations)
 
 ---
 
@@ -60,28 +54,35 @@ Create professional course curricula for 1-2 day workshops using backward design
 ```
 
 **Features:**
-- Backward Design Framework: Start with learning outcomes, design assessments, then plan activities
-- Bloom's Taxonomy Integration: Create measurable learning objectives at appropriate cognitive levels
-- Rapid Course Creation: Generate complete curricula autonomously or step-by-step
-- Modular Architecture: Create courses optimized for 1-2 day weekend workshops
-- Professional Outputs: Course descriptions, outlines, lesson plans, rubrics, student materials
-- Template System: Save and reuse course structures for variants and iterations
+- Backward Design Framework with Bloom's Taxonomy integration
+- Rapid course creation: autonomous or step-by-step
+- Template system: save and reuse course structures
+- Universal Design for Learning (UDL) compliance
+- Virtual/hybrid delivery adaptation
+- Kirkpatrick L1-L4 evaluation planning
+- Course series design (101/201/301/401) with Bloom's band enforcement
 
 **Commands:**
 - `/create-course` - Initialize new course project with directory structure
-- `/generate-description` - Create student-facing course description
-- `/generate-outline` - Generate module structure with timing
+- `/assess-needs` - Conduct a training needs assessment
 - `/generate-objectives` - Create Bloom's-aligned learning objectives
-- `/generate-lesson-plans` - Generate detailed module-level lesson plans
 - `/generate-rubrics` - Create 1-5 scale analytical assessment rubrics
+- `/generate-outline` - Generate module structure with timing
+- `/generate-lesson-plans` - Generate detailed module-level lesson plans
+- `/generate-description` - Create student-facing course description
 - `/generate-artifacts` - Generate student handouts, instructor guides, etc.
+- `/generate-evaluation-plan` - Kirkpatrick L1-L4 evaluation plan
+- `/generate-transfer-plan` - Post-workshop transfer plan
+- `/generate-workshop-prep` - Dated preparation checklist for delivery
+- `/process-workshop-feedback` - Analyze feedback and generate improvement report
+- `/adapt-for-virtual` - Adapt curriculum for virtual or hybrid delivery
+- `/generate-review-package` - Stakeholder/SME review package
+- `/review-curriculum` - Validate curriculum quality and alignment
+- `/export-curriculum` - Export as combined document
+- `/design-series` - Design a leveled course series
 - `/save-as-template` - Save course structure as reusable template
 - `/create-from-template` - Create new course from existing template
-- `/review-curriculum` - Validate curriculum quality and alignment
-
-**Agents:**
-- **Curriculum Architect** - Autonomous agent that designs complete curricula from high-level requirements
-- **Quality Reviewer** - Validates alignment between outcomes, assessments, and activities
+- `/list-templates` - List available course templates
 
 ---
 
@@ -101,14 +102,12 @@ D3.js visualization skill for quickly creating any kind of data visualization.
 - Two workflows: direct implementation (fast) and creative mode (design philosophy + implementation)
 - Discovery interview: 3-round, 12-question process to understand requirements before building
 - Clean professional style: NYT/FT-inspired defaults with muted colors, clean axes, good typography
-- Single-screen layout: 100vh no-scroll default for easy PDF/screenshot export
-- Sample data generation: visualizations work immediately out of the box
 
 ---
 
 ### google-workspace-mcp
 
-Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code.
+Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code. Features OAuth auto-refresh, retry with backoff, read-only tool annotations, and optimized API batching.
 
 **Install:**
 ```bash
@@ -117,9 +116,10 @@ Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code.
 
 **Features:**
 - 22 Gmail tools: send, draft, read, search, modify, delete emails; label management; filters; attachments; threads; contact lookup
-- 6 Google Calendar tools: list calendars, list/create/get/update/delete events
-- OAuth 2.0 authentication with GCP credentials
-- Works with Gmail, Google Calendar, and Google People APIs
+- 7 Google Calendar tools: list calendars, create/get/update/delete events, multi-calendar parallel queries
+- OAuth auto-refresh with token persistence
+- Retry with exponential backoff for transient failures
+- In-memory caching with syncToken revalidation
 
 **Commands:**
 - `/authenticate` - Run OAuth flow for Gmail and Calendar servers
@@ -158,29 +158,14 @@ Plan and book kids' summer camps, March break programs, and PA day coverage with
 ```
 
 **Features:**
-- Schedule Planning: Build gap-free day-by-day coverage from last day of school through fall, including March break and PA days
-- Provider Research: Systematically discover and document camp providers with structured comparison files
-- Budget Tracking: Calculate costs across children, providers, and days/weeks with discount optimization and tax recovery estimates
-- Private School Support: Handle calendar mismatches between private schools and public board PA day/break schedules
-- Email Drafting: Generate inquiry, registration, waitlist, special needs, and cancellation emails
-- Pre-Saved Calendars: Ships with 12+ Ontario public school board calendars (TDSB, TCDSB, PDSB, DDSB, HDSB, YRDSB, and more) plus private schools (GIST, KCS)
-
-**Skills:**
-- **Setup** - Initialize research folder and family profile
-- **Camp Planning** - Ontario camp evaluation knowledge and quality indicators
-- **Budget Optimization** - Cost calculation, discount optimization, tax recovery
-- **Plan Summer** - Day-by-day summer coverage scheduling
-- **Plan March Break** - March break planning (handles 2-week private school breaks)
-- **Plan PA Days** - PA day lookup and single-day coverage
-- **Research Camps** - Provider discovery and documentation
-- **Draft Email** - Email composition for camp communications
-- **Add School Calendar** - Import school calendar from URL/PDF into reference data
-- **Generate Annual Schedule** - Consolidate all periods into one annual view with markdown + xlsx output
-- **Commute Matrix** - Automated commute calculation using Geoapify API
-
-**Agents:**
-- **Camp Researcher** - Autonomous web research creating provider files with daily and weekly rates
-- **Schedule Optimizer** - Builds and refines day-level schedules across constraints
+- Day-by-day scheduling as the primary unit with weekly summaries derived automatically
+- Full-year coverage: summer, PA days, winter break, March break in one annual view
+- Provider research with structured comparison files (daily and weekly rates)
+- Budget tracking with discount optimization and tax recovery estimates
+- Private school support: handle calendar mismatches with public board schedules
+- Email drafting: inquiry, registration, waitlist, special needs, and cancellation emails
+- Pre-saved calendars for 12+ Ontario public school boards plus private schools
+- Commute matrix with Geoapify API integration
 
 ---
 
@@ -207,6 +192,34 @@ Query Mississauga building permit data by address with filtering and summary sta
 
 ---
 
+### model
+
+Live validation for mathematical model documents (.model.md). Turns mathematical papers into validated, executable models with prose, LaTeX display math, and Python validation code in a single document.
+
+**Install:**
+```bash
+/plugin install model@cc-plugins
+```
+
+**Features:**
+- Incremental section-by-section authoring with live validation
+- Symbol registry: sets, parameters, variables, expressions, constraints, objectives
+- Phantom detection, collision checking, index validation, cycle detection, unit boundaries
+- Constraint satisfaction and objective evaluation against fixture data
+- Compile to clean paper, standalone runner.py, and validation report
+- Onboarding workflow for existing papers without validation
+
+**Commands:**
+- `/model:author [file]` - Author a new paper interactively with section-by-section validation
+- `/model:onboard <file>` - Convert an existing paper by adding validation blocks
+- `/model:check <file>` - Run validation pipeline against a .model.md document
+- `/model:status <file>` - Show symbol table, coverage, and orphan/phantom status
+- `/model:report <file>` - Generate full validation report
+- `/model:paper <file>` - Generate clean paper artifact (strips validation blocks)
+- `/model:compile <file>` - Produce all artifacts: clean paper, standalone runner, validation report
+
+---
+
 ### nano-banana
 
 AI image generation and presentation deck creation via Gemini API. 25 style presets, batch deck generation, and report-to-slides decomposition.
@@ -220,12 +233,13 @@ AI image generation and presentation deck creation via Gemini API. 25 style pres
 - 25 style presets across 6 categories: Technical, Business, Creative, UI/UX, Photography, Specialized
 - Image editing with up to 14 reference images per call
 - Batch deck generation from JSON specifications with resume support
-- Report-to-slides decomposition — convert markdown/PDF reports into presentation decks
-- Version-safe output — never overwrites existing files
+- 5 presentation presets: consulting, workshop, pitch, creative, notebooklm
+- Structured prompt schema with template assembly for presentation-quality slides
+- Report-to-slides decomposition -- convert markdown/PDF reports into presentation decks
+- Version-safe output -- never overwrites existing files
 
-**Skills:**
-- `nano-banana` - Image generation and editing via Gemini API
-- `/deck-prompt` - Decompose reports into deck specification JSON
+**Commands:**
+- `/deck-prompt <path>` - Decompose reports into deck specification JSON
 
 ---
 
@@ -243,14 +257,12 @@ Convert markdown research reports into interactive React presentation websites f
 - Tailwind CSS v4 + shadcn/ui with 8 built-in dark color themes
 - Interactive elements: calculators, scenario sliders, comparison tables, timelines
 - Knowledge vault with searchable full-text report content
-- Dark professional theme with refined typography
+- Dark professional theme with refined typography (DM Serif Display + IBM Plex Sans)
 - GitHub Pages ready with included deploy workflow
+- Auto-detects interactive opportunities from report content
 
 **Commands:**
 - `/report-to-web:generate <path>` - Parse a markdown report and generate a complete React site
-
-**Agents:**
-- **Site Builder** - Autonomous agent that parses reports and generates React projects
 
 ---
 
@@ -267,12 +279,10 @@ Generate portfolio-ready repository snapshots for resume and job documentation.
 - Automated git metadata collection: commits, contributors, timeline, tags
 - File statistics and lines-of-code analysis by language
 - Infrastructure and tooling detection (CI/CD, Docker, linting, tests)
-- Complexity hotspot detection: file sizes, function counts, nesting depth
-- Evolution analysis: churn hotspots, commit cadence, refactoring maturity
+- Complexity hotspot detection and evolution analysis
 - Import/dependency mapping with ASCII architecture diagrams
 - Code quality evidence: test ratios, type safety, error handling patterns
 - Professional portfolio-entry synthesis with technical architecture, skills, and business impact
-- Honest, evidence-based output — only claims what the code supports
 
 **Commands:**
 - `/resume-snapshot` - Generate a portfolio-quality markdown summary of the current repository
@@ -330,7 +340,7 @@ Generate and apply themed spinner verbs for Claude Code status messages. Include
 
 ### structured-english
 
-Hybrid Specification Format (HSF) — natural-language specs with @route decision tables, @config parameters, $variable threading, consolidated error tables, and prose instructions. Replaces SESF v4 formal blocks with markdown headers and bold list items while preserving structured notation where it adds value.
+Dual-audience specification format -- HSF v5 (prose instructions optimized for LLM execution) and SESF v4.1 (formal BEHAVIOR/PROCEDURE/RULE/STEP blocks optimized for human readers). Both share @route decision tables, @config parameters, $variable threading, consolidated error tables, and 3-tier scaling.
 
 **Install:**
 ```bash
@@ -338,20 +348,24 @@ Hybrid Specification Format (HSF) — natural-language specs with @route decisio
 ```
 
 **Features:**
-- Prose instructions with markdown headers and bold list items — no formal BEHAVIOR/PROCEDURE blocks
+- Two formats: HSF v5 (LLM-facing prose) and SESF v4.1 (human-facing formal blocks)
 - Decision tables: `@route` compact notation for 3+ branch conditional logic
 - Centralized config: `@config` blocks for thresholds, feature flags, and environment settings
-- Variable threading: `$variable` for explicit data flow between phases (complex specs only)
+- Variable threading: `$variable` for explicit data flow between phases
 - Consolidated error tables: All errors in one scannable table (Error | Severity | Action)
 - 3-tier scaling: Micro (20-80 lines), Standard (80-200 lines), Complex (200-400 lines)
-- Structural validator: Auto-detects SESF v4 vs HSF v5, applies appropriate rules
-- Templates and examples: Fill-in-the-blank templates and 3 complete working examples
+- Structural validator with auto-format detection
+- Cross-format conversion: author in SESF, convert to HSF for LLM execution
 
 **Commands:**
-- `/write-spec <domain>` - Guided HSF specification creation with tier selection, authoring, and validation
-- `/assess-doc <path>` - Evaluate whether a document would benefit from HSF conversion
-- `/assess-inferred-intent <path>` - Review a spec for ambiguity, contradiction, and inferred intent, then resolve interactively
-- `/update-spec <path>` - Upgrade from any previous version (including SESF v4) to HSF v5
+- `/write-LLM-spec <domain>` - Write an LLM-facing specification (HSF v5)
+- `/assess-LLM-doc <path>` - Evaluate whether a document would benefit from HSF conversion
+- `/update-LLM-spec <path>` - Update an existing HSF spec
+- `/write-human-spec <domain>` - Write a human-facing specification (SESF v4.1)
+- `/assess-human-doc <path>` - Evaluate whether a document would benefit from SESF conversion
+- `/update-human-spec <path>` - Update an existing SESF spec
+- `/convert-human-to-llm <path>` - Convert SESF spec to HSF for LLM execution
+- `/assess-inferred-intent <path>` - Review a spec for ambiguity, contradiction, and inferred intent
 
 ---
 

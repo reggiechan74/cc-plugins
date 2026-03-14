@@ -85,7 +85,7 @@
     {
       "name": "structured-english",
       "source": "./structured-english",
-      "description": "Dual-audience specification format — HSF v5 (prose instructions for LLM execution) and SESF v4.1 (formal BEHAVIOR/PROCEDURE/RULE/STEP blocks for human readers). Both share @route decision tables, @config parameters, $variable threading, consolidated error tables, and 3-tier scaling.",
+      "description": "Dual-audience specification format plugin — HSF v5 (prose instructions optimized for LLM execution) and SESF v4.1 (formal BEHAVIOR/PROCEDURE/RULE/STEP blocks optimized for human readers). Both share @route decision tables, @config parameters, $variable threading, consolidated error tables, and 3-tier scaling.",
       "version": "7.0.0"
     }
   ]

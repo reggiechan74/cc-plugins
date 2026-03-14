@@ -37,13 +37,13 @@ This runs in **strict mode** — orphan symbols are hard errors. Use this when t
 
 4. **Report:** Show the user what was generated:
    - `<output>/paper.md` — the clean paper
-   - `<output>/model/` — the Python package (list files)
+   - `<output>/runner.py` — standalone Python runner extracted from validation blocks
    - `<output>/report.txt` — the validation report
 
-5. **Verify codebase:** Optionally run the generated codebase:
+5. **Verify runner:** Optionally run the generated runner:
 
    ```bash
-   cd <output> && python3 -m model
+   cd <output> && python3 runner.py
    ```
 
    Report pass/fail status.
