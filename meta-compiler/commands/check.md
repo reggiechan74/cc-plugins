@@ -1,21 +1,21 @@
 ---
-description: "Run full validation pipeline against a .math.md document"
-argument-hint: "<path-to-file.math.md>"
+description: "Run full validation pipeline against a .model.md document"
+argument-hint: "<path-to-file.model.md>"
 allowed-tools: ["Bash", "Read", "Glob"]
 arguments:
   - name: "file"
-    description: "Path to the .math.md file to validate"
+    description: "Path to the .model.md file to validate"
   - name: "strict"
     description: "If present, treat orphan symbols as errors (compilation mode)"
 ---
 
 # Validate Mathematical Model Document
 
-Run the meta-compiler validation pipeline against the specified `.math.md` file.
+Run the meta-compiler validation pipeline against the specified `.model.md` file.
 
 ## Steps
 
-1. **Locate the file:** Use the provided path argument. If no path is given, search the current directory for `.math.md` files using Glob with pattern `**/*.math.md` and ask the user which one to validate if multiple are found.
+1. **Locate the file:** Use the provided path argument. If no path is given, search the current directory for `.model.md` files using Glob with pattern `**/*.model.md` and ask the user which one to validate if multiple are found.
 
 2. **Run validation:** Execute the check command:
 

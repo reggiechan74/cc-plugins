@@ -1,10 +1,10 @@
 ---
 description: "Compile all three artifacts: paper, codebase, and validation report"
-argument-hint: "<path-to-file.math.md>"
+argument-hint: "<path-to-file.model.md>"
 allowed-tools: ["Bash", "Read", "Write", "Glob"]
 arguments:
   - name: "file"
-    description: "Path to the .math.md file"
+    description: "Path to the .model.md file"
   - name: "output"
     description: "Output directory (defaults to ./output)"
   - name: "depth"
@@ -13,7 +13,7 @@ arguments:
 
 # Compile All Artifacts
 
-Produce all three artifacts from a `.math.md` document:
+Produce all three artifacts from a `.model.md` document:
 1. **Paper** — clean Markdown with validation blocks stripped
 2. **Codebase** — standalone Python package extracted from validation blocks
 3. **Validation Report** — symbol table, dependencies, coverage, test results
@@ -22,7 +22,7 @@ This runs in **strict mode** — orphan symbols are hard errors. Use this when t
 
 ## Steps
 
-1. **Locate the file:** Use the provided path argument. If no path is given, search with Glob for `**/*.math.md`.
+1. **Locate the file:** Use the provided path argument. If no path is given, search with Glob for `**/*.model.md`.
 
 2. **Build the command:**
 

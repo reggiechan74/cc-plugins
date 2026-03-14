@@ -1,21 +1,21 @@
 ---
 description: "Generate full validation report (symbol table, dependencies, coverage, test results)"
-argument-hint: "<path-to-file.math.md>"
+argument-hint: "<path-to-file.model.md>"
 allowed-tools: ["Bash", "Read", "Write", "Glob"]
 arguments:
   - name: "file"
-    description: "Path to the .math.md file"
+    description: "Path to the .model.md file"
   - name: "output"
     description: "Output file path (defaults to stdout)"
 ---
 
 # Generate Validation Report
 
-Produce a full validation report from a `.math.md` document including symbol table, dependency graph, test results, and coverage audit.
+Produce a full validation report from a `.model.md` document including symbol table, dependency graph, test results, and coverage audit.
 
 ## Steps
 
-1. **Locate the file:** Use the provided path argument. If no path is given, search with Glob for `**/*.math.md`.
+1. **Locate the file:** Use the provided path argument. If no path is given, search with Glob for `**/*.model.md`.
 
 2. **Run the report command:**
 

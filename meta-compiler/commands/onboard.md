@@ -9,11 +9,11 @@ arguments:
 
 # Onboard a Math Paper
 
-Convert an existing markdown math paper into a fully validated `.math.md` document with working `python:validate` blocks. This is an interactive, section-by-section process — you will approve each validation block before moving on.
+Convert an existing markdown math paper into a fully validated `.model.md` document with working `python:validate` blocks. This is an interactive, section-by-section process — you will approve each validation block before moving on.
 
 ## Step 1: Locate the file
 
-Use the provided path argument. If no path is given, search with Glob for `**/*.md` (excluding `*.math.md` files). If multiple results are found:
+Use the provided path argument. If no path is given, search with Glob for `**/*.md` (excluding `*.model.md` files). If multiple results are found:
 - Show at most 20 matches and ask the user which one to onboard.
 - If more than 20 matches exist, ask the user to provide a path directly.
 
@@ -21,7 +21,7 @@ Use the provided path argument. If no path is given, search with Glob for `**/*.
 
 Before proceeding, check two conditions:
 
-1. **Already a `.math.md` file?** If the file ends in `.math.md`, tell the user: "This file is already a `.math.md` document. Use `/model:check` to validate it or `/model:status` to see its current state." Stop here.
+1. **Already a `.model.md` file?** If the file ends in `.model.md`, tell the user: "This file is already a `.model.md` document. Use `/model:check` to validate it or `/model:status` to see its current state." Stop here.
 
 2. **No math blocks?** Read the file and check for `$$...$$` display math blocks. If none are found, tell the user: "No display math blocks (`$$...$$`) were found in this file. There is nothing to onboard." Stop here.
 
@@ -51,7 +51,11 @@ For each section that contains `$$...$$` math blocks, in document order:
 
 1. **Show context.** Display the section heading and the math block(s) it contains.
 
-2. **Propose a validation block.** Write a `python:validate` block that registers the symbols and relationships defined in that section using the meta-compiler API:
+2. **Propose a fixture block followed by a validation block.** For each section, generate two consecutive blocks:
+
+   a. **`python:fixture` block** — define a small, realistic test scenario with 3–5 concrete set members and realistic parameter values. This block populates the registry with test data so the subsequent validation block can exercise real indexing and arithmetic. Example: if the section defines a set of workers, create `{"Alice", "Bob", "Carol"}` as the fixture members.
+
+   b. **`python:validate` block** — register the symbols and relationships defined in that section using the meta-compiler API:
    - `Set(name, description=...)` for sets
    - `Parameter(name, index=[...], domain=..., units=..., description=...)` for parameters
    - `Variable(name, index=[...], domain=..., bounds=(...), units=..., description=...)` for variables
@@ -59,6 +63,8 @@ For each section that contains `$$...$$` math blocks, in document order:
    - `Constraint(name, expr=lambda ...: ..., over=[...], type=..., description=...)` for constraints
    - `Objective(name, expr=lambda ...: ..., sense=..., description=...)` for objectives
    - End each block with `registry.run_tests()` to validate incrementally.
+
+   Always place the `python:fixture` block immediately before its corresponding `python:validate` block.
 
 3. **Clarify ambiguity.** If notation is ambiguous (implicit sets, unclear units or domains, undefined subscripts), ask the user to clarify **before** finalizing the block. Do not guess — wait for the user's answer.
 
@@ -96,9 +102,9 @@ registry.run_tests()
 
 ## Step 6: Write the output
 
-Once all sections are approved, write the complete `.math.md` file:
+Once all sections are approved, write the complete `.model.md` file:
 
-- **Filename:** `<original-basename>.math.md` in the same directory as the original file. For example, `paper.md` becomes `paper.math.md`.
+- **Filename:** `<original-basename>.model.md` in the same directory as the original file. For example, `paper.md` becomes `paper.model.md`.
 - **Content rules:**
   - All original prose preserved verbatim.
   - All original math blocks preserved verbatim.
@@ -120,4 +126,4 @@ cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli check "<
 Show the validation result and coverage metric to the user.
 
 - **If validation passed:** Confirm success. List any warnings (e.g., orphan symbols that will be covered in later sections).
-- **If validation failed:** Show the errors, fix them in the `.math.md` file, and re-run check. Repeat up to 3 times. If still failing after 3 attempts, show the remaining errors and ask the user for guidance.
+- **If validation failed:** Show the errors, fix them in the `.model.md` file, and re-run check. Repeat up to 3 times. If still failing after 3 attempts, show the remaining errors and ask the user for guidance.

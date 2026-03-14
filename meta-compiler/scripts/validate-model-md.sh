@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# validate-math-md.sh — PostToolUse hook for .math.md live validation
+# validate-model-md.sh — PostToolUse hook for .model.md live validation
 #
 # Reads PostToolUse JSON from stdin.
-# If the edited file is .math.md, runs the meta-compiler check pipeline.
+# If the edited file is .model.md, runs the meta-compiler check pipeline.
 # Returns structured JSON feedback to Claude Code.
 
 # Find the meta-compiler package relative to this script
@@ -30,11 +30,11 @@ except (json.JSONDecodeError, ValueError):
 tool_name = hook_input.get("tool_name", "")
 file_path = hook_input.get("tool_input", {}).get("file_path", "")
 
-# Only process Write and Edit on .math.md files
+# Only process Write and Edit on .model.md files
 if tool_name not in ("Write", "Edit"):
     sys.exit(0)
 
-if not file_path.endswith(".math.md"):
+if not file_path.endswith(".model.md"):
     sys.exit(0)
 
 file_path_obj = Path(file_path)

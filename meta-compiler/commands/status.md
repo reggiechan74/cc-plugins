@@ -1,19 +1,19 @@
 ---
 description: "Show current symbol table, defined/undefined/orphan status, and coverage"
-argument-hint: "<path-to-file.math.md>"
+argument-hint: "<path-to-file.model.md>"
 allowed-tools: ["Bash", "Read", "Glob"]
 arguments:
   - name: "file"
-    description: "Path to the .math.md file to inspect"
+    description: "Path to the .model.md file to inspect"
 ---
 
 # Show Model Status
 
-Display the current symbol table, dependency status, and coverage metric for a `.math.md` document.
+Display the current symbol table, dependency status, and coverage metric for a `.model.md` document.
 
 ## Steps
 
-1. **Locate the file:** Use the provided path argument. If no path is given, search with Glob for `**/*.math.md` and ask the user which one if multiple are found.
+1. **Locate the file:** Use the provided path argument. If no path is given, search with Glob for `**/*.model.md` and ask the user which one if multiple are found.
 
 2. **Run the validation report:** Execute:
 
