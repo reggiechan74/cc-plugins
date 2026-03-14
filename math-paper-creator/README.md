@@ -1,7 +1,7 @@
-# model
+# math-paper-creator
 
 <!-- badges-start -->
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
 <!-- badges-end -->
@@ -33,7 +33,7 @@ If any check fails, the error is reported with the source line number. You fix i
 
 ## Two Workflows
 
-### Author a new paper (`/model:author`)
+### Author a new paper (`/math-paper-creator:author`)
 
 You describe a problem domain. Claude formalizes it section by section:
 
@@ -46,13 +46,13 @@ You describe a problem domain. Claude formalizes it section by section:
 
 Each section is validated against all previous sections. A variable defined in section 1 can be referenced in section 5 — the checker ensures consistency across the entire document. A variable can only be defined once.
 
-### Onboard an existing paper (`/model:onboard`)
+### Onboard an existing paper (`/math-paper-creator:onboard`)
 
 You have a Markdown paper with `$$...$$` display math but no validation. Claude reads it section by section, proposes fixture + validate blocks for each, and inserts them after your approval. Same incremental validation — each section is checked before moving to the next.
 
 ## What You Get
 
-When the paper is complete, `/model:compile` produces three artifacts:
+When the paper is complete, `/math-paper-creator:compile` produces three artifacts:
 
 | Artifact | What it is |
 |----------|------------|
@@ -66,20 +66,20 @@ The `runner.py` is immediately repeatable. You can run it in CI, share it with c
 
 ```
 /plugin marketplace add reggiechan74/cc-plugins
-/plugin install model@cc-plugins
+/plugin install math-paper-creator@cc-plugins
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/model:author [file]` | Author a new paper interactively — ideate, formalize, validate section-by-section |
-| `/model:onboard <file>` | Convert an existing paper — wrap existing math with validation blocks |
-| `/model:check <file>` | Run validation pipeline against a `.model.md` document |
-| `/model:status <file>` | Show symbol table, coverage, and orphan/phantom status |
-| `/model:report <file>` | Generate full validation report |
-| `/model:paper <file>` | Generate clean paper artifact (strips validation blocks) |
-| `/model:compile <file>` | Produce all artifacts: clean paper, standalone runner, validation report |
+| `/math-paper-creator:author [file]` | Author a new paper interactively — ideate, formalize, validate section-by-section |
+| `/math-paper-creator:onboard <file>` | Convert an existing paper — wrap existing math with validation blocks |
+| `/math-paper-creator:check <file>` | Run validation pipeline against a `.model.md` document |
+| `/math-paper-creator:status <file>` | Show symbol table, coverage, and orphan/phantom status |
+| `/math-paper-creator:report <file>` | Generate full validation report |
+| `/math-paper-creator:paper <file>` | Generate clean paper artifact (strips validation blocks) |
+| `/math-paper-creator:compile <file>` | Produce all artifacts: clean paper, standalone runner, validation report |
 
 ## Live Validation
 

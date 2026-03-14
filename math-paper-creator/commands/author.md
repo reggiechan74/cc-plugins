@@ -131,7 +131,7 @@ When the user signals they are done:
    - Any warnings (orphan symbols, etc.)
 
 3. Ask the user:
-   > "Would you like me to compile now? This produces a clean paper (prose + math only), a standalone runner.py (all validation logic as a self-contained script), and a validation report. Or you can do this later with `/model:compile`."
+   > "Would you like me to compile now? This produces a clean paper (prose + math only), a standalone runner.py (all validation logic as a self-contained script), and a validation report. Or you can do this later with `/math-paper-creator:compile`."
 
 4. If the user wants to compile, run:
    ```bash

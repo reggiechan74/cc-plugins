@@ -47,10 +47,10 @@
       "version": "0.1.0"
     },
     {
-      "name": "model",
-      "source": "./meta-compiler",
-      "description": "Live validation for mathematical model documents (.math.md). Auto-validates on every edit, hard blocks on inconsistency.",
-      "version": "0.1.0"
+      "name": "math-paper-creator",
+      "source": "./math-paper-creator",
+      "description": "Author validated math papers interactively. Formalize concepts into prose, LaTeX math, and executable Python validation — each section checked before the next begins.",
+      "version": "0.2.0"
     },
     {
       "name": "nano-banana",

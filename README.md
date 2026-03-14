@@ -192,13 +192,13 @@ Query Mississauga building permit data by address with filtering and summary sta
 
 ---
 
-### model
+### math-paper-creator
 
-Live validation for mathematical model documents (.model.md). Turns mathematical papers into validated, executable models with prose, LaTeX display math, and Python validation code in a single document.
+Author validated math papers interactively. Formalize concepts into prose, LaTeX math, and executable Python validation — each section checked before the next begins.
 
 **Install:**
 ```bash
-/plugin install model@cc-plugins
+/plugin install math-paper-creator@cc-plugins
 ```
 
 **Features:**
@@ -210,13 +210,13 @@ Live validation for mathematical model documents (.model.md). Turns mathematical
 - Onboarding workflow for existing papers without validation
 
 **Commands:**
-- `/model:author [file]` - Author a new paper interactively with section-by-section validation
-- `/model:onboard <file>` - Convert an existing paper by adding validation blocks
-- `/model:check <file>` - Run validation pipeline against a .model.md document
-- `/model:status <file>` - Show symbol table, coverage, and orphan/phantom status
-- `/model:report <file>` - Generate full validation report
-- `/model:paper <file>` - Generate clean paper artifact (strips validation blocks)
-- `/model:compile <file>` - Produce all artifacts: clean paper, standalone runner, validation report
+- `/math-paper-creator:author [file]` - Author a new paper interactively with section-by-section validation
+- `/math-paper-creator:onboard <file>` - Convert an existing paper by adding validation blocks
+- `/math-paper-creator:check <file>` - Run validation pipeline against a .model.md document
+- `/math-paper-creator:status <file>` - Show symbol table, coverage, and orphan/phantom status
+- `/math-paper-creator:report <file>` - Generate full validation report
+- `/math-paper-creator:paper <file>` - Generate clean paper artifact (strips validation blocks)
+- `/math-paper-creator:compile <file>` - Produce all artifacts: clean paper, standalone runner, validation report
 
 ---
 

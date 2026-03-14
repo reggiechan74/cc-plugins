@@ -21,7 +21,7 @@ Use the provided path argument. If no path is given, search with Glob for `**/*.
 
 Before proceeding, check two conditions:
 
-1. **Already a `.model.md` file?** If the file ends in `.model.md`, tell the user: "This file is already a `.model.md` document. Use `/model:check` to validate it or `/model:status` to see its current state." Stop here.
+1. **Already a `.model.md` file?** If the file ends in `.model.md`, tell the user: "This file is already a `.model.md` document. Use `/math-paper-creator:check` to validate it or `/math-paper-creator:status` to see its current state." Stop here.
 
 2. **No math blocks?** Read the file and check for `$$...$$` display math blocks. If none are found, tell the user: "No display math blocks (`$$...$$`) were found in this file. There is nothing to onboard." Stop here.
 
