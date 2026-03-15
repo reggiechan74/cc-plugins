@@ -15,6 +15,7 @@ Create a new `.model.md` document through interactive ideation. You describe con
 
 **New paper** (no path given, or file doesn't exist):
 
+0. **Check for review findings.** If the user provides a `.review.md` file as the path argument, or if a `<basename>.review.md` file exists adjacent to the target `.model.md` path, read the review findings. These contain a recommended template, outline, and key decisions from a prior `/math-paper-creator:review` session. Tell the user: "I found review findings from a prior session. I'll use these to guide template selection and authoring." Skip items 1-3 below and proceed directly to Step 1.5 with the review context loaded. If no review file is found, continue with item 1.
 1. Ask the user to describe the problem domain. Accept anything from a vague concept ("I want to model workforce optimization under constraints") to a specific sketch ("I have sets I, J, P and an allocation variable x_ijp").
 2. Create the `.model.md` file with YAML frontmatter:
    ```yaml
@@ -87,6 +88,8 @@ After initialization (Step 1), present the template catalog:
    ```
 
 5. Proceed to Step 2.
+
+**Review findings behavior:** When review findings are loaded (from Step 1), use the recommended template and outline from the findings file instead of presenting the template selection menu. Show the recommended template and outline to the user: "Based on your review session, I'm using the [template] template with this outline: [outline]. Want to adjust anything before we start?" Accept confirmation or modifications, then proceed to Step 2.
 
 **Resume behavior:** When resuming an existing `.model.md` that has `template` and `outline` fields in its frontmatter, skip template selection. Compare the outline against sections already written to determine which remain. If the file has no `template`/`outline` fields (pre-template file), offer to select a template or continue without one.
 
