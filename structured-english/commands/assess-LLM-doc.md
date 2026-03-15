@@ -6,17 +6,17 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 
 # Assess Document for LLM-Facing HSF Conversion
 
-Evaluate an existing markdown document against HSF v5 suitability criteria, specifically for producing a spec that an LLM agent will execute. Offer conversion if appropriate.
+Evaluate an existing markdown document against HSF v6 suitability criteria, specifically for producing a spec that an LLM agent will execute. Offer conversion if appropriate.
 
 ## Audience Context
 
-LLM-facing specs prioritize compliance and token efficiency. The question is: would converting this document to HSF v5 make an LLM follow it more reliably?
+LLM-facing specs prioritize compliance and token efficiency. The question is: would converting this document to HSF v6 make an LLM follow it more reliably?
 
 ## Workflow
 
 ### Step 1: Load the Skill
 
-Use the `hsf` skill — it contains all the rules, formats, and validation requirements for HSF v5. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/reference.md`.
+Use the `hsf` skill — it contains all the rules, formats, and validation requirements for HSF v6. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/reference.md`.
 
 ### Step 2: Read the Document
 
@@ -32,11 +32,13 @@ Analyze the content for signals that indicate whether HSF conversion would impro
 
 **Signals FOR conversion** (structure that LLMs need to follow reliably):
 
-- If/then/else or when/then constructs — LLMs handle these better as @route tables or explicit prose conditionals
+- If/then/else or when/then constructs — LLMs handle these better as `<route>` blocks or explicit prose conditionals
 - Multi-step workflows — LLMs follow numbered phase-based instructions more reliably than embedded prose procedures
 - Validation rules — explicit bold list items with MUST/SHOULD keywords produce better compliance than narrative descriptions
 - Error handling scattered throughout — consolidating into a table prevents LLMs from missing error cases
-- Configuration values repeated in multiple places — @config prevents LLMs from using stale values
+- Configuration values repeated in multiple places — `<config>` prevents LLMs from using stale values
+- Document specifies structured output but has no schema — `<output-schema>` would improve LLM compliance with output shape
+- Document uses markdown headers for section boundaries — XML tags provide more reliable parsing for LLMs
 
 **Signals FOR conversion** (LLM-specific benefits):
 
@@ -57,7 +59,7 @@ Report your findings:
 
 - **Verdict**: "Would benefit from LLM-facing HSF" or "Not a good fit"
 - **Evidence**: Specific patterns found, with quotes or line references
-- **If beneficial**: Suggest a tier and outline which HSF features would improve LLM compliance
+- **If beneficial**: Suggest a tier and outline which HSF features would improve LLM compliance (including XML envelope for section structure and `<output-schema>` for structured output phases)
 - **If not beneficial**: Explain why and suggest what format suits it better
 
 ### Step 5: Offer Conversion
