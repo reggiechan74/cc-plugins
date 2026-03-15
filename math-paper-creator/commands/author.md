@@ -39,6 +39,57 @@ Create a new `.model.md` document through interactive ideation. You describe con
 4. Show the user a summary: number of sections, symbol count by type, any warnings.
 5. Ask where they want to continue. Proceed to the authoring loop (Step 3).
 
+## Step 1.5: Template selection
+
+After initialization (Step 1), present the template catalog:
+
+1. Read the template files from `${CLAUDE_PLUGIN_ROOT}/templates/`. List the 10 templates + "Other" as a numbered menu:
+   ```
+   Select a paper type:
+    1. Constrained Optimization — LP, IP, MIP, convex, network flow
+    2. Statistical Modeling — regression, time series, Bayesian inference
+    3. Game-Theoretic Analysis — Nash equilibrium, mechanism design, auctions
+    4. Simulation Model — Monte Carlo, agent-based, discrete-event
+    5. Decision Analysis — decision trees, utility theory, MCDA
+    6. Financial Pricing — derivatives pricing, stochastic calculus, term structure
+    7. Actuarial Model — life tables, loss distributions, reserving
+    8. Econometric Model — structural models, GMM, panel data, IV
+    9. Queueing Model — M/M/1, networks, scheduling
+   10. Graph and Network Analysis — centrality, flow, matching, clustering
+   11. Other — describe your paper and I'll generate a custom outline
+   ```
+
+2. **If preset (1–10):** Read the selected template file. Show the full section outline. Ask the user if they want to reorder, remove, or add sections before proceeding. Accept the outline as-is or with modifications.
+
+3. **If "Other" (11):** Run a discovery conversation:
+   - What is the paper about?
+   - What are the major parts or layers?
+   - What mathematical structures are involved?
+
+   From the answers, generate a custom outline following the template format (section headings, descriptions, `**Symbols:**` types, `(optional)` markers). Present for approval.
+
+4. Store the template name and working outline in the `.model.md` frontmatter:
+   ```yaml
+   ---
+   title: Workforce Optimization Model
+   date: 2026-03-14
+   template: optimization        # or "custom" for Other
+   outline:
+     - Introduction
+     - Sets and Indices
+     - Parameters
+     - Decision Variables
+     - Derived Expressions
+     - Constraints
+     - Objective Function
+     - Conclusion
+   ---
+   ```
+
+5. Proceed to Step 2.
+
+**Resume behavior:** When resuming an existing `.model.md` that has `template` and `outline` fields in its frontmatter, skip template selection. Compare the outline against sections already written to determine which remain. If the file has no `template`/`outline` fields (pre-template file), offer to select a template or continue without one.
+
 ## Step 2: Opening section
 
 Write an Introduction section into the `.model.md` file based on the user's initial description. This section contains:
