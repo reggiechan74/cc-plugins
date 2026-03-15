@@ -1,33 +1,35 @@
-# HSF v5 Reference
+# HSF v6 Reference
 
-The Hybrid Specification Format (HSF v5) uses natural language prose with markdown structure to define agent behavior. LLMs follow prose better than formal notation — an A/B test showed hybrid specs produce 65% more synthesis items while consuming 55% fewer tokens than equivalent formal specs. The formal scaffolding of SESF v4 (BEHAVIOR, PROCEDURE, RULE, STEP blocks, Type definitions, Notation legends) consumed tokens without improving compliance.
+The Hybrid Specification Format (HSF v6) uses natural language prose within an XML envelope to define agent behavior. LLMs follow prose better than formal notation — an A/B test showed hybrid specs produce 65% more synthesis items while consuming 55% fewer tokens than equivalent formal specs. The formal scaffolding of SESF v4 (BEHAVIOR, PROCEDURE, RULE, STEP blocks, Type definitions, Notation legends) consumed tokens without improving compliance.
 
-HSF keeps what works: `@route` decision tables for multi-branch logic, `@config` blocks for centralized parameters, `$variable` threading for complex data flows, consolidated error tables, and RFC 2119 precision keywords (MUST, SHOULD, MAY). Everything else is natural language with markdown headers and bold list items.
+HSF v6 uses XML tags (`<purpose>`, `<scope>`, `<config>`, `<instructions>`, `<rules>`, `<errors>`, `<examples>`) as a structural envelope around natural language prose. It keeps what works: `<route>` decision tables (now XML) for multi-branch logic, `<config>` blocks (now JSON) for centralized parameters, `<output-schema>` for structured output specification, `$variable` threading for complex data flows, consolidated error tables, and RFC 2119 precision keywords (MUST, SHOULD, MAY). Everything else is natural language with `###` sub-headers and bold list items.
 
 ---
 
 ## Section Reference
 
-Sections MUST appear in this order when present. Omit any section that would be empty.
+Sections MUST appear in this order when present. Omit any section that would be empty. Each top-level section uses an XML tag — `###` markdown headers are used for sub-structure within sections.
 
-### Purpose (all tiers — required)
+### `<purpose>` (all tiers — required)
 
-A 1-3 sentence statement of what the spec does and why. This is the first paragraph after the `#` heading.
+A 1-3 sentence statement of what the spec does and why. This is the opening section of the spec.
 
 ```markdown
-# Invoice Validator
+<purpose>
 
 Validate incoming invoices against accounting rules before they enter the
 payment queue. Reject malformed invoices immediately; flag policy violations
 for human review.
+
+</purpose>
 ```
 
-### Scope (all tiers — required)
+### `<scope>` (all tiers — required)
 
 What is IN scope and what is OUT. Use bullet lists or a single "Not in scope" line for micro specs.
 
 ```markdown
-## Scope
+<scope>
 
 **In scope:**
 - Structural validation (required fields, types, formats)
@@ -37,57 +39,93 @@ What is IN scope and what is OUT. Use bullet lists or a single "Not in scope" li
 **Not in scope:**
 - Payment processing (handled by the payment service)
 - Vendor onboarding or credit checks
+
+</scope>
 ```
 
 For micro specs, a single line suffices:
 
 ```markdown
+<scope>
+
 **Not in scope:** retry logic, authentication, batch processing.
+
+</scope>
 ```
 
-### Configuration (all tiers — required when static params exist)
+### `<config>` — JSON Configuration (all tiers — required when static params exist)
 
-Use an `@config` block when 3 or more configuration values exist. For fewer values, state them inline in the text.
+Use a `<config>` block with a JSON body when 3 or more configuration values exist. For fewer values, state them inline in the prose.
 
 **Inline (1-2 values):**
 ```markdown
 The maximum retry count is 3. Output files are written to `/tmp/results/`.
 ```
 
-**@config block (3+ values):**
+**`<config>` block (3+ values):**
 ```markdown
-## Configuration
-
-@config
-  max_retries: 3
-  timeout_ms: 30000
-  output_dir: /tmp/results/
-  supported_currencies: [USD, CAD, EUR, GBP]
+<config>
+{
+  "max_retries": 3,
+  "timeout_ms": 30000,
+  "output_dir": "/tmp/results/",
+  "supported_currencies": ["USD", "CAD", "EUR", "GBP"]
+}
+</config>
 ```
 
-### Inputs / Outputs (standard + complex only)
+**Rules:**
+- `<config>` MUST appear before `<instructions>`
+- Keys use snake_case
+- Body MUST be valid JSON
+- Values are literals: strings, numbers, arrays, nested objects
+- Reference with `config.key` anywhere in the spec (no `$` prefix)
+- `config.nested.key` for nested values
+- `<config>` is for static values only — not for runtime variables (those use `$var` threading)
+- Use `<config>` only when 3 or more configuration values exist; fewer values go inline in the text
+
+**Example:**
+```markdown
+<config>
+{
+  "max_retries": 3,
+  "output_path": "/reports/daily",
+  "recipients": ["alice@example.com", "bob@example.com"],
+  "thresholds": {
+    "warning": 80,
+    "critical": 95
+  }
+}
+</config>
+```
+
+### `<inputs>` / `<outputs>` (standard + complex only)
 
 Typed parameter lists describing what the spec receives and produces.
 
 ```markdown
-## Inputs
+<inputs>
 
 - `transcript`: string — full meeting transcript, plain text or markdown
 - `participant_list`: list of string — names of all attendees (optional)
 - `focus_topics`: list of string — topics to prioritize in extraction (optional)
 
-## Outputs
+</inputs>
+
+<outputs>
 
 - `summary`: markdown file — structured meeting summary with action items
 - `extracted_ideas`: markdown file — labeled ideas (E1, E2, ...) with source attribution
+
+</outputs>
 ```
 
-### Instructions (all tiers — required)
+### `<instructions>` (all tiers — required)
 
 The core of the spec. Prose instructions organized with `###` headers for phases or logical groups, numbered lists for sequences, and bullet lists for parallel concerns.
 
 ```markdown
-## Instructions
+<instructions>
 
 ### Phase 1: Extract Raw Data
 
@@ -103,139 +141,84 @@ Label each extracted item sequentially: E1, E2, E3...
 
 Group the extracted items by theme. EACH theme MUST have at least 2 supporting items.
 Themes with only 1 item SHOULD be merged into the closest related theme.
+
+</instructions>
 ```
 
-### Rules (standard + complex only)
+### `<route>` — Decision Tables
 
-Cross-cutting rules that apply across multiple phases. Use bold list items with RFC 2119 keywords. Phase-specific rules belong inline in the Instructions section, not here.
+Replaces chained prose conditionals for multi-branch routing. Placed inline within `<instructions>` or in a dedicated routing section.
 
-```markdown
-## Rules
-
-### Quality Standards
-
-- **Source attribution:** EVERY claim in the output MUST trace back to a specific transcript location. Use the format `[Speaker, timestamp]`.
-- **No fabrication:** The spec MUST NOT introduce ideas not present in the transcript. If a connection is inferred, label it as `[inferred]`.
-- **Balanced representation:** EACH speaker SHOULD receive proportional coverage. If one speaker dominates, note this in the summary.
-
-### Output Constraints
-
-- **Artifact isolation:** EACH output file MUST be self-contained — no cross-references that require reading another artifact to understand the content.
-- **Markdown formatting:** ALL outputs MUST use valid markdown with heading hierarchy (h2 for sections, h3 for subsections).
-```
-
-### Errors (all tiers — required)
-
-A consolidated table covering all error cases in the spec. Every error has a name, severity, and action.
-
-```markdown
-## Errors
-
-| Error | Severity | Action |
-|-------|----------|--------|
-| empty_transcript | critical | HALT and inform user: "Transcript is empty or unreadable." |
-| no_ideas_extracted | critical | HALT and inform user: "No actionable content found in transcript." |
-| single_speaker | warning | Continue but note in summary: "Only one speaker detected — cross-pollination analysis skipped." |
-| ambiguous_timestamp | info | Use best-effort timestamp with `[approx]` label. |
-```
-
-**Severity levels:**
-- **critical** — Invalid output. Processing MUST stop or the result is rejected.
-- **warning** — Degraded output. Note the issue and continue.
-- **info** — Observation only. No action required.
-
-### Examples (standard + complex only)
-
-Edge cases only. If the happy path is obvious from the rules, do not exemplify it. Use compact single-line format for simple cases, multi-line for cases requiring explanation.
-
-**Compact format:**
-```markdown
-## Examples
-
-missing_speaker_id: transcript has turns with no speaker label → label as "[Unknown Speaker]", add warning to summary
-duplicate_action_item: same commitment stated twice by same speaker → deduplicate, keep the version with more detail
-contradictory_claims: Speaker A says "budget is $50K", later says "budget is $75K" → include both with timestamps, flag as contradiction
-```
-
-**Multi-line format (when explanation is needed):**
-```markdown
-boundary_at_threshold:
-  INPUT: { "invoice": { "amount": 10000 }, "policy": { "review_threshold": 10000 } }
-  EXPECTED: Auto-approved (no review flag)
-  NOTES: Threshold is "exceeds 10000", not "at least 10000" — exactly 10000 does not trigger review
-```
-
----
-
-## Notation Elements
-
-### @config — Centralized Parameters
-
-Declares all configurable values in a single block. Replaces scattered inline values.
+**When to use:** Use `<route>` when a conditional has **3 or more branches** mapping inputs to categories or destinations. Use prose conditionals for binary decisions (true/false, valid/invalid). The form is determined by branch count, not author preference.
 
 **Syntax:**
-```
-@config
-  key: value
-  key: value
-  nested:
-    key: value
-```
-
-**Rules:**
-- @config MUST appear before any Instructions section
-- Keys use snake_case
-- Values are literals: strings, numbers, lists `[a, b, c]`, nested objects
-- Reference with `$config.key` anywhere in the spec
-- `$config.nested.key` for nested values
-- @config is for static values only — not for runtime variables (those use `$var` threading)
-- Use @config only when 3 or more configuration values exist; fewer values go inline in the text
-
-**Example:**
-```
-@config
-  max_retries: 3
-  output_path: /reports/daily
-  recipients: [alice@example.com, bob@example.com]
-  thresholds:
-    warning: 80
-    critical: 95
-```
-
-### @route — Decision Tables
-
-Replaces chained prose conditionals for multi-branch routing.
-
-**When to use:** Use @route when a conditional has **3 or more branches** mapping inputs to categories or destinations. Use prose conditionals for binary decisions (true/false, valid/invalid). The form is determined by branch count, not author preference.
-
-**Syntax:**
-```
-@route table_name [first_match_wins]
-  condition_1  → outcome_1
-  condition_2  → outcome_2
-  *            → default_outcome
+```markdown
+<route name="table_name" mode="first_match_wins">
+  <case when="condition_1">outcome_1</case>
+  <case when="condition_2">outcome_2</case>
+  <default>default_outcome</default>
+</route>
 ```
 
 **Modes:**
-- `first_match_wins` — stop at first matching row (default, can be omitted)
-- `all_matches` — apply all matching rows
+- `first_match_wins` — stop at first matching case (default, can be omitted)
+- `all_matches` — apply all matching cases
 
 **Rules:**
-- `*` (wildcard) is the default case — it SHOULD be the last row when a meaningful default exists; MAY be omitted when all cases are explicitly enumerated
-- Each row is `condition → outcome` with `→` as separator
-- Conditions are natural English predicates (not code expressions)
-- @route replaces verbose prose when branch count reaches 3+
+- `<default>` is the fallback case — it SHOULD be included when a meaningful default exists; MAY be omitted when all cases are explicitly enumerated
+- Each `<case>` has a `when` attribute with a natural English predicate (not code expressions)
+- `<route>` replaces verbose prose when branch count reaches 3+
 
 **Example:**
+```markdown
+<route name="document_type" mode="first_match_wins">
+  <case when="is_invoice AND has_PO_number">Accounts Payable (auto-match to PO)</case>
+  <case when="is_invoice AND no_PO_number">Accounts Payable (manual review queue)</case>
+  <case when="is_contract AND value > $50,000">Legal Review</case>
+  <case when="is_contract AND value <= $50,000">Department Head Approval</case>
+  <case when="is_expense_report">Finance (reimburse within 5 business days)</case>
+  <default>General Inbox (manual triage)</default>
+</route>
 ```
-@route document_type [first_match_wins]
-  is_invoice AND has_PO_number     → Accounts Payable (auto-match to PO)
-  is_invoice AND no_PO_number      → Accounts Payable (manual review queue)
-  is_contract AND value > $50,000  → Legal Review
-  is_contract AND value <= $50,000 → Department Head Approval
-  is_expense_report                → Finance (reimburse within 5 business days)
-  *                                → General Inbox (manual triage)
+
+### `<output-schema>` — Structured Output Specification
+
+Defines the expected structure of machine-readable output inline within `<instructions>`. Use when the spec produces JSON, structured objects, or other machine-readable formats.
+
+**When to use:**
+- SHOULD include for standard and complex tier specs that produce structured output
+- MAY include for micro tier specs when output format clarity adds value
+- Place inside `<instructions>`, in the phase that produces the output
+
+**Syntax:**
+```markdown
+<output-schema format="json">
+{
+  "field_name": "string",
+  "score": "float 0.0-1.0",
+  "optional_field": "string | null",
+  "items": ["string"],
+  "nested": {
+    "key": "integer"
+  }
+}
+</output-schema>
 ```
+
+**Type annotations:** Use descriptive types:
+- `"string"` — text value
+- `"integer"` — whole number
+- `"float 0.0-1.0"` — decimal with range
+- `"boolean"` — true/false
+- `"string | null"` — nullable string
+- `["string"]` — array of strings
+- Nested objects for complex structures
+
+**Rules:**
+- Format attribute specifies the output format (typically `"json"`)
+- Type annotations are descriptive, not programming-language types
+- Use `| null` suffix for optional/nullable fields
+- Include range constraints in the type annotation where applicable (e.g., `"float 0.0-1.0"`)
 
 ### $variable Threading — Explicit Data Flow
 
@@ -257,7 +240,7 @@ Action description → $output2
 - `→ $var` after a phase header declares output variables
 - `→ $var` after an action line shows which action produces which variable
 - Variables use `$` prefix and snake_case naming
-- `$config.key` references the @config block; `$var` references a phase output
+- `config.key` references the `<config>` block; `$var` references a phase output
 - Variable threading is optional — phases without outputs omit the `→` declaration
 - Every `$var` reference MUST have a corresponding production point earlier in the spec
 
@@ -279,26 +262,30 @@ Render $summary into the report template.
 Include $date_range in the header.
 ```
 
-### ERROR Table Format
+### `<errors>` — Error Table Format
 
-All errors are consolidated into a single table in the Errors section.
+All errors are consolidated into a single table inside the `<errors>` section.
 
 **Syntax:**
-```
+```markdown
+<errors>
+
 | Error | Severity | Action |
 |-------|----------|--------|
 | error_name | critical/warning/info | what to do |
+
+</errors>
 ```
 
 **Rules:**
 - Severity values: `critical` (halt), `warning` (continue with degradation), `info` (log only)
 - `{variable}` in action strings indicates dynamic interpolation
-- Every spec MUST have an Errors table (even micro tier)
+- Every spec MUST have an `<errors>` section (even micro tier)
 - Errors belong in one consolidated table, not scattered inline throughout the spec
 
-### EXAMPLES Format
+### `<examples>` — Edge-Case Examples
 
-Edge-case examples use compact single-line format or multi-line format.
+Edge-case examples use compact single-line format or multi-line format, inside the `<examples>` section.
 
 **Compact syntax:**
 ```
@@ -318,6 +305,27 @@ example_name:
 - Input side uses `key=value` pairs separated by commas
 - Include ONLY edge cases — no happy-path examples
 - Use compact format for self-evident cases; multi-line when NOTES or complex data are needed
+
+### `<rules>` — Cross-Cutting Rules (standard + complex only)
+
+Cross-cutting rules that apply across multiple phases. Use bold list items with RFC 2119 keywords. Phase-specific rules belong inline in the `<instructions>` section, not here.
+
+```markdown
+<rules>
+
+### Quality Standards
+
+- **Source attribution:** EVERY claim in the output MUST trace back to a specific transcript location. Use the format `[Speaker, timestamp]`.
+- **No fabrication:** The spec MUST NOT introduce ideas not present in the transcript. If a connection is inferred, label it as `[inferred]`.
+- **Balanced representation:** EACH speaker SHOULD receive proportional coverage. If one speaker dominates, note this in the summary.
+
+### Output Constraints
+
+- **Artifact isolation:** EACH output file MUST be self-contained — no cross-references that require reading another artifact to understand the content.
+- **Markdown formatting:** ALL outputs MUST use valid markdown with heading hierarchy (h2 for sections, h3 for subsections).
+
+</rules>
+```
 
 ### Requirement Keywords
 
@@ -378,7 +386,7 @@ Use these keywords with precise meanings. All operative terms MUST be capitalize
 
 ### How to Write Prose Instructions
 
-Instructions are the core of every spec. Structure them with:
+Instructions are the core of every spec. Structure them inside `<instructions>` with:
 
 1. **`###` headers for phases** — each major stage of processing gets its own header
 2. **Numbered lists for sequences** — when order matters, use 1, 2, 3
@@ -390,19 +398,21 @@ Write each instruction as a sentence you would say to a competent human assistan
 
 ### How to Write Rules
 
-Rules use bold list items under a `##` or `###` header. Each rule is a single statement with an RFC 2119 keyword.
+Rules use bold list items under a `###` header inside `<rules>`. Each rule is a single statement with an RFC 2119 keyword.
 
 ```markdown
-## Rules
+<rules>
 
 ### Data Integrity
 
 - **No fabrication:** The output MUST NOT contain claims not supported by the input data.
 - **Source attribution:** EVERY extracted item MUST include a reference to its source location.
 - **Deduplication:** When the same idea appears multiple times, keep the most detailed version and SKIP duplicates.
+
+</rules>
 ```
 
-Rules that apply to a single phase belong inline in that phase's Instructions section. The Rules section is only for cross-cutting rules that apply across all phases.
+Rules that apply to a single phase belong inline in that phase's instructions. The `<rules>` section is only for cross-cutting rules that apply across all phases.
 
 ### Converting Rules to Prose
 
@@ -423,7 +433,7 @@ Rules that apply to a single phase belong inline in that phase's Instructions se
   ERROR invalid_payment: critical → halt, "Payment validation failed"
 ```
 
-**After (HSF v5):**
+**After (HSF v6):**
 ```markdown
 ### Payment Validation
 
@@ -431,10 +441,10 @@ Before processing, validate EACH payment:
 
 - **Positive amount:** The amount MUST be greater than zero.
 - **Currency required:** The currency field MUST NOT be null.
-- **Supported currency:** The currency MUST be one of the values in `$config.supported_currencies`. If not, reject with "Unsupported currency."
+- **Supported currency:** The currency MUST be one of the values in `config.supported_currencies`. If not, reject with "Unsupported currency."
 ```
 
-The error moves to the consolidated Errors table. The BEHAVIOR wrapper and RULE keywords are gone. The same constraints are stated once, in natural sentences.
+The error moves to the consolidated `<errors>` table. The BEHAVIOR wrapper and RULE keywords are gone. The same constraints are stated once, in natural sentences.
 
 ### Consolidating Errors into a Table
 
@@ -446,9 +456,9 @@ ERROR unsupported_currency: warning → reject invoice, "Currency not supported"
 ERROR duplicate_invoice: info → flag for review, "Possible duplicate detected"
 ```
 
-**After (consolidated table):**
+**After (consolidated table in `<errors>`):**
 ```markdown
-## Errors
+<errors>
 
 | Error | Severity | Action |
 |-------|----------|--------|
@@ -456,9 +466,11 @@ ERROR duplicate_invoice: info → flag for review, "Possible duplicate detected"
 | missing_currency | critical | HALT: "Currency is required." |
 | unsupported_currency | warning | Reject invoice: "Currency {currency} not supported." |
 | duplicate_invoice | info | Flag for review: "Possible duplicate of invoice {existing_id}." |
+
+</errors>
 ```
 
-### When to Use @route vs Prose Conditionals
+### When to Use `<route>` vs Prose Conditionals
 
 Use **prose conditionals** for 1-2 branches:
 
@@ -466,17 +478,18 @@ Use **prose conditionals** for 1-2 branches:
 If the file is larger than 10MB, process it in chunks. Otherwise, process it in a single pass.
 ```
 
-Use **@route** for 3 or more branches:
+Use **`<route>`** for 3 or more branches:
 
 ```markdown
-@route file_processing [first_match_wins]
-  file size ≤ 1MB        → inline processing (load entire file)
-  file size ≤ 50MB       → chunked processing (10MB chunks)
-  file size ≤ 500MB      → streaming processing (line by line)
-  *                      → reject with "File too large for processing"
+<route name="file_processing" mode="first_match_wins">
+  <case when="file size ≤ 1MB">inline processing (load entire file)</case>
+  <case when="file size ≤ 50MB">chunked processing (10MB chunks)</case>
+  <case when="file size ≤ 500MB">streaming processing (line by line)</case>
+  <default>reject with "File too large for processing"</default>
+</route>
 ```
 
-The threshold is 3 branches. This is not a style preference — it is a hard rule. Two-branch @route tables waste the table structure; four-branch prose conditionals become hard to scan.
+The threshold is 3 branches. This is not a style preference — it is a hard rule. Two-branch `<route>` tables waste the table structure; four-branch prose conditionals become hard to scan.
 
 ### When to Use $variable Threading
 
@@ -523,12 +536,14 @@ Before finalizing a spec, verify:
 
 | Check | Rule |
 |-------|------|
+| **XML envelope used** | Top-level sections use XML tags, not `##` headers |
+| **No legacy syntax** | No `@config`, `@route`, or `$config.key` anywhere |
 | **No empty sections** | If a section would say "none" or be blank, omit it entirely |
 | **No duplicate constraints** | Each rule stated once, in the section where it applies |
 | **No formal wrappers on prose** | No BEHAVIOR, RULE, PROCEDURE, STEP keywords |
-| **@route only for 3+ branches** | Fewer branches use a prose conditional |
-| **@config only for 3+ values** | Fewer values stated inline in the text |
-| **Errors as consolidated table** | Not scattered inline after rules |
+| **`<route>` only for 3+ branches** | Fewer branches use a prose conditional |
+| **`<config>` only for 3+ values** | Fewer values stated inline in the text |
+| **Errors in `<errors>` table** | Not scattered inline after rules |
 | **RFC 2119 keywords preserved** | MUST, SHOULD, MAY still capitalized for precision |
 | **Line budget compliance** | Micro ≤80, Standard ≤200, Complex ≤400 |
 | **Edge-case examples only** | No happy-path examples |
@@ -538,16 +553,20 @@ Before finalizing a spec, verify:
 
 | If you catch yourself writing... | Fix |
 |----------------------------------|-----|
-| `**BEHAVIOR** name:` or `**RULE** name:` | Use `##` / `###` headers and bold list items |
+| `**BEHAVIOR** name:` or `**RULE** name:` | Use `###` headers and bold list items |
 | `**PROCEDURE** name:` or `**STEP** name:` | Use `###` phase headers and numbered lists |
+| `## Section Name` for a top-level section | Use the XML tag: `<purpose>`, `<scope>`, `<instructions>`, etc. |
+| `@config` with YAML-like syntax | Use `<config>` with a JSON body |
+| `@route name [mode]` with `→` rows | Use `<route name="..." mode="...">` with `<case>` elements |
+| `$config.key` to reference configuration | Use `config.key` (drop the `$` prefix) |
 | A Notation section explaining `$`, `@`, `→` | Delete it — symbols are self-evident or explained inline on first use |
 | A Types section defining data structures | Inline the field descriptions where they are used |
-| `@route` with only 2 branches | Use a prose conditional (if/otherwise) |
-| `@config` for 1-2 values | State the values inline in the text |
-| `$config.key` for runtime values | Use `$variable` threading; @config is for static values only |
-| Errors scattered after individual rules | Move all errors to the consolidated Errors table |
+| `<route>` with only 2 branches | Use a prose conditional (if/otherwise) |
+| `<config>` for 1-2 values | State the values inline in the text |
+| `config.key` for runtime values | Use `$variable` threading; `<config>` is for static values only |
+| Errors scattered after individual rules | Move all errors to the consolidated `<errors>` table |
 | Happy-path examples | Delete them — examples are for edge cases only |
-| "Handle errors appropriately" | Specify each error case in the Errors table |
+| "Handle errors appropriately" | Specify each error case in the `<errors>` table |
 | "Extract relevant fields" | List exactly which fields |
 | "Validate the data" | State each validation rule explicitly |
 | "Process the files" (no quantifier) | "Process EACH file" or "Process ALL files" |
@@ -555,8 +574,8 @@ Before finalizing a spec, verify:
 | "Don't process any files" (NOT + ANY) | "Process NONE of the files" or "SKIP ALL files" |
 | "Try again if it fails" (unbounded) | "RETRY UP TO 3 TIMES" |
 | "Copy the text" (may paraphrase) | "Copy the text VERBATIM" |
-| Nested conditionals 3+ deep | Break into separate rules or use @route |
-| Same constraint in Instructions AND Rules | State it once, in whichever section it applies to |
+| Nested conditionals 3+ deep | Break into separate rules or use `<route>` |
+| Same constraint in `<instructions>` AND `<rules>` | State it once, in whichever section it applies to |
 
 ---
 
@@ -572,18 +591,24 @@ description: "Validate incoming webhook payloads before forwarding to handlers."
 
 # Webhook Payload Validator
 
+<purpose>
+
 Validate incoming webhook payloads from payment providers. Accept well-formed
 payloads and forward them to the processing queue. Reject malformed payloads
 with a structured error response.
 
+</purpose>
+
+<scope>
+
 **Not in scope:** payload processing, retry logic, authentication.
 
-## Configuration
+</scope>
 
 Maximum payload size is 1MB. The accepted event types are
 `payment.completed`, `payment.failed`, and `refund.issued`.
 
-## Instructions
+<instructions>
 
 For EACH incoming webhook payload:
 
@@ -594,7 +619,9 @@ For EACH incoming webhook payload:
 5. **Check payload size** — the raw body MUST NOT exceed the maximum size. If it does, reject with an oversize error.
 6. **Forward** — if all checks pass, forward the payload to the processing queue VERBATIM.
 
-## Errors
+</instructions>
+
+<errors>
 
 | Error | Severity | Action |
 |-------|----------|--------|
@@ -603,6 +630,8 @@ For EACH incoming webhook payload:
 | missing_required_field | critical | Reject with HTTP 422: "Missing fields: {field_list}." |
 | unknown_event_type | warning | Reject with HTTP 422: "Unknown event type: {event_type}." |
 | payload_too_large | critical | Reject with HTTP 413: "Payload exceeds 1MB limit." |
+
+</errors>
 ```
 
 ### Standard Example: Document Processing Pipeline (~150 lines)
@@ -615,11 +644,15 @@ description: "Classify, extract, and validate insurance claim documents."
 
 # Insurance Claim Document Processor
 
+<purpose>
+
 Process incoming insurance claim documents by classifying them, extracting
 structured data, and validating the extracted data against policy rules.
 Output a structured claim record ready for adjudication.
 
-## Scope
+</purpose>
+
+<scope>
 
 **In scope:**
 - Document classification (form type identification)
@@ -632,29 +665,35 @@ Output a structured claim record ready for adjudication.
 - Fraud detection (separate pipeline)
 - Customer communication
 
-## Configuration
+</scope>
 
-@config
-  supported_form_types: [CMS-1500, UB-04, ADA-J400, pharmacy_claim]
-  max_document_pages: 50
-  extraction_confidence_threshold: 0.85
-  output_format: JSON
+<config>
+{
+  "supported_form_types": ["CMS-1500", "UB-04", "ADA-J400", "pharmacy_claim"],
+  "max_document_pages": 50,
+  "extraction_confidence_threshold": 0.85,
+  "output_format": "JSON"
+}
+</config>
 
-## Document Classification
+<instructions>
 
-@route form_classifier [first_match_wins]
-  has CMS-1500 header or NPI in Box 33         → CMS-1500 (professional claim)
-  has UB-04 header or revenue codes in FL 42    → UB-04 (institutional claim)
-  has ADA claim form header or tooth numbers    → ADA-J400 (dental claim)
-  has NDC codes and pharmacy identifiers        → pharmacy_claim
-  *                                             → unclassified (route to manual review)
+### Document Classification
 
-## Instructions
+After OCR completes, classify the document to determine which extraction template to apply:
+
+<route name="form_classifier" mode="first_match_wins">
+  <case when="has CMS-1500 header or NPI in Box 33">CMS-1500 (professional claim)</case>
+  <case when="has UB-04 header or revenue codes in FL 42">UB-04 (institutional claim)</case>
+  <case when="has ADA claim form header or tooth numbers">ADA-J400 (dental claim)</case>
+  <case when="has NDC codes and pharmacy identifiers">pharmacy_claim</case>
+  <default>unclassified (route to manual review)</default>
+</route>
 
 ### Phase 1: Receive and Classify
 
 1. Verify the document is a PDF or supported image format (TIFF, PNG, JPEG).
-2. If the document exceeds `$config.max_document_pages`, reject it.
+2. If the document exceeds `config.max_document_pages`, reject it.
 3. Run the document through the form classifier above to determine the form type.
 4. If the document is unclassified, route it to manual review and HALT automated processing.
 
@@ -668,7 +707,7 @@ Based on the classified form type, extract the following fields:
 - **ADA-J400 additionally:** tooth numbers, surface codes, area of oral cavity
 - **Pharmacy claims additionally:** NDC codes, quantity dispensed, days supply, DAW code
 
-For EACH extracted field, record the extraction confidence score. If ANY field has a confidence score below `$config.extraction_confidence_threshold`, flag that field for manual verification.
+For EACH extracted field, record the extraction confidence score. If ANY field has a confidence score below `config.extraction_confidence_threshold`, flag that field for manual verification.
 
 ### Phase 3: Validate
 
@@ -682,7 +721,7 @@ Apply these validations to the extracted data:
 
 ### Phase 4: Output
 
-Generate a structured claim record in `$config.output_format` containing:
+Generate a structured claim record in `config.output_format` containing:
 
 - All extracted fields with confidence scores
 - Classification result and confidence
@@ -690,7 +729,9 @@ Generate a structured claim record in `$config.output_format` containing:
 - List of flags requiring manual review (if any)
 - Processing timestamp
 
-## Rules
+</instructions>
+
+<rules>
 
 ### Cross-Cutting Rules
 
@@ -698,7 +739,9 @@ Generate a structured claim record in `$config.output_format` containing:
 - **No data modification:** The processor MUST NOT alter extracted values. If a value appears incorrect, flag it — do not correct it.
 - **Confidence transparency:** ALL confidence scores MUST be included in the output, even for high-confidence extractions.
 
-## Errors
+</rules>
+
+<errors>
 
 | Error | Severity | Action |
 |-------|----------|--------|
@@ -711,12 +754,16 @@ Generate a structured claim record in `$config.output_format` containing:
 | policy_not_found | warning | Flag as "policy not found." Continue processing but mark for review. |
 | amount_outlier | info | Include flag in output. Do not block processing. |
 
-## Examples
+</errors>
+
+<examples>
 
 unclassified_with_partial_match: document has CMS-1500-like fields but no header → classified as "unclassified" (partial matches are not sufficient)
 future_date_of_service: date_of_service="2027-01-15", today="2026-03-13" → validation fails with "date of service is in the future"
 confidence_at_threshold: field confidence=0.85 exactly → passes threshold (threshold is "below 0.85", not "at or below")
 dual_diagnosis_one_invalid: codes=["M54.5", "Z99.99"] → M54.5 passes, Z99.99 flagged as invalid, claim still processed with flag
+
+</examples>
 ```
 
 ### Complex Example: Competitive Intelligence Analysis System (~350 lines)
@@ -729,12 +776,16 @@ description: "Multi-phase analysis of competitor earnings calls and filings."
 
 # Competitive Intelligence Analyzer
 
+<purpose>
+
 Analyze competitor earnings call transcripts and SEC filings to produce
 a structured competitive intelligence report. Extract strategic signals,
 assess competitive positioning, and generate actionable recommendations
 for the executive team.
 
-## Scope
+</purpose>
+
+<scope>
 
 **In scope:**
 - Earnings call transcript analysis (10-Q commentary, guidance statements)
@@ -748,49 +799,58 @@ for the executive team.
 - Legal analysis of SEC compliance
 - Real-time market data integration
 
-## Inputs
+</scope>
+
+<inputs>
 
 - `transcripts`: list of string — one or more earnings call transcripts (required)
 - `company_profile`: object — our company's product lines, market segments, and strategic priorities (required)
 - `previous_report`: string — the last competitive intelligence report, if any (optional)
 - `focus_areas`: list of string — specific competitive dimensions to prioritize (optional)
 
-## Outputs
+</inputs>
+
+<outputs>
 
 - `intelligence_report`: markdown file — structured competitive intelligence report
 - `signal_database`: JSON file — machine-readable extracted signals with metadata
 - `executive_summary`: markdown file — 1-page summary for leadership team
 
-## Configuration
+</outputs>
 
-@config
-  max_signals_per_transcript: 50
-  confidence_levels: [high, medium, low]
-  signal_categories: [product, market, financial, operational, strategic, talent]
-  lookback_quarters: 4
-  output_dir: /tmp/competitive-intel/
-  recommendation_limit: 10
+<config>
+{
+  "max_signals_per_transcript": 50,
+  "confidence_levels": ["high", "medium", "low"],
+  "signal_categories": ["product", "market", "financial", "operational", "strategic", "talent"],
+  "lookback_quarters": 4,
+  "output_dir": "/tmp/competitive-intel/",
+  "recommendation_limit": 10
+}
+</config>
 
-## Routing Logic
+<instructions>
 
-@route transcript_processing [first_match_wins]
-  transcript ≤ 25,000 tokens    → direct processing (single pass)
-  transcript ≤ 175,000 tokens   → chunked processing (section by section)
-  transcript > 175,000 tokens   → summary-first processing (executive summary, then deep dive on flagged sections)
+### Routing Logic
 
-@route signal_priority [first_match_wins]
-  signal matches a focus_area AND confidence = high      → priority 1 (lead the report)
-  signal matches a focus_area AND confidence = medium    → priority 2 (include with analysis)
-  signal is a new market entry or product launch         → priority 1 (always lead-worthy)
-  confidence = high                                      → priority 2
-  confidence = medium                                    → priority 3 (supporting evidence)
-  *                                                      → priority 4 (appendix only)
+<route name="transcript_processing" mode="first_match_wins">
+  <case when="transcript ≤ 25,000 tokens">direct processing (single pass)</case>
+  <case when="transcript ≤ 175,000 tokens">chunked processing (section by section)</case>
+  <case when="transcript > 175,000 tokens">summary-first processing (executive summary, then deep dive on flagged sections)</case>
+</route>
 
-## Instructions
+<route name="signal_priority" mode="first_match_wins">
+  <case when="signal matches a focus_area AND confidence = high">priority 1 (lead the report)</case>
+  <case when="signal matches a focus_area AND confidence = medium">priority 2 (include with analysis)</case>
+  <case when="signal is a new market entry or product launch">priority 1 (always lead-worthy)</case>
+  <case when="confidence = high">priority 2</case>
+  <case when="confidence = medium">priority 3 (supporting evidence)</case>
+  <default>priority 4 (appendix only)</default>
+</route>
 
 ### Phase 1: Setup → $scratchpad
 
-Create the output directory: `mkdir -p $config.output_dir`.
+Create the output directory: `mkdir -p config.output_dir`.
 
 If a `previous_report` is provided, read it and extract:
 - Previously identified signals (for trend tracking)
@@ -816,11 +876,11 @@ For EACH extracted signal, record:
 - A unique label (S1, S2, S3...)
 - The verbatim quote from the transcript
 - The speaker and their role
-- The signal category (from `$config.signal_categories`)
-- A confidence level (from `$config.confidence_levels`)
+- The signal category (from `config.signal_categories`)
+- A confidence level (from `config.confidence_levels`)
 - Whether this confirms, contradicts, or is new relative to $scratchpad
 
-Produce AT MOST `$config.max_signals_per_transcript` signals per transcript. If extraction yields more, keep only the highest-confidence signals → $raw_signals
+Produce AT MOST `config.max_signals_per_transcript` signals per transcript. If extraction yields more, keep only the highest-confidence signals → $raw_signals
 
 ### Phase 3: Cross-Transcript Analysis → $analyzed_signals
 
@@ -846,7 +906,7 @@ All assessments MUST be grounded in specific signals. Do not speculate beyond wh
 
 ### Phase 5: Recommendations → $recommendations
 
-Generate AT MOST `$config.recommendation_limit` strategic recommendations:
+Generate AT MOST `config.recommendation_limit` strategic recommendations:
 
 For EACH recommendation:
 1. State the recommendation in one sentence
@@ -859,7 +919,7 @@ Recommendations MUST be specific and actionable. "Monitor the situation" is not 
 
 ### Phase 6: Report Assembly
 
-Produce three output files in `$config.output_dir`:
+Produce three output files in `config.output_dir`:
 
 **`intelligence_report.md`** — the full report containing:
 - Executive summary (2-3 paragraphs)
@@ -878,7 +938,9 @@ Produce three output files in `$config.output_dir`:
 
 EACH output file MUST be self-contained. A reader of the executive summary MUST NOT need to read the full report to understand the recommendations.
 
-## Rules
+</instructions>
+
+<rules>
 
 ### Analytical Rigor
 
@@ -893,7 +955,9 @@ EACH output file MUST be self-contained. A reader of the executive summary MUST 
 - **Signal traceability:** EVERY claim in the report MUST trace to a specific signal label and transcript quote.
 - **Recommendation specificity:** EVERY recommendation MUST name a specific team, a specific action, and a specific trigger or timeline. Generic advice is not acceptable.
 
-## Errors
+</rules>
+
+<errors>
 
 | Error | Severity | Action |
 |-------|----------|--------|
@@ -906,11 +970,15 @@ EACH output file MUST be self-contained. A reader of the executive summary MUST 
 | no_previous_report | info | Skip trend analysis. Note: "No previous report available; all signals treated as new." |
 | focus_area_mismatch | info | Note in blind spot section: "Competitors discussing {topic} heavily, but not listed in our focus areas." |
 
-## Examples
+</errors>
+
+<examples>
 
 earnings_call_vs_press_release: transcript is a press release, not an earnings call → low_signal_density warning, proceed but flag in report that source quality is lower than expected
 contradictory_guidance: Company A says "cloud market growing 40% YoY", Company B says "cloud growth decelerating to 15%" → include both as S5 and S12, note contradiction, assess credibility based on each company's market position
 signal_at_extraction_limit: transcript yields 55 signals, max is 50 → keep top 50 by confidence, note in report that 5 lower-confidence signals were excluded
 previous_signal_disappeared: $scratchpad shows S3 ("AI investment doubling") from last quarter, current transcript does not mention AI → flag as "signal weakened or dropped" in trend analysis, do not assume the initiative was canceled
 no_focus_area_blind_spot: focus_areas=["cloud", "security"], but 3 competitors discuss "edge computing" extensively → flag as blind spot in positioning assessment, include as a recommendation to evaluate
+
+</examples>
 ```
