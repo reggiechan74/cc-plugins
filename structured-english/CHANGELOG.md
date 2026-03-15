@@ -4,6 +4,50 @@ All notable changes to the `structured-english` plugin are documented here.
 
 ---
 
+## [8.0.0] — 2026-03-14 — HSF v6: XML Envelope + Output Schemas
+
+### Breaking Changes
+- **HSF upgraded from v5 to v6:** The LLM-facing specification format now uses XML tags and native JSON/XML notation instead of custom `@`-prefixed syntax
+  - Top-level sections wrapped in XML tags (`<purpose>`, `<scope>`, `<config>`, `<instructions>`, `<rules>`, `<errors>`, `<examples>`, `<inputs>`, `<outputs>`) instead of `## Markdown Headers`
+  - `@config` with YAML-like syntax replaced by `<config>` with JSON body
+  - `@route name [mode]` with `→` rows replaced by `<route name="..." mode="...">` with `<case when="...">` and `<default>` XML elements
+  - Config references changed from `$config.key` to `config.key` (no `$` prefix — reserved for `$variable` threading)
+  - `## Section` markdown headers forbidden for top-level sections (use XML tags); `###` headers still used for sub-structure within sections
+
+### New: `<output-schema>` Blocks
+- Define exact structured output shape inline in instructions
+- Uses descriptive type annotations (`"string"`, `"float 0.0-1.0"`, `"string | null"`) — not formal JSON Schema
+- SHOULD for standard and complex tiers when producing structured output; MAY for micro
+- Closes the biggest LLM compliance gap: LLMs guessing output shape
+
+### Updated
+- `skills/hsf/SKILL.md` — rewritten for v6 rules and examples
+- `skills/hsf/assets/reference.md` — rewritten with XML envelope, JSON config, XML routes, output-schema documentation
+- `skills/hsf/assets/template.md` — all tier templates rewritten in v6 format
+- `skills/hsf/references/examples.md` — all three tier examples (Micro, Standard, Complex) rewritten in v6 format
+- `commands/write-LLM-spec.md` — updated for v6 notation and output-schema guidance
+- `commands/assess-LLM-doc.md` — updated assessment signals for XML envelope and output-schema benefits
+- `commands/convert-human-to-llm.md` — updated conversion mapping table for SESF → HSF v6
+
+### Validator
+- `validate_sesf.py` now auto-detects HSF v6 (by XML section tags) alongside v5 and SESF v4
+- New validation functions: `check_hsf_v6_structure`, `check_hsf_v6_config` (JSON parsing), `check_hsf_v6_routes` (XML element parsing), `check_hsf_v6_output_schema`
+- 19 new v6 tests added (54 total, all passing)
+
+### Unchanged
+- SESF v4.1 (human-facing format) — no changes
+- `$variable` threading, RFC 2119 keywords, tier system, line budgets, error table format, edge-case-only examples — all preserved
+- `/write-human-spec`, `/assess-human-doc`, `/update-human-spec`, `/assess-inferred-intent` — unchanged
+
+### Design Rationale
+- XML tags provide unambiguous section boundaries that LLMs parse with near-perfect accuracy
+- JSON config eliminates custom YAML-like syntax — LLMs already parse JSON natively
+- XML route elements make branch boundaries explicit without custom `→` separator notation
+- Output schemas close the most common LLM compliance failure: guessing output structure
+- The approach matches how Anthropic's own system prompts work — XML envelopes with prose content
+
+---
+
 ## [7.0.0] — 2026-03-13 — Dual-Audience Architecture (HSF + SESF)
 
 ### Breaking Changes

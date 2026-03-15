@@ -1,8 +1,8 @@
 # structured-english
 
 <!-- badges-start -->
-[![Plugin](https://img.shields.io/badge/plugin-v7.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
-[![HSF](https://img.shields.io/badge/HSF-v5.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english/skills/hsf)
+[![Plugin](https://img.shields.io/badge/plugin-v8.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english)
+[![HSF](https://img.shields.io/badge/HSF-v6.0.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english/skills/hsf)
 [![SESF](https://img.shields.io/badge/SESF-v4.1.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/structured-english/skills/sesf)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.8+-yellow)](https://www.python.org)
@@ -15,10 +15,10 @@ This plugin gives you a structured format for writing specifications where every
 
 Two formats, optimized for different readers:
 
-- **HSF v5** (LLM-facing) — prose instructions with markdown headers. Token-efficient, high compliance. What LLMs follow best.
+- **HSF v6** (LLM-facing) — XML envelope with prose instructions. JSON config, XML route tables, output schemas. Unambiguous section boundaries that LLMs parse with near-perfect accuracy.
 - **SESF v4.1** (human-facing) — formal BEHAVIOR/PROCEDURE/RULE/STEP blocks with WHEN/THEN syntax. Visual scaffolding, scannable structure, rationale annotations. What humans scan and maintain best.
 
-Both share: @route decision tables, @config parameters, $variable threading, consolidated error tables, RFC 2119 keywords, and 3-tier scaling (Micro/Standard/Complex).
+Both share: decision tables, configuration parameters, $variable threading, consolidated error tables, RFC 2119 keywords, and 3-tier scaling (Micro/Standard/Complex).
 
 ## Installation
 
@@ -31,7 +31,7 @@ Add the marketplace, then install the plugin:
 
 ## Commands
 
-### LLM-facing (HSF v5)
+### LLM-facing (HSF v6)
 
 ```
 /write-LLM-spec payment webhook handler
@@ -65,9 +65,9 @@ The skills activate automatically:
 
 | Component | HSF (LLM) | SESF (Human) |
 |-----------|-----------|--------------|
-| **Skill** | `hsf` — prose instruction rules, tier selection, @config/@route/$variable placement | `sesf` — formal block rules, WHEN/THEN syntax, STEP → $var, rationale annotations |
-| **Reference** | Format spec for prose output | Format spec for formal block output |
-| **Templates** | Micro/Standard/Complex with markdown headers | Micro/Standard/Complex with BEHAVIOR/PROCEDURE blocks |
+| **Skill** | `hsf` — XML envelope rules, JSON config, XML routes, output-schema, $variable threading | `sesf` — formal block rules, WHEN/THEN syntax, STEP → $var, rationale annotations |
+| **Reference** | Format spec with XML tags, JSON config, XML routes, output-schema | Format spec for formal block output |
+| **Templates** | Micro/Standard/Complex with XML envelope | Micro/Standard/Complex with BEHAVIOR/PROCEDURE blocks |
 | **Examples** | 3 complete specs (Webhook, Document Pipeline, Meeting Analysis) | 3 complete specs (same domains, formal block syntax) |
 | **Authoring Guide** | — | 6-step thinking process for human authors |
 | **Validator** | `validate_sesf.py` (auto-detects format) | `validate_sesf.py` (auto-detects format) |
@@ -76,9 +76,9 @@ The skills activate automatically:
 
 | Audience | Format | Why |
 |----------|--------|-----|
-| LLM agent executing the spec | **HSF v5** | Prose is what LLMs follow best. Formal blocks consume tokens without improving compliance. |
+| LLM agent executing the spec | **HSF v6** | XML envelope with prose content. LLMs parse XML boundaries with near-perfect accuracy. JSON config and output schemas eliminate guesswork. |
 | Human reading/reviewing the spec | **SESF v4.1** | Formal blocks create visual chapters. WHEN/THEN creates alignment points. Rationale explains *why*. |
-| Human authoring → LLM executing | **SESF v4.1 → `/convert-human-to-llm`** | Author in formal blocks (easier to think through), then convert to prose for the agent. |
+| Human authoring → LLM executing | **SESF v4.1 → `/convert-human-to-llm`** | Author in formal blocks (easier to think through), then convert to XML envelope format for the agent. |
 
 ### Use HSF or SESF for
 
@@ -132,55 +132,58 @@ finance for reimbursement.
 
 An LLM executing this spec would fill every gap with its own assumptions — different assumptions each time, producing inconsistent behavior.
 
-### After (HSF v5 — LLM-facing)
+### After (HSF v6 — LLM-facing)
 
 ```markdown
-# Expense Report Processor
-
+<purpose>
 Validate employee expense reports, route for approval, and forward
 approved reports to finance. Reject malformed reports immediately;
 flag policy violations for manager review.
+</purpose>
 
+<scope>
 **Not in scope:** Reimbursement processing, tax calculations, vendor payments.
+</scope>
 
-## Configuration
+<config>
+{
+  "receipt_required_above": 25,
+  "line_item_limit": 500,
+  "total_report_limit": 5000,
+  "manager_approval_timeout_days": 5,
+  "duplicate_window_days": 90
+}
+</config>
 
-@config
-  receipt_required_above: 25
-  line_item_limit: 500
-  total_report_limit: 5000
-  manager_approval_timeout_days: 5
-  duplicate_window_days: 90
-
-## Approval Routing
-
-@route approval_path [first_match_wins]
-  total ≤ $config.total_report_limit AND all items ≤ $config.line_item_limit  → auto-approve
-  total ≤ $config.total_report_limit AND any item > $config.line_item_limit   → manager approval
-  total > $config.total_report_limit                                          → manager + director approval
-  *                                                                           → finance review
-
-## Instructions
-
+<instructions>
 ### Phase 1: Validate Structure
 
 For EACH line item in the report:
 
 1. **Required fields:** MUST have description, amount, date, and category. If ANY field is missing, reject the entire report with `missing_field`.
-2. **Receipt check:** If amount > `$config.receipt_required_above`, a receipt MUST be attached. If missing, reject the line item (not the report) with `missing_receipt`.
-3. **Amount validation:** Amount MUST be positive and ≤ `$config.line_item_limit`. Amounts at exactly the limit pass (threshold is "exceeds", not "at or above").
-4. **Duplicate detection:** Check if a line item with the same amount, date, and vendor exists in reports submitted within `$config.duplicate_window_days`. If found, flag as `potential_duplicate` but continue processing.
+2. **Receipt check:** If amount > `config.receipt_required_above`, a receipt MUST be attached. If missing, reject the line item (not the report) with `missing_receipt`.
+3. **Amount validation:** Amount MUST be positive and ≤ `config.line_item_limit`. Amounts at exactly the limit pass (threshold is "exceeds", not "at or above").
+4. **Duplicate detection:** Check if a line item with the same amount, date, and vendor exists in reports submitted within `config.duplicate_window_days`. If found, flag as `potential_duplicate` but continue processing.
 
 ### Phase 2: Route for Approval
 
-Apply the `approval_path` route table using the report total and individual item amounts. If manager approval is required, notify the submitter's direct manager via email. If the manager does not respond within `$config.manager_approval_timeout_days`, escalate to their skip-level manager.
+Apply the approval route table using the report total and individual item amounts:
+
+<route name="approval_path" mode="first_match_wins">
+  <case when="total ≤ config.total_report_limit AND all items ≤ config.line_item_limit">auto-approve</case>
+  <case when="total ≤ config.total_report_limit AND any item > config.line_item_limit">manager approval</case>
+  <case when="total > config.total_report_limit">manager + director approval</case>
+  <default>finance review</default>
+</route>
+
+If manager approval is required, notify the submitter's direct manager via email. If the manager does not respond within `config.manager_approval_timeout_days`, escalate to their skip-level manager.
 
 ### Phase 3: Forward to Finance
 
 After approval, forward the report to the finance reimbursement queue with: employee ID, approved line items, total approved amount, approval chain (who approved and when), and any flags.
+</instructions>
 
-## Errors
-
+<errors>
 | Error | Severity | Action |
 |-------|----------|--------|
 | missing_field | critical | Reject entire report: "Line item {n} missing {field}." |
@@ -188,27 +191,37 @@ After approval, forward the report to the finance reimbursement queue with: empl
 | potential_duplicate | info | Flag: "Possible duplicate of {existing_report_id}, submitted {date}." Do not block. |
 | approval_timeout | warning | Escalate to skip-level manager. Notify submitter: "Manager did not respond within {days} days." |
 | over_line_limit | critical | Reject line item: "Amount ${amount} exceeds per-item limit of ${line_item_limit}." |
+</errors>
 ```
 
-Every ambiguity from the original is now resolved: thresholds are explicit numbers in @config, the approval path is a scannable @route table, error handling names each failure mode with a severity and action, and boundary conditions are specified ("at exactly the limit" passes).
+Every ambiguity from the original is now resolved: thresholds are explicit numbers in `<config>` JSON, the approval path is a scannable `<route>` table, error handling names each failure mode with a severity and action, and boundary conditions are specified ("at exactly the limit" passes).
 
-## HSF v5 at a glance (LLM format)
+## HSF v6 at a glance (LLM format)
 
 ```markdown
-## Validation Rules
+<purpose>
+Validate and process incoming payments.
+</purpose>
 
-- **Positive amount:** payment.amount MUST be greater than zero.
-- **Currency required:** payment.currency MUST NOT be empty.
-
-## Instructions
-
+<instructions>
 ### Phase 1: Validate Input
 
 Read the payment request. Check amount is positive and currency is supported.
 
+- **Positive amount:** payment.amount MUST be greater than zero.
+- **Currency required:** payment.currency MUST NOT be empty.
+
 ### Phase 2: Process Payment
 
 Submit the validated payment to the gateway.
+</instructions>
+
+<errors>
+| Error | Severity | Action |
+|-------|----------|--------|
+| invalid_amount | critical | Reject: "Amount must be positive." |
+| missing_currency | critical | Reject: "Currency is required." |
+</errors>
 ```
 
 ## SESF v4.1 at a glance (Human format)
@@ -238,8 +251,8 @@ Submit the validated payment to the gateway.
 
 This plugin uses three version numbers:
 
-- **Plugin version** (7.0.0) tracks the package release — commands, README, plugin.json
-- **HSF version** (v5.0.0) tracks the LLM-facing specification language
+- **Plugin version** (8.0.0) tracks the package release — commands, README, plugin.json
+- **HSF version** (v6.0.0) tracks the LLM-facing specification language
 - **SESF version** (v4.1.0) tracks the human-facing specification language
 
 ## License
