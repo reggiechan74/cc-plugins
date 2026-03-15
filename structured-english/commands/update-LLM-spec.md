@@ -1,12 +1,12 @@
 ---
-description: Upgrade an existing specification to LLM-optimized HSF v5 format
+description: Upgrade an existing specification to LLM-optimized HSF v6 format
 argument-hint: <path to spec file>
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
-# Upgrade a Specification to LLM-Facing HSF v5
+# Upgrade a Specification to LLM-Facing HSF v6
 
-Detect the format version of an existing specification and migrate it to HSF v5, optimized for LLM execution. Preserves all domain logic while upgrading notation and structure for maximum LLM compliance and token efficiency.
+Detect the format version of an existing specification and migrate it to HSF v6, optimized for LLM execution. Preserves all domain logic while upgrading notation and structure for maximum LLM compliance and token efficiency.
 
 ## Audience Context
 
@@ -14,13 +14,13 @@ The upgraded spec will be consumed by an LLM agent. Optimize the migration for:
 
 - **Compliance** — clear, unambiguous instructions with RFC 2119 keywords
 - **Token efficiency** — remove boilerplate sections, strip rationale that doesn't prevent misapplication
-- **Flat structure** — avoid deep nesting; prefer @route tables over nested conditionals
+- **XML envelope** — use XML section tags for unambiguous structure that LLMs parse with near-perfect accuracy
 
 ## Workflow
 
 ### Step 1: Load the Skill
 
-Use the `hsf` skill — it contains all the rules, formats, and validation requirements for HSF v5. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/reference.md`.
+Use the `hsf` skill — it contains all the rules, formats, and validation requirements for HSF v6. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/reference.md`.
 
 ### Step 2: Read and Detect Version
 
@@ -33,10 +33,13 @@ Read the full file content, then detect the format version:
 | Signal | Inferred Format |
 |--------|-----------------|
 | Has `**BEHAVIOR**`, `**PROCEDURE**`, `**RULE**`, `**STEP**` keywords | SESF v4 / v4.1 |
-| Has `@route` or `@config` or `## Instructions` prose, no BEHAVIOR/PROCEDURE | Already HSF v5 |
-| No BEHAVIOR, PROCEDURE, or `## Instructions` sections found | Not a spec |
+| Has `@route` or `@config` or `## Instructions` prose, no BEHAVIOR/PROCEDURE and no XML section tags | HSF v5 (needs v6 upgrade) |
+| Has XML section tags (`<purpose>`, `<instructions>`, `<config>`, `<errors>`) | Already HSF v6 |
+| No BEHAVIOR, PROCEDURE, `## Instructions`, or XML section tags found | Not a spec |
 
-**If already HSF v5**: Report that the specification is already at the latest LLM-facing format and stop.
+**If already HSF v6**: Report that the specification is already at the latest LLM-facing format and stop.
+
+**If HSF v5**: Proceed with migration to HSF v6. The main changes are: replace `##` section headers with XML tags, convert `@config` to `<config>` with JSON body, convert `@route` to `<route>` with `<case>` elements, change `$config.key` references to `config.key`.
 
 **If not a spec**: Suggest using `/write-LLM-spec` to create a new specification or `/assess-LLM-doc` to evaluate suitability, then stop.
 
@@ -59,37 +62,49 @@ Store the user's choice as `$output_mode`.
 
 ### Step 3: Analyze Gaps
 
-Compare the specification against HSF v5 requirements. Build two lists:
+Compare the specification against HSF v6 requirements. Build two lists:
 
 **Format migrations** (auto-apply):
 
-When upgrading from SESF v4/v4.1 → HSF v5:
+When upgrading from SESF v4/v4.1 → HSF v6:
 
 1. **Delete** Meta, Notation, Types, Functions, Precedence, Dependencies, Changelog sections
 2. **Convert** each `**BEHAVIOR**` block:
-   - Extract rules into prose bullets under `## Rules` or inline in the relevant instruction phase
+   - Extract rules into prose bullets under `<rules>` or inline in the relevant instruction phase
    - Convert WHEN/THEN/ELSE to natural prose sentences with bold list items
    - Move inline ERROR declarations to the consolidated error table
-   - Keep @route tables — move them to `## Routing Logic` or inline in Instructions
+   - Convert `@route` tables to `<route name="..." mode="...">` with `<case>` elements
 3. **Convert** each `**PROCEDURE**` block:
-   - Rewrite as prose under `## Instructions` with `###` phase headers
+   - Rewrite as prose under `<instructions>` with `###` phase headers
    - Drop `**STEP**` keywords; convert to numbered lists or phase headers
    - Drop `→ $variable` syntax unless data flow is genuinely complex
    - Inline applicable rules directly into the phase where they apply
 4. **Strip rationale annotations** — remove parenthetical explanations unless the rationale prevents a common LLM misapplication
-5. **Consolidate** errors into a single `## Errors` table
-6. **Preserve** @config blocks, @route tables, worked examples, RFC 2119 keywords
-7. **Move** version to YAML frontmatter
+5. **Consolidate** errors into a single table inside `<errors>`
+6. **Convert** `@config` blocks to `<config>` with JSON body (reference as `config.key`, not `$config.key`)
+7. **Wrap** top-level sections in XML tags (`<purpose>`, `<scope>`, `<instructions>`, `<rules>`, `<errors>`, `<examples>`)
+8. **Move** version to YAML frontmatter
+
+When upgrading from HSF v5 → HSF v6:
+
+1. **Replace** `## Section` headers with XML tags (`<purpose>`, `<scope>`, `<instructions>`, `<rules>`, `<errors>`, `<examples>`)
+2. **Convert** `@config` blocks to `<config>` with JSON body
+3. **Convert** `@route name [mode]` with `→` rows to `<route name="..." mode="...">` with `<case when="...">` and `<default>` elements
+4. **Change** `$config.key` references to `config.key` (drop `$` prefix)
+5. **Wrap** error table in `<errors>` tags
+6. **Add** `<output-schema>` blocks for phases producing structured output
+7. **Preserve** prose instructions, $variable threading, RFC 2119 keywords, examples
 
 **LLM-specific optimizations** (apply automatically):
 
 - Convert passive voice to imperative mood
 - Replace references to other sections with inline repetition where it improves compliance
 
-**v5 opportunity suggestions** (require user approval):
+**v6 opportunity suggestions** (require user approval):
 
-- **@config candidates**: Repeated literal values
-- **@route candidates**: Conditional logic with 3+ branches
+- **`<config>` candidates**: Repeated literal values (3+)
+- **`<route>` candidates**: Conditional logic with 3+ branches
+- **`<output-schema>` candidates**: Phases producing structured output
 - **Rule inlining candidates**: Rules that apply to only one phase
 
 ### Step 4: Present Migration Report
@@ -97,7 +112,7 @@ When upgrading from SESF v4/v4.1 → HSF v5:
 Show:
 
 - **Detected format**: The inferred version
-- **Target format**: HSF v5 (LLM-optimized)
+- **Target format**: HSF v6 (LLM-optimized, XML envelope)
 - **Format migrations**: Automatic changes
 - **Suggestions**: Optional enhancements
 
@@ -117,7 +132,7 @@ Use `AskUserQuestion`:
 
 **Apply output mode** based on `$output_mode`:
 
-- **self-contained**: Convert into HSF v5 prose format. No meta-specification layer.
+- **self-contained**: Convert into HSF v6 format with XML envelope. No meta-specification layer.
 - **split**: Extract operational content into companion files.
 
 **CRITICAL**: Preserve ALL domain logic exactly. Only change format and notation.
