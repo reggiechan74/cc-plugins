@@ -110,7 +110,13 @@ The user provides the next concept. This can be:
 - A relationship: "Total load should not exceed capacity"
 - A request for suggestion: "What would this model need next?"
 
-If the user asks what's needed next, review the current symbol registry and suggest what a complete model typically requires (e.g., "You have sets and parameters but no constraints or objective yet").
+If the user asks what's needed next, combine three sources into a single suggestion:
+
+1. **Template outline:** Check the outline (from frontmatter) for the next unwritten section. Suggest it by name and describe what goes there.
+2. **Structural checklist:** Read `${CLAUDE_PLUGIN_ROOT}/templates/_checklist.md` and scan the Required items against the current document. Surface any structural gaps (e.g., "no computable output yet — consider adding an Expression, Constraint, or Objective").
+3. **Symbol registry:** Review the current symbols and suggest what a complete model typically requires (e.g., "You have sets and parameters but no constraints or objective yet"). This is the existing behavior.
+
+Present all three as a unified recommendation, not three separate lists.
 
 ### 3.2 Formalize
 
@@ -180,6 +186,9 @@ When the user signals they are done:
    - Total sections with math blocks
    - Symbol count by type (Sets, Parameters, Variables, Expressions, Constraints, Objectives)
    - Any warnings (orphan symbols, etc.)
+   - **Structural checklist results:** Read `${CLAUDE_PLUGIN_ROOT}/templates/_checklist.md` and evaluate every item against the document:
+     - **Required items:** Show pass/fail status for each. Failed items are warnings — the user should address them but they don't block compilation.
+     - **Advisory items:** Show any that match as informational notes.
 
 3. Ask the user:
    > "Would you like me to compile now? This produces a clean paper (prose + math only), a standalone runner.py (all validation logic as a self-contained script), and a validation report. Or you can do this later with `/math-paper-creator:compile`."
