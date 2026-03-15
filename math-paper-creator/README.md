@@ -46,6 +46,20 @@ You describe a problem domain. Claude formalizes it section by section:
 
 Each section is validated against all previous sections. A variable defined in section 1 can be referenced in section 5 — the checker ensures consistency across the entire document. A variable can only be defined once.
 
+The author workflow includes template selection — choose a paper type to get a pre-defined section outline and structural checklist tailored to your problem domain.
+
+### Review a paper (`/math-paper-creator:review`)
+
+You have a draft paper (`.md`, `.model.md`, or `.pdf`) and want a mathematical coherence assessment before proceeding. Claude reviews it across five layers:
+
+1. **Core model** — are the foundational definitions sound?
+2. **Mathematical completeness** — are there gaps in the formalization?
+3. **Internal consistency** — do definitions, constraints, and objectives align?
+4. **Structure and organization** — does the paper flow logically?
+5. **Prose and presentation** — is the exposition clear and precise?
+
+Findings are saved to a `.review.md` file and can be discussed interactively. The author workflow is aware of review findings — if a review file exists, Claude consults it when writing new sections.
+
 ### Onboard an existing paper (`/math-paper-creator:onboard`)
 
 You have a Markdown paper with `$$...$$` display math but no validation. Claude reads it section by section, proposes fixture + validate blocks for each, and inserts them after your approval. Same incremental validation — each section is checked before moving to the next.
@@ -75,11 +89,31 @@ The `runner.py` is immediately repeatable. You can run it in CI, share it with c
 |---------|-------------|
 | `/math-paper-creator:author [file]` | Author a new paper interactively — ideate, formalize, validate section-by-section |
 | `/math-paper-creator:onboard <file>` | Convert an existing paper — wrap existing math with validation blocks |
+| `/math-paper-creator:review [file]` | Review a draft paper for mathematical coherence — layered assessment with interactive discussion |
 | `/math-paper-creator:check <file>` | Run validation pipeline against a `.model.md` document |
 | `/math-paper-creator:status <file>` | Show symbol table, coverage, and orphan/phantom status |
 | `/math-paper-creator:report <file>` | Generate full validation report |
 | `/math-paper-creator:paper <file>` | Generate clean paper artifact (strips validation blocks) |
 | `/math-paper-creator:compile <file>` | Produce all artifacts: clean paper, standalone runner, validation report |
+
+## Templates
+
+The author workflow offers 10 paper-type templates, each providing a pre-defined section outline and structural checklist:
+
+| Template | Domain |
+|----------|--------|
+| Constrained Optimization | LP, IP, MIP, convex, network flow, assignment |
+| Statistical Modeling | Regression, time series, Bayesian inference |
+| Game-Theoretic Analysis | Nash equilibrium, mechanism design, auctions |
+| Simulation Model | Monte Carlo, agent-based, discrete-event |
+| Decision Analysis | Decision trees, utility theory, MCDA |
+| Financial Pricing | Derivatives pricing, stochastic calculus, term structure |
+| Actuarial Model | Life tables, loss distributions, reserving |
+| Econometric Model | Structural models, GMM, panel data, IV |
+| Queueing Model | M/M/1, networks, scheduling |
+| Graph and Network Analysis | Centrality, flow, matching, clustering |
+
+A universal structural checklist applies to all paper types, covering required and advisory items.
 
 ## Live Validation
 
