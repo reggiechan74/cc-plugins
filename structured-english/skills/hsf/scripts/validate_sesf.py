@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""SESF v3/v4 and HSF v5 Structural Validator
+"""SESF v3/v4, HSF v5, and HSF v6 Structural Validator
 
 Parses specification files (markdown) and validates them for structural
-correctness. Auto-detects whether a spec is SESF v4 (formal blocks) or
-HSF v5 (hybrid prose format) and applies the appropriate validation rules.
+correctness. Auto-detects whether a spec is SESF v4 (formal blocks),
+HSF v5 (hybrid prose format), or HSF v6 (XML section tags) and applies
+the appropriate validation rules.
 
 SESF v4: Checks BEHAVIOR blocks, PROCEDURE blocks, ACTION declarations,
 section structure, @config, @route, $variable threading.
 
 HSF v5: Checks prose structure, forbidden formal keywords, @config, @route,
 $variable threading, consolidated error tables, line budgets.
+
+HSF v6: Checks XML section tags, <config> with JSON body, <route> with
+<case> elements, <output-schema>, $variable threading, line budgets.
 
 Usage:
     python3 validate_sesf.py <spec_file.md>
@@ -19,6 +23,7 @@ Exit codes:
     1 - One or more checks failed, or file is not a valid spec
 """
 
+import json
 import re
 import sys
 from dataclasses import dataclass, field
@@ -246,9 +251,10 @@ def _strip_fenced_code_blocks(text: str) -> str:
 
 
 def detect_format_version(text: str) -> str:
-    """Detect whether a spec is SESF v4 or HSF v5.
+    """Detect whether a spec is SESF v4, HSF v5, or HSF v6.
 
     Returns:
+        'hsf_v6' if 2+ XML section tags found (<purpose>, <instructions>, etc.)
         'sesf_v4' if BEHAVIOR/PROCEDURE keywords found outside code blocks
         'hsf_v5' if prose format (no formal blocks) with @route/@config/## Instructions
         'unknown' if neither pattern matches
@@ -256,6 +262,18 @@ def detect_format_version(text: str) -> str:
     # Strip fenced code blocks so examples don't trigger false positives
     prose_only = _strip_fenced_code_blocks(text)
     normalized = _normalize_for_matching(prose_only)
+
+    # Check for HSF v6 XML section tags (before v5/v4 checks)
+    v6_section_tags = [
+        'purpose', 'instructions', 'scope', 'config', 'rules',
+        'errors', 'examples', 'inputs', 'outputs',
+    ]
+    v6_tag_count = sum(
+        1 for tag in v6_section_tags
+        if re.search(rf'<{tag}[\s>]', prose_only)
+    )
+    if v6_tag_count >= 2:
+        return 'hsf_v6'
 
     # Check for SESF v4 formal blocks (outside code blocks only)
     has_behavior = bool(re.search(r'^\s*BEHAVIOR\s+\w+', normalized, re.MULTILINE))
@@ -2648,6 +2666,391 @@ def check_hsf_rfc2119(text: str) -> list:
     return results
 
 
+# ---------------------------------------------------------------------------
+# HSF v6 validation
+# ---------------------------------------------------------------------------
+
+# Canonical section order for HSF v6
+_V6_SECTION_ORDER = [
+    'purpose', 'scope', 'inputs', 'outputs', 'config',
+    'instructions', 'rules', 'errors', 'examples',
+]
+
+# Section-level tags (not inner tags like <case>, <default>)
+_V6_SECTION_TAGS = set(_V6_SECTION_ORDER)
+
+
+def check_hsf_v6_structure(text: str, filepath: str) -> list:
+    """Validate HSF v6 structural requirements."""
+    results = []
+    lines = text.split('\n')
+    line_count = len([l for l in lines if l.strip()])  # non-empty lines
+    tier = _detect_hsf_tier(text, line_count)
+
+    results.append(ValidationResult(
+        "hsf_v6_structure", "INFO",
+        f"Detected HSF v6 format, inferred tier: {tier} ({line_count} non-empty lines)"
+    ))
+
+    # Build a set of line numbers that are inside fenced code blocks
+    in_code_block = set()
+    inside = False
+    for i, line in enumerate(lines, 1):
+        if line.strip().startswith('```'):
+            inside = not inside
+            in_code_block.add(i)
+            continue
+        if inside:
+            in_code_block.add(i)
+
+    # --- Required sections ---
+    has_purpose = bool(re.search(r'<purpose[\s>]', text))
+    has_instructions = bool(re.search(r'<instructions[\s>]', text))
+    has_errors = bool(re.search(r'<errors[\s>]', text))
+
+    if not has_purpose:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "FAIL",
+            "Missing <purpose> section (required for all tiers)"
+        ))
+    else:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "PASS",
+            "<purpose> section present"
+        ))
+
+    if not has_instructions:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "FAIL",
+            "Missing <instructions> section (required for all tiers)"
+        ))
+    else:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "PASS",
+            "<instructions> section present"
+        ))
+
+    if not has_errors:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "WARN",
+            "No <errors> section found — consider adding error handling"
+        ))
+
+    # --- Forbidden: ## Section markdown headers for top-level sections ---
+    forbidden_md_sections = [
+        'Purpose', 'Scope', 'Instructions', 'Rules', 'Errors',
+        'Examples', 'Inputs', 'Outputs', 'Configuration', 'Config',
+    ]
+    for section in forbidden_md_sections:
+        pattern = rf'^##\s+{section}\s*$'
+        for i, line in enumerate(lines, 1):
+            if i in in_code_block:
+                continue
+            if re.match(pattern, line.strip()):
+                results.append(ValidationResult(
+                    "hsf_v6_structure", "FAIL",
+                    f"Forbidden markdown header '## {section}' — HSF v6 uses XML tags like <{section.lower()}> instead",
+                    line_number=i
+                ))
+
+    # --- Forbidden: BEHAVIOR/RULE/PROCEDURE/STEP keywords ---
+    forbidden_keywords = [
+        (r'^\s*BEHAVIOR\s+\w+', '**BEHAVIOR**'),
+        (r'^\s*RULE\s+\w+', '**RULE**'),
+        (r'^\s*PROCEDURE\s+\w+', '**PROCEDURE**'),
+        (r'^\s*STEP\s+\w+', '**STEP**'),
+    ]
+    for pattern, keyword in forbidden_keywords:
+        for i, line in enumerate(lines, 1):
+            if i in in_code_block:
+                continue
+            norm_line = _normalize_for_matching(line)
+            if re.match(pattern, norm_line):
+                results.append(ValidationResult(
+                    "hsf_v6_structure", "FAIL",
+                    f"Forbidden keyword {keyword} found — HSF v6 uses XML tags and prose instead",
+                    line_number=i
+                ))
+
+    # --- Forbidden: @config and @route (replaced by XML in v6) ---
+    for i, line in enumerate(lines, 1):
+        if i in in_code_block:
+            continue
+        stripped = line.strip()
+        if re.match(r'^@config\b', stripped):
+            results.append(ValidationResult(
+                "hsf_v6_structure", "FAIL",
+                "Forbidden @config found — HSF v6 uses <config> with JSON body instead",
+                line_number=i
+            ))
+        if re.match(r'^@route\b', stripped):
+            results.append(ValidationResult(
+                "hsf_v6_structure", "FAIL",
+                "Forbidden @route found — HSF v6 uses <route> with <case> elements instead",
+                line_number=i
+            ))
+
+    # --- Warn: $config.key references (should be config.key without $) ---
+    for i, line in enumerate(lines, 1):
+        if i in in_code_block:
+            continue
+        if re.search(r'\$config\.', line):
+            results.append(ValidationResult(
+                "hsf_v6_structure", "WARN",
+                "$config.key reference found — HSF v6 uses config.key without $ prefix",
+                line_number=i
+            ))
+
+    # --- Empty XML sections check (section-level tags only) ---
+    section_tag_pattern = '|'.join(_V6_SECTION_TAGS)
+    for m in re.finditer(rf'<({section_tag_pattern})(?:\s[^>]*)?>(\s*)</\1>', text):
+        tag_name = m.group(1)
+        line_num = text[:m.start()].count('\n') + 1
+        results.append(ValidationResult(
+            "hsf_v6_structure", "FAIL",
+            f"Empty <{tag_name}> section — omit sections that have no content instead of stubbing them",
+            line_number=line_num
+        ))
+
+    # --- Section order check ---
+    found_sections = []
+    for tag in _V6_SECTION_ORDER:
+        match = re.search(rf'<{tag}[\s>]', text)
+        if match:
+            found_sections.append((match.start(), tag))
+    found_sections.sort(key=lambda x: x[0])
+    ordered_tags = [tag for _, tag in found_sections]
+    # Check if the found sections are in the correct relative order
+    expected_order = [t for t in _V6_SECTION_ORDER if t in ordered_tags]
+    if ordered_tags != expected_order:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "WARN",
+            f"Section order should be: {', '.join(expected_order)} — found: {', '.join(ordered_tags)}"
+        ))
+    else:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "PASS",
+            "Section order is correct"
+        ))
+
+    # --- Line budget check ---
+    budget = {"micro": 80, "standard": 200, "complex": 400}
+    max_lines = budget.get(tier, 400)
+    if line_count > max_lines:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "WARN",
+            f"Spec has {line_count} non-empty lines, exceeding {tier} tier budget of {max_lines}"
+        ))
+    else:
+        results.append(ValidationResult(
+            "hsf_v6_structure", "PASS",
+            f"Line budget OK ({line_count}/{max_lines} for {tier} tier)"
+        ))
+
+    return results
+
+
+def check_hsf_v6_config(text: str) -> list:
+    """Validate <config> blocks with JSON body in HSF v6 specs."""
+    results = []
+
+    config_match = re.search(r'<config>(.*?)</config>', text, re.DOTALL)
+    if not config_match:
+        return results
+
+    config_body = config_match.group(1).strip()
+
+    # Parse JSON
+    try:
+        config_data = json.loads(config_body)
+    except json.JSONDecodeError as e:
+        results.append(ValidationResult(
+            "hsf_v6_config", "FAIL",
+            f"<config> body is not valid JSON: {e}"
+        ))
+        return results
+
+    # Must be a dict
+    if not isinstance(config_data, dict):
+        results.append(ValidationResult(
+            "hsf_v6_config", "FAIL",
+            "<config> JSON must be an object (dict), not " + type(config_data).__name__
+        ))
+        return results
+
+    results.append(ValidationResult(
+        "hsf_v6_config", "PASS",
+        f"<config> contains valid JSON with {len(config_data)} keys"
+    ))
+
+    # Warn if keys aren't snake_case
+    snake_case_re = re.compile(r'^[a-z][a-z0-9]*(_[a-z0-9]+)*$')
+    for key in config_data:
+        if not snake_case_re.match(key):
+            results.append(ValidationResult(
+                "hsf_v6_config", "WARN",
+                f"Config key '{key}' is not snake_case"
+            ))
+
+    # Find config.key references outside the config block
+    config_end = config_match.end()
+    config_start = config_match.start()
+    text_outside_config = text[:config_start] + text[config_end:]
+    config_refs = set(re.findall(r'\bconfig\.([a-zA-Z_][a-zA-Z0-9_.]*)', text_outside_config))
+
+    for ref in config_refs:
+        top_key = ref.split('.')[0]
+        if top_key not in config_data:
+            results.append(ValidationResult(
+                "hsf_v6_config", "WARN",
+                f"config.{ref} referenced but '{top_key}' not found in <config> block"
+            ))
+
+    # Warn if fewer than 3 keys
+    if len(config_data) < 3:
+        results.append(ValidationResult(
+            "hsf_v6_config", "WARN",
+            f"<config> has only {len(config_data)} keys — consider whether a config block is needed for fewer than 3"
+        ))
+
+    return results
+
+
+def check_hsf_v6_routes(text: str) -> list:
+    """Validate <route> elements with <case> children in HSF v6 specs."""
+    results = []
+
+    # Match <route ...>...</route> with order-independent attributes
+    route_pattern = re.compile(
+        r'<route\s+([^>]*)>(.*?)</route>',
+        re.DOTALL
+    )
+
+    for match in route_pattern.finditer(text):
+        attrs_str = match.group(1)
+        route_body = match.group(2)
+        line_num = text[:match.start()].count('\n') + 1
+
+        # Parse name and mode attributes (order-independent)
+        name_match = re.search(r'name\s*=\s*"([^"]*)"', attrs_str)
+        mode_match = re.search(r'mode\s*=\s*"([^"]*)"', attrs_str)
+
+        name = name_match.group(1) if name_match else None
+        mode = mode_match.group(1) if mode_match else None
+
+        if not name:
+            results.append(ValidationResult(
+                "hsf_v6_routes", "FAIL",
+                "Route is missing required 'name' attribute",
+                line_number=line_num
+            ))
+            continue
+
+        if not mode:
+            results.append(ValidationResult(
+                "hsf_v6_routes", "WARN",
+                f"Route '{name}' is missing 'mode' attribute — defaults to first_match_wins",
+                line_number=line_num
+            ))
+            mode = "first_match_wins"
+
+        # Validate mode
+        if mode not in ('first_match_wins', 'all_matches'):
+            results.append(ValidationResult(
+                "hsf_v6_routes", "FAIL",
+                f"Route '{name}' has invalid mode '{mode}' — must be first_match_wins or all_matches",
+                line_number=line_num
+            ))
+
+        # Count <case when="..."> elements
+        case_count = len(re.findall(r'<case\s+when\s*=\s*"[^"]*"', route_body))
+
+        if case_count < 3:
+            results.append(ValidationResult(
+                "hsf_v6_routes", "WARN",
+                f"Route '{name}' has {case_count} cases — use prose conditionals for fewer than 3 cases",
+                line_number=line_num
+            ))
+        else:
+            results.append(ValidationResult(
+                "hsf_v6_routes", "PASS",
+                f"Route '{name}' has {case_count} cases",
+                line_number=line_num
+            ))
+
+    return results
+
+
+def check_hsf_v6_output_schema(text: str, tier: str) -> list:
+    """Validate <output-schema> blocks in HSF v6 specs."""
+    results = []
+
+    schema_match = re.search(
+        r'<output-schema\s+format\s*=\s*"([^"]*)">(.*?)</output-schema>',
+        text, re.DOTALL
+    )
+
+    if not schema_match:
+        # If no output-schema and tier is standard/complex, check if spec mentions structured output
+        if tier in ('standard', 'complex'):
+            if re.search(r'structured\s+output', text, re.IGNORECASE):
+                results.append(ValidationResult(
+                    "hsf_v6_output_schema", "WARN",
+                    "Spec mentions structured output but no <output-schema> block found"
+                ))
+        return results
+
+    fmt = schema_match.group(1)
+    body = schema_match.group(2).strip()
+
+    # Warn if format is not json
+    if fmt != 'json':
+        results.append(ValidationResult(
+            "hsf_v6_output_schema", "WARN",
+            f"<output-schema> format is '{fmt}' — 'json' is recommended"
+        ))
+
+    # Fail if empty body
+    if not body:
+        results.append(ValidationResult(
+            "hsf_v6_output_schema", "FAIL",
+            "<output-schema> has empty body"
+        ))
+        return results
+
+    # Check body starts with { or [ (pseudo-JSON structure)
+    if not body.startswith('{') and not body.startswith('['):
+        results.append(ValidationResult(
+            "hsf_v6_output_schema", "WARN",
+            "<output-schema> body should start with '{' or '[' for pseudo-JSON structure"
+        ))
+    else:
+        results.append(ValidationResult(
+            "hsf_v6_output_schema", "PASS",
+            "<output-schema> has valid pseudo-JSON structure"
+        ))
+
+    return results
+
+
+def validate_hsf_v6(text: str, filepath: str) -> list:
+    """Run all HSF v6 validation checks."""
+    results = []
+    results.extend(check_hsf_v6_structure(text, filepath))
+    results.extend(check_hsf_v6_config(text))
+    results.extend(check_hsf_v6_routes(text))
+
+    # Detect tier for output-schema check
+    lines = text.split('\n')
+    line_count = len([l for l in lines if l.strip()])
+    tier = _detect_hsf_tier(text, line_count)
+    results.extend(check_hsf_v6_output_schema(text, tier))
+
+    results.extend(check_hsf_variable_threading(text))
+    results.extend(check_hsf_rfc2119(text))
+    return results
+
+
 def validate_hsf(text: str, filepath: str) -> list:
     """Run all HSF v5 validation checks."""
     results = []
@@ -2682,7 +3085,10 @@ def main():
 
     format_version = detect_format_version(stripped_text)
 
-    if format_version == 'hsf_v5':
+    if format_version == 'hsf_v6':
+        print(f"  Detected format: HSF v6 (XML Section Tags)")
+        results = validate_hsf_v6(stripped_text, filepath)
+    elif format_version == 'hsf_v5':
         print(f"  Detected format: HSF v5 (Hybrid Specification Format)")
         results = validate_hsf(stripped_text, filepath)
     elif format_version == 'sesf_v4':

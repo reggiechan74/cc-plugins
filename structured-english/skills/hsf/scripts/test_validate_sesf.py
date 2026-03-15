@@ -29,8 +29,13 @@ from validate_sesf import (
     check_type_consistency,
     detect_format_version,
     validate_hsf,
+    validate_hsf_v6,
     check_hsf_structure,
     check_hsf_route_tables,
+    check_hsf_v6_structure,
+    check_hsf_v6_config,
+    check_hsf_v6_routes,
+    check_hsf_v6_output_schema,
 )
 
 
@@ -2029,6 +2034,493 @@ Nothing to see here.
 # Runner
 # ──────────────────────────────────────────────────────────────────────────
 
+# ──────────────────────────────────────────────────────────────────────────
+# HSF v6 Tests
+# ──────────────────────────────────────────────────────────────────────────
+
+# A reusable valid v6 micro spec for tests
+_V6_MICRO_SPEC = """\
+# Daily Stand-up Summary Generator
+
+<purpose>
+Produce a concise daily stand-up summary from team member updates.
+</purpose>
+
+<instructions>
+Read each team member's update. Extract blockers, completions, and plans.
+Combine them into a single summary grouped by project area.
+If a member has no update, note them as absent.
+</instructions>
+
+<errors>
+| Error | Severity | Action |
+|-------|----------|--------|
+| no_updates | warning | Return empty summary with note |
+| malformed_input | fatal | Reject with parse error |
+</errors>
+"""
+
+# A reusable valid v6 standard spec for tests
+_V6_STANDARD_SPEC = """\
+# Invoice Reconciliation Engine
+
+<purpose>
+Match incoming invoices against purchase orders and flag discrepancies.
+</purpose>
+
+<scope>
+Accounts-payable pipeline for approved vendors only.
+</scope>
+
+<inputs>
+- Invoice PDF or EDI payload
+- Purchase order ledger access
+</inputs>
+
+<outputs>
+- Reconciliation result with disposition
+</outputs>
+
+<config>
+{
+  "tolerance_pct": 5,
+  "currency": "USD",
+  "auto_approve_below": 100.00,
+  "review_queue": "finance-team"
+}
+</config>
+
+<route name="match_strategy" mode="first_match_wins">
+  <case when="exact PO match and amount within tolerance">auto_approve</case>
+  <case when="exact PO match but amount over tolerance">flag_for_review</case>
+  <case when="fuzzy PO match >90% similarity">suggest_match</case>
+  <case when="no PO match found">route_to_manual</case>
+</route>
+
+<instructions>
+### Phase 1 — Ingest
+
+Parse the invoice PDF or EDI payload. Extract vendor ID, PO number,
+line items, and total amount. Normalize the currency to config.currency.
+
+### Phase 2 — Match
+
+Look up the PO number in the purchase-order ledger. Apply the
+route match_strategy to decide the next action.
+
+### Phase 3 — Disposition
+
+For auto-approved invoices, stamp them and forward to payment.
+For flagged invoices, enqueue to config.review_queue with a
+discrepancy report attached.
+</instructions>
+
+<rules>
+- **tolerance_check** — The invoice total MUST be within config.tolerance_pct
+  percent of the PO total to qualify for auto-approval.
+- **duplicate_guard** — An invoice number that has already been processed
+  MUST be rejected with error duplicate_invoice.
+- **currency_normalize** — All monetary values MUST be converted to
+  config.currency before comparison.
+</rules>
+
+<errors>
+| Error | Severity | Action |
+|-------|----------|--------|
+| duplicate_invoice | fatal | Reject and log |
+| po_not_found | warning | Route to manual queue |
+| amount_mismatch | warning | Flag for review |
+| parse_failure | fatal | Reject with details |
+</errors>
+
+<examples>
+**Example: exact match auto-approve**
+
+Input: Invoice #1234 for PO-5678, amount $500.00
+Expected: auto_approve — amount matches within tolerance
+</examples>
+
+<output-schema format="json">
+{
+  "disposition": "string",
+  "invoice_id": "string",
+  "po_number": "string",
+  "amount": "number",
+  "discrepancy_pct": "number"
+}
+</output-schema>
+"""
+
+
+class TestHSFv6Validation:
+    """Test cases for HSF v6 format validation."""
+
+    def test_detect_format_v6(self):
+        """A v6 spec with XML section tags should be detected as hsf_v6."""
+        version = detect_format_version(_V6_MICRO_SPEC)
+        assert version == "hsf_v6", f"Expected hsf_v6, got {version}"
+        print("  PASS  test_detect_format_v6")
+
+    def test_detect_format_v5_not_v6(self):
+        """A v5 spec should still detect as hsf_v5, not hsf_v6."""
+        v5_spec = """\
+# My Spec
+
+@config
+  key: value
+
+## Instructions
+
+Do the thing.
+
+## Errors
+
+| Error | Severity | Action |
+|-------|----------|--------|
+| oops | fatal | abort |
+"""
+        version = detect_format_version(v5_spec)
+        assert version == "hsf_v5", f"Expected hsf_v5, got {version}"
+        print("  PASS  test_detect_format_v5_not_v6")
+
+    def test_v6_structure_valid_micro(self):
+        """A valid v6 micro spec should produce no failures."""
+        path = _write_temp_spec(_V6_MICRO_SPEC)
+        try:
+            results = check_hsf_v6_structure(_V6_MICRO_SPEC, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            assert len(failures) == 0, (
+                f"Expected no failures, got: {[r.message for r in failures]}"
+            )
+            print("  PASS  test_v6_structure_valid_micro")
+        finally:
+            os.unlink(path)
+
+    def test_v6_structure_forbidden_markdown_headers(self):
+        """## Instructions in a v6 spec should produce a FAIL."""
+        spec = """\
+# My Spec
+
+<purpose>
+Do something.
+</purpose>
+
+## Instructions
+
+Do the thing step by step.
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = check_hsf_v6_structure(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            md_fails = [r for r in failures if "Forbidden markdown header" in r.message]
+            assert len(md_fails) >= 1, (
+                f"Expected at least 1 forbidden markdown header failure, got: "
+                f"{[r.message for r in failures]}"
+            )
+            print("  PASS  test_v6_structure_forbidden_markdown_headers")
+        finally:
+            os.unlink(path)
+
+    def test_v6_structure_forbidden_at_config(self):
+        """@config in a v6 spec should produce a FAIL."""
+        spec = """\
+# My Spec
+
+<purpose>
+Do something.
+</purpose>
+
+<instructions>
+Do the thing.
+</instructions>
+
+@config
+  key: value
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = check_hsf_v6_structure(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            at_config_fails = [r for r in failures if "@config" in r.message]
+            assert len(at_config_fails) >= 1, (
+                f"Expected @config failure, got: {[r.message for r in failures]}"
+            )
+            print("  PASS  test_v6_structure_forbidden_at_config")
+        finally:
+            os.unlink(path)
+
+    def test_v6_config_valid_json(self):
+        """Valid JSON in <config> should pass."""
+        spec = """\
+<config>
+{
+  "tolerance_pct": 5,
+  "currency": "USD",
+  "auto_approve_below": 100.00
+}
+</config>
+"""
+        results = check_hsf_v6_config(spec)
+        failures = [r for r in results if r.status == "FAIL"]
+        assert len(failures) == 0, (
+            f"Expected no failures, got: {[r.message for r in failures]}"
+        )
+        passes = [r for r in results if r.status == "PASS"]
+        assert len(passes) >= 1, "Expected at least one PASS result"
+        print("  PASS  test_v6_config_valid_json")
+
+    def test_v6_config_invalid_json(self):
+        """YAML-like content in <config> should FAIL."""
+        spec = """\
+<config>
+  tolerance_pct: 5
+  currency: USD
+</config>
+"""
+        results = check_hsf_v6_config(spec)
+        failures = [r for r in results if r.status == "FAIL"]
+        assert len(failures) >= 1, (
+            f"Expected JSON parse failure, got: {[r.message for r in results]}"
+        )
+        print("  PASS  test_v6_config_invalid_json")
+
+    def test_v6_config_undefined_ref(self):
+        """Reference to undefined config key should warn."""
+        spec = """\
+<config>
+{
+  "tolerance_pct": 5,
+  "currency": "USD",
+  "auto_approve_below": 100.00
+}
+</config>
+
+Use config.nonexistent_key to decide.
+"""
+        results = check_hsf_v6_config(spec)
+        warns = [r for r in results if r.status == "WARN"]
+        ref_warns = [r for r in warns if "nonexistent_key" in r.message]
+        assert len(ref_warns) >= 1, (
+            f"Expected warning about undefined ref, got: {[r.message for r in results]}"
+        )
+        print("  PASS  test_v6_config_undefined_ref")
+
+    def test_v6_route_valid(self):
+        """Valid route with 3+ cases should pass."""
+        spec = """\
+<route name="match_strategy" mode="first_match_wins">
+  <case when="condition A">outcome_a</case>
+  <case when="condition B">outcome_b</case>
+  <case when="condition C">outcome_c</case>
+</route>
+"""
+        results = check_hsf_v6_routes(spec)
+        failures = [r for r in results if r.status == "FAIL"]
+        assert len(failures) == 0, (
+            f"Expected no failures, got: {[r.message for r in failures]}"
+        )
+        passes = [r for r in results if r.status == "PASS"]
+        assert len(passes) >= 1, "Expected at least one PASS"
+        print("  PASS  test_v6_route_valid")
+
+    def test_v6_route_under_threshold(self):
+        """Route with <3 cases should warn."""
+        spec = """\
+<route name="simple" mode="first_match_wins">
+  <case when="yes">do_it</case>
+  <case when="no">skip_it</case>
+</route>
+"""
+        results = check_hsf_v6_routes(spec)
+        warns = [r for r in results if r.status == "WARN"]
+        assert len(warns) >= 1, (
+            f"Expected warning about few cases, got: {[r.message for r in results]}"
+        )
+        print("  PASS  test_v6_route_under_threshold")
+
+    def test_v6_route_invalid_mode(self):
+        """Invalid route mode should FAIL."""
+        spec = """\
+<route name="bad" mode="round_robin">
+  <case when="a">x</case>
+  <case when="b">y</case>
+  <case when="c">z</case>
+</route>
+"""
+        results = check_hsf_v6_routes(spec)
+        failures = [r for r in results if r.status == "FAIL"]
+        assert len(failures) >= 1, (
+            f"Expected failure for invalid mode, got: {[r.message for r in results]}"
+        )
+        print("  PASS  test_v6_route_invalid_mode")
+
+    def test_v6_route_reversed_attrs(self):
+        """Route with mode before name should still parse correctly."""
+        spec = """\
+<route mode="all_matches" name="multi">
+  <case when="a">x</case>
+  <case when="b">y</case>
+  <case when="c">z</case>
+</route>
+"""
+        results = check_hsf_v6_routes(spec)
+        failures = [r for r in results if r.status == "FAIL"]
+        assert len(failures) == 0, (
+            f"Expected no failures for reversed attrs, got: {[r.message for r in failures]}"
+        )
+        passes = [r for r in results if r.status == "PASS"]
+        assert len(passes) >= 1, "Expected PASS for valid reversed-attrs route"
+        print("  PASS  test_v6_route_reversed_attrs")
+
+    def test_v6_output_schema_valid(self):
+        """Valid output-schema should pass."""
+        spec = """\
+<output-schema format="json">
+{
+  "result": "string",
+  "count": "number"
+}
+</output-schema>
+"""
+        results = check_hsf_v6_output_schema(spec, "standard")
+        failures = [r for r in results if r.status == "FAIL"]
+        assert len(failures) == 0, (
+            f"Expected no failures, got: {[r.message for r in failures]}"
+        )
+        passes = [r for r in results if r.status == "PASS"]
+        assert len(passes) >= 1, "Expected PASS for valid output-schema"
+        print("  PASS  test_v6_output_schema_valid")
+
+    def test_v6_output_schema_missing_warn(self):
+        """Standard spec mentioning structured output without schema should warn."""
+        spec = """\
+<purpose>
+Generate structured output from input data.
+</purpose>
+
+<instructions>
+Process and return results.
+</instructions>
+"""
+        results = check_hsf_v6_output_schema(spec, "standard")
+        warns = [r for r in results if r.status == "WARN"]
+        assert len(warns) >= 1, (
+            f"Expected warning about missing output-schema, got: {[r.message for r in results]}"
+        )
+        print("  PASS  test_v6_output_schema_missing_warn")
+
+    def test_v6_dollar_config_warning(self):
+        """$config.key in v6 spec should produce a WARN."""
+        spec = """\
+# My Spec
+
+<purpose>
+Do something.
+</purpose>
+
+<instructions>
+Use $config.my_key to decide.
+</instructions>
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = check_hsf_v6_structure(spec, path)
+            warns = [r for r in results if r.status == "WARN" and "$config" in r.message]
+            assert len(warns) >= 1, (
+                f"Expected $config warning, got: {[r.message for r in results]}"
+            )
+            print("  PASS  test_v6_dollar_config_warning")
+        finally:
+            os.unlink(path)
+
+    def test_v6_empty_section_detected(self):
+        """Empty <rules></rules> should FAIL."""
+        spec = """\
+# My Spec
+
+<purpose>
+Do something.
+</purpose>
+
+<instructions>
+Do the thing.
+</instructions>
+
+<rules></rules>
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = check_hsf_v6_structure(spec, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            empty_fails = [r for r in failures if "Empty" in r.message and "<rules>" in r.message]
+            assert len(empty_fails) >= 1, (
+                f"Expected empty section failure, got: {[r.message for r in failures]}"
+            )
+            print("  PASS  test_v6_empty_section_detected")
+        finally:
+            os.unlink(path)
+
+    def test_v6_section_order_warning(self):
+        """Out-of-order sections should warn."""
+        spec = """\
+# My Spec
+
+<instructions>
+Do the thing.
+</instructions>
+
+<purpose>
+Do something.
+</purpose>
+"""
+        path = _write_temp_spec(spec)
+        try:
+            results = check_hsf_v6_structure(spec, path)
+            warns = [r for r in results if r.status == "WARN" and "order" in r.message.lower()]
+            assert len(warns) >= 1, (
+                f"Expected section order warning, got: {[r.message for r in results]}"
+            )
+            print("  PASS  test_v6_section_order_warning")
+        finally:
+            os.unlink(path)
+
+    def test_v6_full_validation_standard(self):
+        """Full validation pipeline on valid standard spec should have no failures."""
+        path = _write_temp_spec(_V6_STANDARD_SPEC)
+        try:
+            results = validate_hsf_v6(_V6_STANDARD_SPEC, path)
+            failures = [r for r in results if r.status == "FAIL"]
+            assert len(failures) == 0, (
+                f"Expected no failures for valid standard v6 spec, got: "
+                f"{[r.message for r in failures]}"
+            )
+            print("  PASS  test_v6_full_validation_standard")
+        finally:
+            os.unlink(path)
+
+    def test_v6_cli_end_to_end(self):
+        """Running the validator CLI on a v6 spec should exit 0."""
+        import subprocess
+        path = _write_temp_spec(_V6_STANDARD_SPEC)
+        try:
+            script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "validate_sesf.py")
+            result = subprocess.run(
+                [sys.executable, script, path],
+                capture_output=True, text=True
+            )
+            assert result.returncode == 0, (
+                f"Expected exit code 0, got {result.returncode}\n"
+                f"stdout: {result.stdout}\nstderr: {result.stderr}"
+            )
+            assert "HSF v6" in result.stdout, (
+                f"Expected 'HSF v6' in output, got: {result.stdout}"
+            )
+            print("  PASS  test_v6_cli_end_to_end")
+        finally:
+            os.unlink(path)
+
+
 def main():
     tests = [
         test_parse_procedure_block,
@@ -2071,6 +2563,30 @@ def main():
         hsf_tests.test_hsf_over_line_budget,
         hsf_tests.test_sesf_v4_still_validates,
         hsf_tests.test_format_detection,
+    ])
+
+    # Add HSF v6 test methods from TestHSFv6Validation class
+    v6_tests = TestHSFv6Validation()
+    tests.extend([
+        v6_tests.test_detect_format_v6,
+        v6_tests.test_detect_format_v5_not_v6,
+        v6_tests.test_v6_structure_valid_micro,
+        v6_tests.test_v6_structure_forbidden_markdown_headers,
+        v6_tests.test_v6_structure_forbidden_at_config,
+        v6_tests.test_v6_config_valid_json,
+        v6_tests.test_v6_config_invalid_json,
+        v6_tests.test_v6_config_undefined_ref,
+        v6_tests.test_v6_route_valid,
+        v6_tests.test_v6_route_under_threshold,
+        v6_tests.test_v6_route_invalid_mode,
+        v6_tests.test_v6_route_reversed_attrs,
+        v6_tests.test_v6_output_schema_valid,
+        v6_tests.test_v6_output_schema_missing_warn,
+        v6_tests.test_v6_dollar_config_warning,
+        v6_tests.test_v6_empty_section_detected,
+        v6_tests.test_v6_section_order_warning,
+        v6_tests.test_v6_full_validation_standard,
+        v6_tests.test_v6_cli_end_to_end,
     ])
 
     passed = 0
