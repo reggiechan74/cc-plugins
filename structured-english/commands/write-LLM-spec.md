@@ -1,12 +1,12 @@
 ---
-description: Write a specification optimized for LLM execution using HSF v5
+description: Write a specification optimized for LLM execution using HSF v6
 argument-hint: <domain or topic to specify>
 allowed-tools: ["Read", "Write", "Edit", "Bash", "AskUserQuestion"]
 ---
 
 # Write an LLM-Facing Specification
 
-Generate a complete HSF v5 specification optimized for LLM consumption. The output uses prose instructions with markdown headers — the format LLMs follow best. Formal scaffolding is avoided because it consumes tokens without improving compliance.
+Generate a complete HSF v6 specification optimized for LLM consumption. The output uses prose instructions with XML section tags — the format LLMs parse with near-perfect accuracy. Formal scaffolding is avoided because it consumes tokens without improving compliance.
 
 ## Audience
 
@@ -14,13 +14,13 @@ The primary reader of this spec is an LLM agent. Optimize for:
 
 - **Compliance** — clear, unambiguous instructions the LLM can follow without interpretation
 - **Token efficiency** — no notation legends, type definitions, or boilerplate sections
-- **Scannable structure** — markdown headers, bold list items, and RFC 2119 keywords for precision
+- **Scannable structure** — XML section tags for unambiguous structure, bold list items, and RFC 2119 keywords for precision
 
 ## Workflow
 
 ### Step 1: Load the Skill
 
-Use the `hsf` skill — it contains all the rules, formats, and validation requirements for HSF v5 specifications. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/reference.md`.
+Use the `hsf` skill — it contains all the rules, formats, and validation requirements for HSF v6 specifications. Read it fully before proceeding. Also read the reference at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/reference.md`.
 
 ### Step 2: Gather Requirements
 
@@ -35,12 +35,13 @@ Always ask all three questions, even if the user provided a domain/topic in the 
 Based on the requirements, select the appropriate tier:
 
 - **Micro** (20-80 lines): Single concern, ≤5 rules. Configuration + prose instructions. No formal blocks needed.
-- **Standard** (80-200 lines): Multiple concerns. Configuration + @route tables + prose rules + prose procedures. Named errors as table.
-- **Complex** (200-400 lines): Many concerns with complex interactions. Everything in Standard, plus @config, $variable threading, worked examples, system dynamics sections.
+- **Standard** (80-200 lines): Multiple concerns. Configuration + `<route>` blocks + prose rules + prose procedures. Named errors as table.
+- **Complex** (200-400 lines): Many concerns with complex interactions. Everything in Standard, plus `<config>`, $variable threading, worked examples, system dynamics sections.
 
 Also determine which notation elements will be used:
-- **@config** — only if 3+ configurable parameters
-- **@route** — only if 3+ branch decision logic
+- **`<config>`** — only if 3+ configurable parameters (JSON body, referenced as `config.key`)
+- **`<route>`** — only if 3+ branch decision logic (XML with `<case>`/`<default>` elements)
+- **`<output-schema>`** — SHOULD for standard+ when producing structured output, MAY for micro
 - **$variable threading** — only if complex data flow between phases
 - **Worked examples** — only if chain integrity matters
 
@@ -54,10 +55,12 @@ Present the plan to the user before writing:
 
 1. Read the template at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/assets/template.md`
 2. Read the examples at `${CLAUDE_PLUGIN_ROOT}/skills/hsf/references/examples.md` for the selected tier
-3. Follow the HSF v5 skill rules exactly:
-   - Use prose instructions with markdown headers, NOT BEHAVIOR/PROCEDURE blocks
-   - Include @route tables only for 3+ branch logic
-   - Include @config only for 3+ configuration values
+3. Follow the HSF v6 skill rules exactly:
+   - Use XML tags for top-level sections (`<purpose>`, `<instructions>`, `<errors>`, etc.), NOT `##` markdown headers
+   - Use `<config>` with a JSON body for configuration (reference values as `config.key`, not `$config.key`)
+   - Use `<route name="..." mode="...">` with `<case when="...">` and `<default>` elements for branch logic (3+ branches)
+   - Add `<output-schema format="json">` blocks for phases that produce structured output
+   - NOT BEHAVIOR/PROCEDURE blocks
    - Consolidate errors into a single table at the end
    - State rules inline where they apply, with a cross-cutting Rules section only for rules that span all phases
    - Edge-case examples only — no happy-path examples
@@ -71,6 +74,7 @@ Present the plan to the user before writing:
 - Use imperative mood ("Do X" not "You should do X")
 - Avoid explaining *why* a rule exists unless the rationale prevents a common misapplication
 - Prefer explicit enumeration over references ("validate vendor_name, amount, and date" not "validate the required fields listed above")
+- Use XML tags for section boundaries — LLMs parse these with near-perfect accuracy
 
 ### Step 5: Review
 
