@@ -12,26 +12,25 @@ import pytest
 
 # Add script directory to path
 sys.path.insert(0, os.path.dirname(__file__))
-from generate_annual_schedule import (
+from calendar_parser import (
     parse_calendar,
     parse_date_flexible,
-    build_annual_days,
-    build_annual_days_multi,
     resolve_calendars,
     get_weekdays_between,
     get_summer_holidays,
     find_civic_holiday,
-    _group_into_sections,
-    _read_rate_block,
-    render_markdown,
+)
+from rate_resolver import resolve_period_rate, _read_rate_block
+from schedule_builder import build_annual_days, build_annual_days_multi
+from xlsx_handler import (
     read_provider_rates,
     update_xlsx,
     calculate_total_cols,
     get_child_col_offsets,
     validate_child_count,
-    resolve_period_rate,
-    main,
 )
+from renderer import render_markdown, _group_into_sections
+from generate_annual_schedule import main
 
 
 # --- Fixtures: calendar markdown content ---
