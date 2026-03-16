@@ -133,6 +133,19 @@ The sample annual schedule (`examples/sample-annual-schedule.md`) demonstrates f
 | `generate_annual_schedule.py` | Consolidate spreadsheet + school calendar into annual schedule markdown and xlsx tab |
 | `commute_calculator.py` | Travel time calculation with geocoding, route matrix, and full chain modeling |
 
+### Helper Scripts (2)
+
+| Script | Purpose |
+|--------|---------|
+| `scrape_board_calendar.py` | HTML calendar page scraper (draft quality — output requires manual review and reorganization) |
+| `validate_calendar.py` | Calendar markdown validation |
+
+### Tests (1)
+
+| File | Purpose |
+|------|---------|
+| `test_generate_annual_schedule.py` | Pytest suite for annual schedule generation |
+
 **Daily rate examples:**
 
 ```bash
