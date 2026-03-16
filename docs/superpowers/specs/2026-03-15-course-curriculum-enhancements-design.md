@@ -1,7 +1,7 @@
 # Course Curriculum Creator — Enhancement Design
 
 **Date:** 2026-03-15
-**Scope:** 10 enhancements across 3 new commands, 4 new reference files, and 3 modifications to existing files
+**Scope:** 10 enhancements — 7 new files (3 commands, 4 references) and 6 modified files (3 enhancements, 3 integration updates)
 **Approach:** Additive only — no restructuring of existing files or patterns
 
 ---
