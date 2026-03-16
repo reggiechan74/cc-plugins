@@ -20,6 +20,15 @@ This plugin helps independent consultants, trainers, and instructional designers
 - **Quality Gates**: Prerequisite validation hooks prevent generating files out of order
 - **Incremental Updates**: Add, remove, or modify individual objectives and modules
 - **Version Control Ready**: Semantic versioning with organized markdown files
+- **Learner Analysis**: Generate learner profiles with prior knowledge, motivations, and transfer environment
+- **Pre-Work Design**: Micro-learning units with fast track/full path for prerequisite coverage
+- **Spaced Practice**: Post-workshop retrieval practice at expanding intervals to combat forgetting curve
+- **Affective Objectives**: Krathwohl's taxonomy support for attitude-change workshops
+- **Co-Facilitation**: Multi-facilitator support with role rotation and handoff protocols
+- **Accessibility Standards**: WCAG 2.1 AA specifications for training materials
+- **Cultural Adaptation**: Localization guidance for cross-cultural delivery
+- **Content Curation**: RARBA framework for evaluating third-party content quality
+- **Series Transitions**: Inter-course retention bridges, placement assessments, and bridge assignments
 
 ## Installation
 
@@ -80,6 +89,7 @@ Commands are organized by curriculum development lifecycle stage:
 | `/assess-needs` | Conduct a training needs assessment to determine if a course is the right intervention |
 | `/create-course` | Initialize new course project with directory structure |
 | `/design-series` | Design a leveled course series (101/201/301/401) |
+| `/generate-learner-profile` | Generate learner profile analyzing prior knowledge, motivations, constraints, and transfer environment |
 
 ### Stage 1: Desired Results (`commands/1-desired-results/`)
 
@@ -101,6 +111,7 @@ Commands are organized by curriculum development lifecycle stage:
 | `/generate-outline` | Generate module structure with timing |
 | `/generate-lesson-plans` | Generate detailed module-level lesson plans |
 | `/generate-transfer-plan` | Generate post-workshop transfer plan with action items, manager briefings, job aids, and follow-up touchpoints |
+| `/generate-pre-work` | Design pre-workshop micro-learning units covering prerequisites |
 
 ### Stage 4: Materials & Communication (`commands/4-materials/`)
 
@@ -124,6 +135,7 @@ Commands are organized by curriculum development lifecycle stage:
 |---------|-------------|
 | `/generate-workshop-prep` | Generate dated preparation checklist for delivery |
 | `/process-workshop-feedback` | Analyze feedback and generate improvement report |
+| `/generate-spaced-practice` | Generate post-workshop spaced retrieval practice sequence |
 
 ### Templates (`commands/7-templates/`)
 
@@ -140,6 +152,7 @@ Provides knowledge on Understanding by Design (UbD) framework for creating effec
 - Stage 1: Identify desired results (learning outcomes)
 - Stage 2: Determine acceptable evidence (assessments)
 - Stage 3: Plan learning experiences (activities)
+- Reference files: assessment design, formative assessment techniques, content curation
 
 **Triggers**: "use backward design", "create curriculum using UbD", "design learning outcomes first"
 
@@ -149,6 +162,7 @@ Guides creation of measurable learning objectives across cognitive levels:
 - Action verb selection for each level
 - Assessment type recommendations
 - Scaffolding strategies for multi-day workshops
+- Affective domain support (Krathwohl's taxonomy) for attitude-change objectives
 
 **Triggers**: "write learning objectives", "use Bloom's taxonomy", "create measurable outcomes"
 
@@ -157,6 +171,7 @@ Practical guidance for creating inclusive, accessible learning experiences using
 - Multiple Means of Engagement (the "why" of learning)
 - Multiple Means of Representation (the "what" of learning)
 - Multiple Means of Action & Expression (the "how" of learning)
+- Reference files: accessibility specifications (WCAG 2.1 AA), cultural adaptation guide
 
 **Triggers**: "apply UDL", "make course accessible", "inclusive design", "universal design for learning"
 
@@ -227,6 +242,7 @@ CourseName-YYYY-MM-DD/
 │   ├── course-positioning.md      # Market fit, audience, value proposition
 │   ├── course-description.md      # Student-facing description
 │   ├── learning-objectives.md     # Bloom's-aligned outcomes
+│   ├── learner-profile.md         # Audience analysis (optional)
 │   └── content-sources.md         # Third-party content & licensing tracker
 ├── 02-design/
 │   ├── course-outline.md          # Module structure with timing
@@ -234,6 +250,8 @@ CourseName-YYYY-MM-DD/
 ├── 03-assessment/
 │   └── rubrics.md                 # 1-5 scale evaluation criteria
 └── 04-materials/
+    ├── pre-work.md                # Pre-workshop micro-learning (optional)
+    ├── spaced-practice.md         # Post-workshop retrieval practice (optional)
     ├── student-handout.md
     ├── instructor-guide.md
     └── [other artifacts]
@@ -304,6 +322,20 @@ See `skills/` subdirectories for worked examples:
 - `skills/backward-design-methodology/examples/example-backward-design-1day.md` - Full backward design walkthrough
 
 ## What's New
+
+### v1.1.0 - Learner Analysis, Retention & Inclusivity
+- New: `/generate-learner-profile` command for audience analysis across 5 dimensions
+- New: `/generate-pre-work` command for micro-learning prerequisite coverage
+- New: `/generate-spaced-practice` command for post-workshop retrieval practice
+- New: Formative assessment techniques reference with decision rules
+- New: WCAG 2.1 AA accessibility specifications reference
+- New: Cultural adaptation guide for cross-cultural delivery
+- New: Content curation guide with RARBA evaluation framework
+- New: Affective domain (Krathwohl's taxonomy) in Bloom's skill
+- Enhanced: Co-facilitation support in `/generate-lesson-plans` with role rotation and handoff protocols
+- Enhanced: Inter-course transition design in `/design-series` with retention bridges and placement assessments
+- Enhanced: Curriculum architect generates learner profiles, pre-work, and spaced practice
+- Enhanced: Quality reviewer validates learner profiles, affective objectives, pre-work, and spaced practice
 
 ### v1.0.0 - Polish & Completeness
 - Enhanced: `/process-workshop-feedback --pilot` flag for first-run pilot analysis with iteration planning
