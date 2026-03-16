@@ -148,10 +148,19 @@ Invite the user to review and edit the family profile directly at `<research_dir
 If a `.claude/kids-camp-planner.local.md` file already exists:
 1. Read it to get the `research_dir` path
 2. Read `<research_dir>/family-profile.md` for existing family data
-3. Ask the user whether to:
-   - Update specific fields (preserve existing data)
-   - Start fresh (replace entirely)
-   - Cancel (keep existing profile)
+3. Parse the profile and present a summary to the user:
+   - Number of children and their names/ages
+   - School board and type
+   - Budget overview (per-week and per-day targets)
+   - Key constraints (commute, care hours, dietary)
+   - Vacation dates
+4. Ask the user using AskUserQuestion: "Does this profile look correct? You can:
+   - **Confirm** — skip to API key configuration (Step 3)
+   - **Update specific sections** — tell me which group to update (Children, School, Parents, Location, Budget, Vacation, School Dates)
+   - **Start fresh** — replace the entire profile"
+5. If the user confirms: skip directly to Step 3 (API keys) and Step 4 (summary)
+6. If the user wants to update: ask which group(s), then collect only those groups' data. Preserve all other existing data.
+7. If the user wants to start fresh: proceed from Step 1 as normal.
 
 If `research_dir` points to a directory that doesn't exist, treat it as a fresh setup starting from Step 1.
 
