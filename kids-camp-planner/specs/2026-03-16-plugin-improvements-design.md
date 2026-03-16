@@ -174,6 +174,8 @@ In the README components section, note that `scrape_board_calendar.py` is draft 
 
 > **Check calendar staleness:** After loading calendar data, extract the school year from the `## YYYY-YYYY School Year` header. Parse the end year (e.g., 2026 from "2025-2026"). If the current date is after September 1 of that end year, warn: *"Calendar data for [board] is from [year]. The current year may have different PA days and breaks. Would you like to search for updated calendar data?"* If the user says yes, run the 3-Tier School Calendar Lookup to find updated data.
 
+**Special case — `generate-annual-schedule`:** This skill passes the calendar as a `--calendar` CLI argument rather than having an explicit "load calendar data" step. For this skill, insert the staleness check *before* the script invocation step: "Before running the script, read the calendar file header and check for staleness as described above."
+
 **Implementation:** Documented as instruction text in each skill. Not a shared Python module — skills instruct Claude to perform the check inline.
 
 ---
@@ -244,20 +246,21 @@ skills/generate-annual-schedule/scripts/
 │                                  # get_summer_holidays(), find_civic_holiday(),
 │                                  # get_weekdays_between(), resolve_calendars()
 │                                  # (~250 lines)
-├── rate_resolver.py               # read_provider_rates(), resolve_period_rate(),
-│                                  # _group_into_sections(), _read_rate_block(),
-│                                  # _resolve_assignments() (~150 lines)
+├── rate_resolver.py               # resolve_period_rate(), _read_rate_block(),
+│                                  # _resolve_assignments() (~90 lines)
 ├── schedule_builder.py            # build_annual_days(), build_annual_days_multi()
-│                                  # (~250 lines)
-├── xlsx_handler.py                # update_xlsx(), _vlookup_col_indices(),
+│                                  # (~400 lines)
+├── xlsx_handler.py                # read_provider_rates(), read_summer_assignments(),
+│                                  # update_xlsx(), _vlookup_col_indices(),
 │                                  # calculate_total_cols(), get_child_col_offsets(),
-│                                  # validate_child_count(), read_summer_assignments(),
-│                                  # read_provider_rates() [xlsx portion]
-│                                  # — lazy-imports openpyxl (~250 lines)
+│                                  # validate_child_count()
+│                                  # — lazy-imports openpyxl (~300 lines)
 ├── renderer.py                    # render_markdown(), _group_into_sections()
-│                                  # (~250 lines)
+│                                  # (~340 lines)
 └── test_generate_annual_schedule.py  # existing tests — update imports
 ```
+
+Note: `read_provider_rates()` depends on openpyxl so it lives in `xlsx_handler.py`, not `rate_resolver.py`. `_group_into_sections()` is called by `render_markdown()` so it lives in `renderer.py`. `rate_resolver.py` is intentionally small — it contains only the pure logic for interpreting rate data after it has been read.
 
 **Key decisions:**
 - `generate_annual_schedule.py` remains the CLI entry point — existing `python3 path/to/generate_annual_schedule.py` invocations don't break
