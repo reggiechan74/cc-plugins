@@ -280,6 +280,120 @@ bloomsModel: center-of-gravity
 - Remove/revise objective [Z] (duplicates level [N-1] content)
 ````
 
+## Inter-Course Transition Design
+
+After defining the series structure, design the transitions between course levels to address retention decay and readiness verification.
+
+### Retention Bridge
+
+For each course transition (101→201, 201→301, etc.), generate:
+
+#### Review Module
+- **Duration:** 15-20 minutes at the start of the higher-level course
+- **Content:** Recap of the prior course's 3-5 handoff outcomes
+- **Format:** Not a re-teach — a rapid activation exercise:
+  - Quick-fire concept check (5 questions, 5 minutes)
+  - Pair discussion: "How have you applied [prior course skill] since the workshop?" (5 minutes)
+  - Instructor recap of key frameworks with visual reference (5-10 minutes)
+- **Instructor note:** If >30% of participants struggle with the review, consider whether they have the prerequisite knowledge for this level
+
+#### Prerequisite Concept Map
+For each transition, list:
+
+| Concept from Level N | Required for (Level N+1 Module) | How It's Used |
+|---|---|---|
+| [Handoff outcome 1] | Module [X]: [Title] | [Foundation for / Builds directly on / Assumed prerequisite for] |
+
+This maps exactly which prior knowledge feeds into which later module, so the review module can prioritize the most critical prerequisites.
+
+#### Recommended Time Gaps
+| Gap | Suitability | Notes |
+|---|---|---|
+| 1-4 weeks | Ideal | Skills still fresh; brief review sufficient |
+| 1-3 months | Acceptable | Moderate review needed; include pre-work refresher |
+| 3-6 months | Requires intervention | Significant review module or pre-work required |
+| 6+ months | Re-assessment recommended | Consider requiring placement assessment before enrollment |
+
+### Placement Assessment
+
+Generate a short skills assessment for each transition that allows learners to skip a level:
+
+- **Length:** 5-8 questions covering the prior course's Apply+ objectives
+- **Format:** Scenario-based questions at the prior course's highest Bloom's level
+- **Passing threshold:** 80% (must demonstrate solid mastery, not just familiarity)
+- **Result interpretation:**
+  - 80%+: May enroll directly in the higher-level course
+  - 60-79%: Recommended to take the prior course or complete bridge pre-work
+  - Below 60%: Should complete the prior course before enrolling
+
+#### Placement Assessment Template
+
+For each transition in the series, generate a section in the series plan:
+
+```
+### Placement: Skip [Level N] → Enroll Directly in [Level N+1]
+
+**Instructions:** Complete this assessment to determine if you can skip [Level N]. You should be able to answer at least [M] of [N] questions correctly.
+
+1. [Scenario-based question targeting handoff outcome 1]
+2. [Scenario-based question targeting handoff outcome 2]
+...
+
+**Answer Key:** [Provided separately to administrator]
+
+**Score Interpretation:**
+- [M+]/[N]: You may skip [Level N] and enroll in [Level N+1]
+- [Below M]/[N]: We recommend completing [Level N] first
+```
+
+### Bridge Assignments
+
+Optional between-course activities that maintain skills during the gap between courses:
+
+#### Post-[Level N] / Pre-[Level N+1] Activities
+
+For each transition, generate 2-3 bridge activities:
+
+| Activity | Purpose | Time | Deadline |
+|---|---|---|---|
+| [Practice task using Level N skills in workplace] | Maintain procedural skill | 30-60 min | 2 weeks post-Level N |
+| [Reading or self-study on Level N+1 preview topics] | Prime for new content | 20-30 min | 1 week pre-Level N+1 |
+| [Self-assessment checklist for Level N+1 readiness] | Identify gaps before enrollment | 10 min | Before enrollment |
+
+**Bridge Activity Design Principles:**
+- Activities should use skills from Level N in realistic workplace contexts (not academic exercises)
+- Preview activities for Level N+1 should build curiosity, not teach the content (that's the next course's job)
+- Total bridge time should not exceed 2 hours between courses
+- All activities are optional but recommended — never gate enrollment on bridge completion
+
+### Series Plan Output Addition
+
+When generating the series plan, add after the `## Series Coherence Summary` section:
+
+```
+## Inter-Course Transitions
+
+### Transition: 101 → 201
+
+**Review module (15-20 min at start of 201):**
+- Concepts to review: [list from 101 handoff outcomes]
+- Review format: [Quick-fire check + pair discussion + visual recap]
+
+**Placement assessment:**
+- [N] questions covering [101 handoff outcomes]
+- Passing threshold: 80%
+
+**Bridge activities (optional):**
+1. [Activity 1]
+2. [Activity 2]
+
+**Recommended gap:** [Ideal: X weeks | Maximum: Y months]
+
+---
+
+[Repeat for each transition]
+```
+
 ## Settings Integration
 
 Read from `.claude/course-curriculum-creator.local.md` if exists:
