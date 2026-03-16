@@ -39,9 +39,13 @@ Add fields to `.claude-plugin/plugin.json`:
 }
 ```
 
-### 1.3 Fix README Board Count
+### 1.3 Fix README Board Count and Abbreviation List
 
-Update line referencing "12+ Ontario public school boards" to "14 Ontario public school boards" to match actual shipped data.
+Update line referencing "12+ Ontario public school boards" to "14 Ontario public school boards." Also reconcile the listed abbreviations with actual files on disk.
+
+**Actual files in `public-boards/`:** DDSB, DPCDSB, HDSB, HWDSB, OCDSB, PDSB, SCDSB, TCDSB, TDSB, TVDSB, UCDSB, WRDSB, YCDSB, YRDSB (14 boards).
+
+The current README lists "TDSB, TCDSB, PDSB, DDSB, HDSB, YRDSB, YCDSB, OCSB, OCDSB, WRDSB, WCDSB, HWDSB" — OCSB and WCDSB do not have files; SCDSB, TVDSB, UCDSB, and DPCDSB are missing from the list. Replace with the accurate list.
 
 ### 1.4 Fix Script Documentation
 
@@ -70,14 +74,15 @@ All example content is preserved, just moved below the frontmatter.
 
 ### 2.1 Replace Regex YAML Parsing with `pyyaml`
 
-**Affected files:**
+**Affected file:**
 - `commute_calculator.py` — `parse_profile()` function (lines 50-107)
-- `generate_annual_schedule.py` — confirm and fix any regex YAML parsing
+
+Note: `generate_annual_schedule.py` has no YAML parsing — it reads `.xlsx` and markdown calendar files only. No changes needed there for this item.
 
 **Approach:**
 - Read file, split on `---` markers, `yaml.safe_load()` the frontmatter block
-- Navigate the resulting dict to extract fields
-- Keep the same return signature from `parse_profile()` so callers don't change
+- Navigate the resulting dict to extract fields. The `parents` block is a nested list-of-dicts (`data["parents"]` → `[{"name": ..., "work_address": ...}, ...]`) that needs careful key mapping to maintain the same return signature.
+- Keep the same return signature from `parse_profile()` (`dict` with `home_address`, `work_addresses`, `api_key`, `max_commute`) so callers don't change
 - Add `pyyaml` to prerequisites in README alongside `openpyxl`
 
 ### 2.2 Full Test Suites
@@ -128,17 +133,21 @@ Coverage:
 #### `test_scrape_board_calendar.py`
 Location: `skills/add-school-calendar/scripts/`
 
+Import functions via `sys.path.insert(0, os.path.dirname(__file__))` + `from scrape_board_calendar import TableExtractor, fetch_and_extract, generate_draft`.
+
 Coverage:
-- `TableExtractor` HTML parser: simple table, nested tags, empty cells, multi-table page
-- `generate_draft()` output structure (correct headers, TODO placeholders, all tables rendered)
-- Malformed HTML handling (unclosed tags, no tables found)
-- Edge: non-UTF8 encoding in response
+- `TableExtractor` (HTMLParser subclass) — feed it HTML strings directly: simple table, nested tags, empty cells, multiple tables on one page
+- `generate_draft()` output structure: correct `# Board Name (ABBR)` header, `## YYYY-YYYY School Year` section, all extracted tables rendered as markdown, TODO placeholders present
+- `fetch_and_extract()` with mocked `urllib.request.urlopen` — verify it calls `TableExtractor` and returns `(tables, html)`
+- Malformed HTML handling: unclosed tags, no tables found (returns empty list)
+- Edge: non-UTF8 encoding in response body
 
 ### 2.3 Make Tax Estimates Configurable
 
 In `budget_calculator.py`:
 - Add CLI args: `--tax-deduction-limit` (default: 8000), `--tax-marginal-rate` (default: 0.25)
 - Add JSON input fields: `tax_deduction_limit`, `tax_marginal_rate` with same defaults
+- **Reconcile the two tax formulas:** `render_markdown_simple()` (line 515) uses age-conditional logic (`8000 if age < 7 else 5000`), while `render_markdown_detailed()` (line 600) uses a flat `min(total, 5000)`. Unify both to use the `--tax-deduction-limit` value. Drop the age-conditional logic — it's based on outdated CRA rules and the user can override the limit per run. Both renderers should use `min(total, tax_deduction_limit) * tax_marginal_rate`.
 - Add disclaimer to tax recovery section output: *"Estimates only — consult a tax professional. Based on CRA child care expense deduction (Line 21400). Limits and rates may change."*
 
 ### 2.4 Lazy-Import `openpyxl`
@@ -159,9 +168,13 @@ In the README components section, note that `scrape_board_calendar.py` is draft 
 
 **Warning message:** *"Calendar data for [board] is from [year]. The current year may have different PA days and breaks. Would you like to search for updated calendar data?"*
 
-**Where it's called:** In skill instructions for `plan-summer`, `plan-march-break`, `plan-pa-days`, and `generate-annual-schedule`. Each skill adds a step after loading calendar data: check staleness, warn if stale, offer to run 3-tier lookup.
+**Where it's called:** In skill instructions for `plan-summer`, `plan-march-break`, `plan-pa-days`, and `generate-annual-schedule`.
 
-**Implementation:** Documented as a pattern in skill text (Claude checks the header and warns). Not a shared Python module — skills instruct Claude to perform the check inline.
+**Insertion point in each SKILL.md:** Add immediately after the step that loads/reads calendar data (e.g., after "Read the calendar data from..." or after the 3-Tier lookup completes). The new step reads:
+
+> **Check calendar staleness:** After loading calendar data, extract the school year from the `## YYYY-YYYY School Year` header. Parse the end year (e.g., 2026 from "2025-2026"). If the current date is after September 1 of that end year, warn: *"Calendar data for [board] is from [year]. The current year may have different PA days and breaks. Would you like to search for updated calendar data?"* If the user says yes, run the 3-Tier School Calendar Lookup to find updated data.
+
+**Implementation:** Documented as instruction text in each skill. Not a shared Python module — skills instruct Claude to perform the check inline.
 
 ---
 
@@ -171,18 +184,40 @@ In the README components section, note that `scrape_board_calendar.py` is draft 
 
 ### 3.1 Add 6 Slash Commands
 
-Create `commands/` directory with standard Claude Code command frontmatter.
+Create `commands/` directory with one markdown file per command using Claude Code command frontmatter.
 
-| Command | Skill/Agent | Arguments |
-|---------|-------------|-----------|
-| `/camp-setup` | setup skill | none |
-| `/camp-research` | camp-researcher agent / research-camps skill | optional: search focus (e.g., "STEM camps", "week 3 alternatives") |
-| `/camp-plan` | plan-summer, plan-march-break, or plan-pa-days | optional: `summer`, `march-break`, `pa-days` — asks interactively if omitted |
-| `/camp-budget` | budget-optimization skill | optional: period (e.g., "summer") |
-| `/camp-email` | draft-email skill | optional: type and provider (e.g., "inquiry YMCA") |
-| `/camp-schedule` | generate-annual-schedule skill | none |
+**File naming:** `commands/camp-setup.md`, `commands/camp-research.md`, etc.
 
-Each command reads `.claude/kids-camp-planner.local.md` for config, loads the family profile, and delegates to the corresponding skill.
+| Command | File | Skill/Agent | Arguments |
+|---------|------|-------------|-----------|
+| `/camp-setup` | `camp-setup.md` | setup skill | none |
+| `/camp-research` | `camp-research.md` | camp-researcher agent / research-camps skill | optional: search focus |
+| `/camp-plan` | `camp-plan.md` | plan-summer, plan-march-break, or plan-pa-days | optional: `summer`, `march-break`, `pa-days` |
+| `/camp-budget` | `camp-budget.md` | budget-optimization skill | optional: period |
+| `/camp-email` | `camp-email.md` | draft-email skill | optional: type and provider |
+| `/camp-schedule` | `camp-schedule.md` | generate-annual-schedule skill | none |
+
+**Example command file (`commands/camp-setup.md`):**
+
+```markdown
+---
+name: camp-setup
+description: Initialize the kids-camp-planner workspace and family profile
+arguments:
+  - name: directory
+    description: Research directory name (default: camp-research)
+    required: false
+---
+
+Read `.claude/kids-camp-planner.local.md` to check for existing configuration.
+Read the family profile at `<research_dir>/family-profile.md` if it exists.
+
+Then follow the setup skill workflow from `${CLAUDE_PLUGIN_ROOT}/skills/setup/SKILL.md`.
+
+If a research directory argument was provided, use it as the directory name instead of asking.
+```
+
+Each command follows this pattern: read thin config, load family profile if it exists, then delegate to the corresponding skill's workflow. The command prompt provides the glue; the skill SKILL.md provides the detailed workflow steps.
 
 ### 3.2 Fast-Path Setup
 
@@ -197,32 +232,39 @@ This enhances the existing re-running setup section (which already checks for ex
 
 ### 3.3 Split `generate_annual_schedule.py` into Modules
 
-Current: ~900+ lines, single file.
+Current: 1,369 lines, single file.
 
-Proposed structure:
+Proposed structure with full function allocation:
 
 ```
 skills/generate-annual-schedule/scripts/
-├── generate_annual_schedule.py    # CLI entry point + main orchestration (~150 lines)
+├── generate_annual_schedule.py    # CLI entry point: main(), argument parsing,
+│                                  # orchestration (~200 lines)
 ├── calendar_parser.py             # parse_calendar(), parse_date_flexible(),
 │                                  # get_summer_holidays(), find_civic_holiday(),
-│                                  # get_weekdays_between() (~150 lines)
+│                                  # get_weekdays_between(), resolve_calendars()
+│                                  # (~250 lines)
 ├── rate_resolver.py               # read_provider_rates(), resolve_period_rate(),
-│                                  # _group_into_sections(), _read_rate_block() (~150 lines)
-├── xlsx_handler.py                # update_xlsx(), calculate_total_cols(),
-│                                  # get_child_col_offsets(), validate_child_count()
-│                                  # — lazy-imports openpyxl (~200 lines)
-├── renderer.py                    # render_markdown(), build_annual_days(),
-│                                  # build_annual_days_multi() (~200 lines)
+│                                  # _group_into_sections(), _read_rate_block(),
+│                                  # _resolve_assignments() (~150 lines)
+├── schedule_builder.py            # build_annual_days(), build_annual_days_multi()
+│                                  # (~250 lines)
+├── xlsx_handler.py                # update_xlsx(), _vlookup_col_indices(),
+│                                  # calculate_total_cols(), get_child_col_offsets(),
+│                                  # validate_child_count(), read_summer_assignments(),
+│                                  # read_provider_rates() [xlsx portion]
+│                                  # — lazy-imports openpyxl (~250 lines)
+├── renderer.py                    # render_markdown(), _group_into_sections()
+│                                  # (~250 lines)
 └── test_generate_annual_schedule.py  # existing tests — update imports
 ```
 
 **Key decisions:**
-- `generate_annual_schedule.py` remains the CLI entry point — existing invocations don't break
+- `generate_annual_schedule.py` remains the CLI entry point — existing `python3 path/to/generate_annual_schedule.py` invocations don't break
 - Each module has a single responsibility
 - `xlsx_handler.py` contains the lazy openpyxl import (from 2.4)
 - Existing test file updates imports but test logic is unchanged — validates the refactor
-- Internal imports use relative imports within the scripts directory
+- **Import strategy:** Use `sys.path` insertion in the entry point (`sys.path.insert(0, os.path.dirname(__file__))`) then absolute imports (`from calendar_parser import parse_calendar`). This matches the pattern already used in `test_generate_annual_schedule.py` (line 14) and works with direct `python3` invocation. No `__init__.py` or `-m` flag needed.
 
 ---
 
