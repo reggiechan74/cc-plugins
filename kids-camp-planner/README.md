@@ -1,7 +1,7 @@
 # Kids Camp Planner
 
 <!-- badges-start -->
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/kids-camp-planner)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/kids-camp-planner)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 <!-- badges-end -->
