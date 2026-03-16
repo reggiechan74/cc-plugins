@@ -41,33 +41,33 @@ This plugin helps Ontario families navigate the complex puzzle of school-break c
 
 ### 1. Set Up Your Family Profile
 ```
-User: "Set up camp planner"
+/camp-setup
 ```
-The setup skill will guide you through creating your family profile with children's details, school information, budget, and constraints.
+The setup skill guides you through creating your family profile with children's details, school information, budget, and constraints. If a profile already exists, it offers a fast-path to review and update specific sections.
 
 ### 2. Research Camp Providers
 ```
-User: "Research summer camps near me"
+/camp-research STEM camps
 ```
-The camp-researcher agent will search for providers in your area and create structured comparison files with daily and weekly rates.
+The camp-researcher agent searches for providers in your area and creates structured comparison files with daily and weekly rates.
 
 ### 3. Plan Your Summer
 ```
-User: "Plan summer camp coverage"
+/camp-plan summer
 ```
-The plan-summer skill builds a day-by-day schedule covering every weekday from school end to fall start. Each day gets a camp assignment per child, with costs looked up automatically from provider rates.
+Builds a day-by-day schedule covering every weekday from school end to fall start. Each day gets a camp assignment per child, with costs looked up automatically from provider rates. Also supports `/camp-plan march-break` and `/camp-plan pa-days`.
 
 ### 4. Generate Budget
 ```
-User: "Create a camp budget for summer"
+/camp-budget summer
 ```
-The budget-optimization skill calculates total costs with discounts and tax recovery estimates. Supports both daily and weekly rate calculations.
+Calculates total costs with discounts and configurable tax recovery estimates. Supports both daily and weekly rate calculations.
 
 ### 5. Draft Emails
 ```
-User: "Draft an inquiry email to YMCA about their Adventure Camp"
+/camp-email inquiry YMCA
 ```
-The draft-email skill generates personalized emails using your family profile and provider details.
+Generates personalized emails using your family profile and provider details. Supports inquiry, registration, waitlist, special needs, and cancellation templates.
 
 ## How Daily Scheduling Works
 
@@ -140,11 +140,26 @@ The sample annual schedule (`examples/sample-annual-schedule.md`) demonstrates f
 | `scrape_board_calendar.py` | HTML calendar page scraper (draft quality — output requires manual review and reorganization) |
 | `validate_calendar.py` | Calendar markdown validation |
 
-### Tests (1)
+### Commands (6)
+
+| Command | Purpose |
+|---------|---------|
+| `/camp-setup` | Initialize workspace and family profile |
+| `/camp-research` | Research and document camp providers |
+| `/camp-plan` | Plan camp coverage for a period (summer, march-break, pa-days) |
+| `/camp-budget` | Generate budget analysis with cost breakdown |
+| `/camp-email` | Draft an email to a camp provider |
+| `/camp-schedule` | Generate consolidated annual schedule |
+
+### Tests (4)
 
 | File | Purpose |
 |------|---------|
-| `test_generate_annual_schedule.py` | Pytest suite for annual schedule generation |
+| `test_generate_annual_schedule.py` | Pytest suite for annual schedule generation (75 tests) |
+| `test_budget_calculator.py` | Budget calculation, discounts, tax estimates, rendering (89 tests) |
+| `test_summer_dates.py` | Date calculations, Labour Day, week/day breakdowns (28 tests) |
+| `test_commute_calculator.py` | YAML parsing, geocoding, route matrix, chain math (35 tests) |
+| `test_scrape_board_calendar.py` | HTML table extraction, draft generation (15 tests) |
 
 **Daily rate examples:**
 
