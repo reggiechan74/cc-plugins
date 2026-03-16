@@ -1,5 +1,11 @@
 # Kids Camp Planner
 
+<!-- badges-start -->
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/reggiechan74/cc-plugins/tree/main/kids-camp-planner)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
+<!-- badges-end -->
+
 A Claude Code plugin for planning and booking kids' day camps, March break programs, PA day coverage, and other school-break childcare in Ontario. Helps parents systematically research providers, build gap-free day-by-day schedules, manage budgets, and draft communications with camp providers.
 
 ## Overview
