@@ -795,3 +795,39 @@ class TestEdgeCases:
 
     def test_format_currency_cents(self):
         assert format_currency(99.50) == "$99.50"
+
+
+# ---------------------------------------------------------------------------
+# TestTaxEstimates
+# ---------------------------------------------------------------------------
+
+class TestTaxEstimates:
+    def test_default_tax_limit(self):
+        results = [{
+            "child": "Child 1", "camp_fees": 10000, "before_after": 0,
+            "lunch_cost": 0, "registration": 0, "subtotal": 10000,
+            "sibling_discount": 0, "early_bird_discount": 0, "total": 10000,
+        }]
+        args = Namespace(budget_limit=0, tax_deduction_limit=8000, tax_marginal_rate=0.25)
+        output = render_markdown_simple(results, 10000, args)
+        assert "$2,000" in output  # min(10000, 8000) * 0.25
+
+    def test_custom_tax_limit(self):
+        results = [{
+            "child": "Child 1", "camp_fees": 10000, "before_after": 0,
+            "lunch_cost": 0, "registration": 0, "subtotal": 10000,
+            "sibling_discount": 0, "early_bird_discount": 0, "total": 10000,
+        }]
+        args = Namespace(budget_limit=0, tax_deduction_limit=5000, tax_marginal_rate=0.30)
+        output = render_markdown_simple(results, 10000, args)
+        assert "$1,500" in output  # min(10000, 5000) * 0.30
+
+    def test_disclaimer_present(self):
+        results = [{
+            "child": "Child 1", "camp_fees": 2000, "before_after": 0,
+            "lunch_cost": 0, "registration": 0, "subtotal": 2000,
+            "sibling_discount": 0, "early_bird_discount": 0, "total": 2000,
+        }]
+        args = Namespace(budget_limit=0, tax_deduction_limit=8000, tax_marginal_rate=0.25)
+        output = render_markdown_simple(results, 2000, args)
+        assert "Estimates only" in output

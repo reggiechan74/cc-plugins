@@ -510,11 +510,14 @@ def render_markdown_simple(results, grand_total, args):
     lines.append("")
 
     # Tax estimate
+    tax_limit = getattr(args, 'tax_deduction_limit', 8000)
+    tax_rate = getattr(args, 'tax_marginal_rate', 0.25)
     lines.append("## Tax Recovery Estimate\n")
+    lines.append("*Estimates only — consult a tax professional. Based on CRA child care expense deduction (Line 21400). Limits and rates may change.*\n")
     for r in results:
-        deductible = min(r["total"], 8000 if "age" not in r else (8000 if r.get("age", 7) < 7 else 5000))
-        estimated_savings = deductible * 0.25  # rough marginal rate estimate
-        lines.append(f"- **{r['child']}**: {format_currency(r['total'])} eligible, ~{format_currency(estimated_savings)} estimated tax savings (at ~25% marginal rate)")
+        deductible = min(r["total"], tax_limit)
+        estimated_savings = deductible * tax_rate
+        lines.append(f"- **{r['child']}**: {format_currency(r['total'])} eligible, ~{format_currency(estimated_savings)} estimated tax savings (at ~{tax_rate:.0%} marginal rate)")
     lines.append("")
 
     # Budget check
@@ -595,10 +598,13 @@ def render_markdown_detailed(data):
     lines.append("")
 
     # Tax estimate
+    tax_limit = data.get("tax_deduction_limit", 8000)
+    tax_rate = data.get("tax_marginal_rate", 0.25)
     lines.append("## Tax Recovery Estimate\n")
+    lines.append("*Estimates only — consult a tax professional. Based on CRA child care expense deduction (Line 21400). Limits and rates may change.*\n")
     for r in results:
-        deductible = min(r["total"], 5000)  # conservative estimate
-        estimated_savings = deductible * 0.25
+        deductible = min(r["total"], tax_limit)
+        estimated_savings = deductible * tax_rate
         lines.append(f"- **{r['child']}**: {format_currency(r['total'])} eligible, ~{format_currency(estimated_savings)} estimated tax savings")
     lines.append("")
 
@@ -663,6 +669,10 @@ def main():
     parser.add_argument("--early-bird", type=float, default=0, help="Early bird discount per week")
     parser.add_argument("--registration-fee", type=float, default=0, help="One-time registration fee per child")
     parser.add_argument("--budget-limit", type=float, default=0, help="Total budget limit")
+    parser.add_argument("--tax-deduction-limit", type=float, default=8000,
+                        help="Maximum child care expense deduction (default: 8000)")
+    parser.add_argument("--tax-marginal-rate", type=float, default=0.25,
+                        help="Estimated marginal tax rate (default: 0.25)")
     parser.add_argument("--format", choices=["markdown", "csv"], default="markdown", help="Output format")
 
     args = parser.parse_args()
