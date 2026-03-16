@@ -44,9 +44,6 @@ import re
 import sys
 from datetime import date, datetime, timedelta
 
-import openpyxl
-from openpyxl.utils import get_column_letter
-
 
 # ---------------------------------------------------------------------------
 # Dynamic child column layout constants
@@ -140,6 +137,12 @@ def read_provider_rates(xlsx_path):
     contains matching labels (e.g., "PA Daily" or "PA Day"). Otherwise these
     columns may hold weekly summaries or other data from older spreadsheets.
     """
+    try:
+        import openpyxl
+    except ImportError:
+        print("Error: openpyxl is required for Excel output. Install with: pip install openpyxl",
+              file=sys.stderr)
+        sys.exit(1)
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
     ws = wb["Provider Comparison"]
 
@@ -183,6 +186,12 @@ def read_summer_assignments(xlsx_path, children):
 
     Returns list of dicts: [{date, week, assignments: {child: camp_name}}]
     """
+    try:
+        import openpyxl
+    except ImportError:
+        print("Error: openpyxl is required for Excel output. Install with: pip install openpyxl",
+              file=sys.stderr)
+        sys.exit(1)
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
     ws = wb["Daily Schedule"]
     days = []
@@ -1128,6 +1137,13 @@ def update_xlsx(xlsx_path, annual_days, children, provider_count=3):
     Uses dynamic column layout: 3 prefix + (N * 6 child block) + 1 daily total.
     VLOOKUP formulas reference Provider Comparison.
     """
+    try:
+        import openpyxl
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        print("Error: openpyxl is required for Excel output. Install with: pip install openpyxl",
+              file=sys.stderr)
+        sys.exit(1)
     n_children = len(children)
     total_cols = calculate_total_cols(n_children)
     child_offsets = get_child_col_offsets(n_children)
