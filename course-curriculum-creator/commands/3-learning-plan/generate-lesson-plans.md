@@ -447,4 +447,83 @@ Inherit all virtual adjustments PLUS:
 
 ---
 
+## Co-Facilitation Support
+
+When generating lesson plans for team-taught workshops, add co-facilitation structure to each module.
+
+### Argument
+
+`--facilitators N` (default: 1)
+
+When N > 1, add the following to each module's lesson plan:
+
+### Per-Module Role Table
+
+Add after the module header and before "### Overview":
+
+```markdown
+### Facilitation Roles
+
+| Role | Facilitator | Responsibilities |
+|---|---|---|
+| **Lead** | [Name/TBD] | Content delivery, demonstrations, main instruction |
+| **Support** | [Name/TBD] | Q&A monitoring, time management, circulating during practice, breakout room visits (virtual) |
+| **Observer** (if 3+) | [Name/TBD] | Assessment observation, note-taking on student progress, identifying struggling learners |
+```
+
+### Role Rotation
+
+Rotate lead and support roles across modules to:
+- Keep both facilitators engaged and energized
+- Leverage each facilitator's strengths for relevant modules
+- Prevent one facilitator from becoming a passive observer
+
+Default rotation: alternate lead role every 2-3 modules. Group module assignments by facilitator expertise if known.
+
+### Handoff Protocol
+
+Add between each module pair:
+
+```markdown
+### Module Transition: [Module N] → [Module N+1]
+
+**Outgoing Lead briefs Incoming Lead (2-3 min during break):**
+- Timing status: [on time / X minutes behind / ahead]
+- Student energy: [high / moderate / flagging]
+- Unresolved questions: [list any questions parked for later]
+- Struggling learners: [note anyone needing extra support]
+- Key misconception surfaced: [if any]
+```
+
+### Split Instructor Notes
+
+Where the standard template has `**Instructor Notes:**`, split to:
+
+```markdown
+**Lead Notes:**
+- [Content delivery guidance, pacing, key emphases]
+
+**Support Notes:**
+- [What to monitor during this section]
+- [When to intervene vs. let the lead handle]
+- [Specific students or groups to watch]
+- [Chat/Q&A management instructions (virtual)]
+```
+
+### Co-Facilitation Planning Checklist
+
+Add to the Instructor Preparation Checklist at the end of lesson plans:
+
+```markdown
+### Co-Facilitation Preparation
+- [ ] Role assignments confirmed for each module
+- [ ] Handoff protocol reviewed by both facilitators
+- [ ] Shared signals agreed (time warnings, need-help, take-over)
+- [ ] Communication channel established (text, Slack, hand signals)
+- [ ] Pre-workshop dry run: practice at least one handoff
+- [ ] Backup plan: if one facilitator is unavailable, which modules can be solo-delivered?
+```
+
+---
+
 Create detailed, practical lesson plans that instructors can follow while maintaining flexibility for audience needs and pacing adjustments.
