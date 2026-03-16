@@ -1,7 +1,7 @@
 # Reggie Chan's Claude Code Plugins
 
 <!-- badges-start -->
-[![Plugins](https://img.shields.io/badge/plugins-14-blue)](https://github.com/reggiechan74/cc-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-13-blue)](https://github.com/reggiechan74/cc-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-marketplace-blueviolet)](https://claude.ai/claude-code)
 [![GitHub Stars](https://img.shields.io/github/stars/reggiechan74/cc-plugins?style=flat&color=yellow)](https://github.com/reggiechan74/cc-plugins/stargazers)
@@ -123,28 +123,6 @@ Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code. Feature
 
 **Commands:**
 - `/authenticate` - Run OAuth flow for Gmail and Calendar servers
-
----
-
-### install-private-plugin
-
-Configure git auth for installing Claude Code plugins from private GitHub repos. Guides PAT creation, Codespace secret storage, and git URL rewriting when `/plugin marketplace add` fails with 403 or HTTPS auth errors.
-
-**Install:**
-```bash
-/plugin install install-private-plugin@cc-plugins
-```
-
-**Features:**
-- Step-by-step guide for creating fine-grained GitHub PATs with minimal permissions
-- Codespace secret storage and container rebuild workflow
-- Git URL rewriting to inject PAT credentials transparently
-- Access verification before attempting plugin install
-- Works with any git-based private repo (GitHub, GitLab, Bitbucket)
-
-**Commands:**
-- `/install-private-plugin` - Show full prerequisites guide for PAT and secret setup
-- `/install-private-plugin <github-repo-url> <env-var-name>` - Configure git auth and verify access
 
 ---
 
