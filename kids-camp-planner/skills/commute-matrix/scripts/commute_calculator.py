@@ -42,6 +42,8 @@ import urllib.parse
 import urllib.request
 from datetime import date
 
+import yaml
+
 
 # ---------------------------------------------------------------------------
 # Profile parsing
@@ -62,47 +64,33 @@ def parse_profile(profile_path):
         print("Error: Could not find YAML frontmatter in profile.", file=sys.stderr)
         sys.exit(1)
 
-    yaml_text = m.group(1)
+    data = yaml.safe_load(m.group(1))
+    if not data:
+        data = {}
 
     result = {
-        "home_address": "",
+        "home_address": str(data.get("home_address", "")),
         "work_addresses": [],
         "api_key": "",
-        "max_commute": 0,
+        "max_commute": int(data.get("max_commute_minutes", 0)),
     }
 
-    # Home address
-    hm = re.search(r'^home_address:\s*"?(.+?)"?\s*$', yaml_text, re.MULTILINE)
-    if hm:
-        result["home_address"] = hm.group(1).strip().strip('"')
-
-    # Max commute
-    mc = re.search(r'^max_commute_minutes:\s*(\d+)', yaml_text, re.MULTILINE)
-    if mc:
-        result["max_commute"] = int(mc.group(1))
-
-    # API key
-    ak = re.search(r'geoapify_api_key:\s*"?([^"\s]+)"?', yaml_text)
-    if ak:
-        result["api_key"] = ak.group(1).strip()
+    # API key from nested apis block
+    apis = data.get("apis", {})
+    if apis:
+        result["api_key"] = str(apis.get("geoapify_api_key", ""))
 
     # Parents and work addresses
-    # Parse the parents block by finding each parent entry
-    parents_block = re.search(r'^parents:\s*\n((?:[ \t]+.*\n)*)', yaml_text, re.MULTILINE)
-    if parents_block:
-        parent_text = parents_block.group(1)
-        # Split into individual parent entries on "- name:"
-        entries = re.split(r'(?=\s+-\s+name:)', parent_text)
-        for entry in entries:
-            nm = re.search(r'name:\s*"?([^"\n]+)"?', entry)
-            wa = re.search(r'work_address:\s*"?([^"\n]+)"?', entry)
-            if nm and wa:
-                addr = wa.group(1).strip().strip('"')
-                if addr:
-                    result["work_addresses"].append({
-                        "name": nm.group(1).strip().strip('"'),
-                        "address": addr,
-                    })
+    parents = data.get("parents", [])
+    if parents:
+        for parent in parents:
+            name = parent.get("name", "")
+            work_addr = parent.get("work_address", "")
+            if name and work_addr:
+                result["work_addresses"].append({
+                    "name": str(name),
+                    "address": str(work_addr),
+                })
 
     return result
 

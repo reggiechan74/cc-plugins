@@ -254,6 +254,7 @@ See `RESEARCH-PLAN.md` for the roadmap to add more Ontario schools.
 
 - Claude Code CLI
 - Python 3.x (for budget calculator and date scripts)
+- PyYAML (`pip install pyyaml`) — for parsing family profile YAML
 - openpyxl (for Excel spreadsheet generation)
 - Geoapify API key (optional, free tier — for automated commute calculations via commute-matrix skill)
 - [Anthropic xlsx skill](https://github.com/anthropics/skills/blob/main/skills/xlsx/SKILL.md) (optional, for Excel budget export)
