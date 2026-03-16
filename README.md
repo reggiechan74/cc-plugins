@@ -61,6 +61,12 @@ Create professional course curricula for 1-2 day workshops using backward design
 - Virtual/hybrid delivery adaptation
 - Kirkpatrick L1-L4 evaluation planning
 - Course series design (101/201/301/401) with Bloom's band enforcement
+- Learner profile generation for audience analysis
+- Pre-work micro-learning units with fast track/full path options
+- Post-workshop spaced retrieval practice to combat forgetting curve
+- Affective domain (Krathwohl's taxonomy) for attitude-change objectives
+- WCAG 2.1 AA accessibility specifications
+- Co-facilitation support with role rotation and handoff protocols
 
 **Commands:**
 - `/create-course` - Initialize new course project with directory structure
@@ -83,6 +89,9 @@ Create professional course curricula for 1-2 day workshops using backward design
 - `/save-as-template` - Save course structure as reusable template
 - `/create-from-template` - Create new course from existing template
 - `/list-templates` - List available course templates
+- `/generate-learner-profile` - Audience analysis across 5 dimensions
+- `/generate-pre-work` - Pre-workshop micro-learning prerequisites
+- `/generate-spaced-practice` - Post-workshop spaced retrieval practice
 
 ---
 
