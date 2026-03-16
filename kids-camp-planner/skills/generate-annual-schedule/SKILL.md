@@ -46,6 +46,8 @@ Ask the user: "For PA days I'll use City of Toronto ($62/day) and for winter/Mar
 
 If children need **different providers** on specific days (e.g., Emma does Science Camp for a PA day while Liam does YMCA), create an overrides JSON file. Every day can have a different provider per child — see the `--overrides` argument below.
 
+**Check calendar staleness:** Before running the script, read the calendar file header and check for staleness. Extract the school year from the `## YYYY-YYYY School Year` header. Parse the end year (e.g., 2026 from "2025-2026"). If the current date is after September 1 of that end year, warn: *"Calendar data for [board] is from [year]. The current year may have different PA days and breaks. Would you like to search for updated calendar data?"* If the user says yes, run the 3-Tier School Calendar Lookup to find updated data before proceeding.
+
 ### Step 3: Run the Generator Script
 
 ```bash

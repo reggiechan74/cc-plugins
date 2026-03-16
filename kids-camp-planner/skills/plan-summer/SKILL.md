@@ -31,6 +31,8 @@ If the user doesn't have it, search for "[school board] school year calendar [ye
 - Download and save the PDF if one is found to `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/pdfs/`
 - Extract dates and save structured data to the internal library
 
+**Check calendar staleness:** After loading calendar data, extract the school year from the `## YYYY-YYYY School Year` header. Parse the end year (e.g., 2026 from "2025-2026"). If the current date is after September 1 of that end year, warn: *"Calendar data for [board] is from [year]. The current year may have different PA days and breaks. Would you like to search for updated calendar data?"* If the user says yes, run the 3-Tier School Calendar Lookup to find updated data.
+
 **Multi-school families:** If children attend different schools, determine the summer window per child. The coverage window starts on the earliest last-school-day and ends on the latest first-fall-day across all schools. On days when one child's school is still in session (or has already started), that child does not need camp coverage.
 
 From the calendar data, determine:

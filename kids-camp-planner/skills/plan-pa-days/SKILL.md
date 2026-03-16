@@ -35,6 +35,8 @@ If the user doesn't have it, conduct a web search for "[school board name] schoo
 - If a PDF is found, download and save it to `${CLAUDE_PLUGIN_ROOT}/skills/camp-planning/references/school-calendars/pdfs/`
 - Extract all PA day dates from the calendar and save the structured data to the internal library
 
+**Check calendar staleness:** After loading calendar data, extract the school year from the `## YYYY-YYYY School Year` header. Parse the end year (e.g., 2026 from "2025-2026"). If the current date is after September 1 of that end year, warn: *"Calendar data for [board] is from [year]. The current year may have different PA days and breaks. Would you like to search for updated calendar data?"* If the user says yes, run the 3-Tier School Calendar Lookup to find updated data.
+
 **Common Ontario school boards and typical PA day patterns:**
 - Most boards have 6-7 PA days per school year
 - Typically: 1-2 in September/October, 1 in November, 1 in January/February, 1-2 in April/May/June

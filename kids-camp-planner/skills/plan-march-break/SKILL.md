@@ -24,6 +24,8 @@ Ontario March break is set by the Ministry of Education. Determine the exact dat
 4. **Tier 3 - Web search**: If the user doesn't have it, search for "[school board] March break [year]". Download and save any PDF found. Extract dates and save to internal library.
 5. For private schools, note that break dates may differ significantly from public boards.
 
+**Check calendar staleness:** After loading calendar data, extract the school year from the `## YYYY-YYYY School Year` header. Parse the end year (e.g., 2026 from "2025-2026"). If the current date is after September 1 of that end year, warn: *"Calendar data for [board] is from [year]. The current year may have different PA days and breaks. Would you like to search for updated calendar data?"* If the user says yes, run the 3-Tier School Calendar Lookup to find updated data.
+
 **Multi-school families:** If children attend different schools, their March break dates may differ. Determine each child's break dates separately. On days when only some children are off, only those children need camp coverage (others are marked "In school"). The generate-annual-schedule script handles this automatically via `build_annual_days_multi()`.
 
 **Typical pattern:** Third Monday through Friday in March, but confirm annually as it occasionally shifts.
