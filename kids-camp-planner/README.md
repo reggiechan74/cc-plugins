@@ -21,7 +21,7 @@ This plugin helps Ontario families navigate the complex puzzle of school-break c
 - **Budget Tracking**: Calculate costs across children, providers, and days/weeks with discount optimization and tax recovery estimates
 - **Private School Support**: Handle calendar mismatches between private schools and public board PA day/break schedules
 - **Email Drafting**: Generate inquiry, registration, waitlist, special needs, and cancellation emails
-- **Pre-Saved Calendars**: Ships with TDSB, TCDSB, GIST, and KCS calendar data; extensible to other Ontario schools
+- **Pre-Saved Calendars**: Ships with 14 Ontario public board calendars plus GIST and KCS private school data; extensible to other Ontario schools
 
 ## Installation
 
@@ -233,7 +233,7 @@ The plugin includes specific handling for private schools whose calendars don't 
 
 ### Pre-Saved Calendar Data
 
-Ships with calendar data for 12+ Ontario public school boards (TDSB, TCDSB, PDSB, DDSB, HDSB, YRDSB, YCDSB, OCSB, OCDSB, WRDSB, WCDSB, HWDSB) plus private schools (GIST, KCS) — all 2025-2026 PA days, holidays, and breaks.
+Ships with calendar data for 14 Ontario public school boards (DDSB, DPCDSB, HDSB, HWDSB, OCDSB, PDSB, SCDSB, TCDSB, TDSB, TVDSB, UCDSB, WRDSB, YCDSB, YRDSB) plus private schools (GIST, KCS) — all 2025-2026 PA days, holidays, and breaks.
 
 See `RESEARCH-PLAN.md` for the roadmap to add more Ontario schools.
 
