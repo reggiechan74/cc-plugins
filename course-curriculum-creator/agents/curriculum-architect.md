@@ -69,6 +69,15 @@ Follow its instructions to create the directory structure and initial files (cou
 
 Use the gathered requirements from Phase 1 (topic, duration, audience, level) as inputs.
 
+## Phase 3.5: Learner Profile (Optional)
+
+If sufficient audience information is available from Phase 1 requirements or TNA:
+
+Read `${CLAUDE_PLUGIN_ROOT}/commands/0-analysis/generate-learner-profile.md` using the Read tool.
+Follow its instructions to generate a learner profile analyzing prior knowledge, motivational drivers, learning constraints, transfer environment, and resistance points.
+
+If learner information is limited, skip this phase — it can be generated later when more audience data is available.
+
 ## Phase 4: Learning Outcomes Definition
 
 Read `${CLAUDE_PLUGIN_ROOT}/commands/generate-objectives.md` using the Read tool.
@@ -96,6 +105,15 @@ Read `${CLAUDE_PLUGIN_ROOT}/commands/generate-lesson-plans.md` using the Read to
 Follow its instructions to create detailed module-level lesson plans.
 
 Each module should include introduction, content delivery, practice activities, and debrief sections with instructor notes.
+
+## Phase 7.5: Pre-Work Materials (If Applicable)
+
+If learning objectives include Remember or Understand-level prerequisites that could be covered before Day 1:
+
+Read `${CLAUDE_PLUGIN_ROOT}/commands/3-learning-plan/generate-pre-work.md` using the Read tool.
+Follow its instructions to design micro-learning units covering prerequisite knowledge.
+
+Skip if all objectives are at Apply level or higher with no implied prerequisites.
 
 ## Phase 8: Student-Facing Materials
 
@@ -178,6 +196,14 @@ After generating lesson plans and artifacts, review all modules for third-party 
 3. For each external reference found, add an entry to content-sources.md using the Source Registry template
 4. Flag any sources that need permission or have unclear licensing
 
+### Phase 9e: Spaced Practice Sequence
+
+Read `${CLAUDE_PLUGIN_ROOT}/commands/6-delivery/generate-spaced-practice.md` using the Read tool.
+Follow its instructions to generate:
+- 3-5 retrieval questions per module at appropriate Bloom's level
+- Expanding interval schedule (Day 1, 3, 7, 14, 30)
+- Email format for delivery
+
 ## Phase 10: Deliverables & Handoff (5 minutes)
 
 ### Step 10.1: Generate Summary Report
@@ -199,6 +225,9 @@ I've designed a comprehensive [duration] curriculum on [topic] for [audience].
 7. `04-materials/transfer-plan.md` — Transfer of learning plan
 8. `03-assessment/evaluation-plan.md` — Kirkpatrick evaluation plan
 9. `01-planning/content-sources.md` — Third-party content & licensing tracker (populated)
+10. `01-planning/learner-profile.md` — Learner profile (if generated)
+11. `04-materials/pre-work.md` — Pre-work materials (if applicable)
+12. `04-materials/spaced-practice.md` — Spaced retrieval practice sequence
 
 ## Curriculum Highlights
 - **Learning Outcomes:** [Brief list]
