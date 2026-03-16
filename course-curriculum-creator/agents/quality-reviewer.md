@@ -136,6 +136,13 @@ Use the Skill tool to load:
 - Are extension challenges genuinely more complex (not just "do more")?
 - Are instructor decision points built into practice activities?
 
+### Learner Profile Alignment
+- If `01-planning/learner-profile.md` exists:
+  - Do differentiation tiers match profile findings? (e.g., if profile shows mixed skill levels, are floor/scaffold/extension tiers meaningfully different?)
+  - Do examples and scenarios match the audience's domain context from the profile?
+  - Does the transfer plan account for the transfer environment assessment?
+  - If profile identifies resistance points, are they addressed in module introductions?
+
 ### Timing Feasibility
 - Is time allocated realistic for activity completion?
 - Are there natural break points in the schedule?
@@ -161,6 +168,13 @@ Use the Skill tool to load:
 - Is terminology consistent across all documents?
 - Are the same topics described the same way?
 - Do examples align with the domain context?
+
+### Affective Objective Validation
+- If learning objectives include affective objectives (Krathwohl's taxonomy):
+  - Are affective objectives paired with related cognitive objectives?
+  - Do affective objectives use appropriate assessment methods (reflection, observation, attitude scales — NOT quizzes)?
+  - Are affective objectives limited to Receiving/Responding/Valuing levels for 1-2 day workshops?
+  - Is the total count of affective objectives 1-2 maximum?
 
 ### Timing Analysis
 - Add up all activity times and compare to workshop duration
@@ -261,6 +275,32 @@ Use the Skill tool to load:
 - Flag untracked external content references
 - Flag unresolved permission requests
 - Note upcoming license expirations
+
+## 5e. Pre-Work Validation (if applicable)
+
+**Check pre-work materials for quality and alignment:**
+
+### Coverage
+- Does pre-work map to specific objectives or prerequisites?
+- Are Remember/Understand prerequisites that could be pre-work actually covered in pre-work?
+- Does Day 1 Module 1 adjust for pre-work content (not re-teaching)?
+
+### Design Quality
+- Is total pre-work time 30 minutes or less?
+- Does every unit have both a fast track and full path?
+- Are self-assessment questions aligned with prerequisite concepts?
+- Are email templates provided for T-7 and T-2 distribution?
+
+### Spaced Practice Validation (if applicable)
+- Do retrieval questions match the Bloom's level of their module's objective?
+- Is every module represented in the question bank?
+- Are practice sessions completable in under 5 minutes each?
+- Do later sessions interleave questions across modules?
+
+**Document findings:**
+- Rate pre-work quality: STRONG / ADEQUATE / NEEDS IMPROVEMENT / NOT PRESENT
+- Flag any pre-work that exceeds 30-minute time cap
+- Flag modules without corresponding spaced practice questions
 
 ## 6. Generate Validation Report
 
@@ -371,6 +411,8 @@ Prioritized list of changes needed:
 - **Overall Coherence**: Complete vertical alignment, no orphaned elements, adequate timing buffer, consistent terminology
 - **UDL & Accessibility**: Each module uses 2+ representation modes, each half-day includes learner choice, assessments accept multiple formats, proactive accommodations designed in
 - **Content Licensing**: All third-party content tracked in content-sources.md, attributions present in materials, no unresolved permissions, no expired licenses
+- **Pre-Work (if exists)**: Maps to prerequisites, under 30 min, fast track + full path, email templates present
+- **Spaced Practice (if exists)**: Questions match Bloom's levels, all modules covered, sessions under 5 min
 
 **Overall quality ratings:**
 
