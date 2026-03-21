@@ -40,7 +40,15 @@ class FixtureBlock:
     line_number: int
 
 
-Block = ProseBlock | MathBlock | ValidationBlock | FixtureBlock
+@dataclass
+class ResultsBlock:
+    """A python:results fenced code block — stdout replaces block in paper."""
+    code: str
+    line_number: int
+    output: str | None = None  # Populated by executor
+
+
+Block = ProseBlock | MathBlock | ValidationBlock | FixtureBlock | ResultsBlock
 
 
 def parse_document(source: str) -> list[Block]:
@@ -70,6 +78,22 @@ def parse_document(source: str) -> list[Block]:
                 code_lines.append(lines[i])
                 i += 1
             blocks.append(FixtureBlock(
+                code="\n".join(code_lines),
+                line_number=start_line,
+            ))
+            i += 1  # Skip closing ```
+            continue
+
+        # Check for results block: ```python:results
+        if line.strip().startswith("```python:results"):
+            flush_prose()
+            code_lines: list[str] = []
+            start_line = i + 1
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code_lines.append(lines[i])
+                i += 1
+            blocks.append(ResultsBlock(
                 code="\n".join(code_lines),
                 line_number=start_line,
             ))

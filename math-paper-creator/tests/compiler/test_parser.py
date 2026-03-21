@@ -111,7 +111,7 @@ def test_coverage_metric_uncovered():
     assert len(result.uncovered_sections) == 1
 
 
-from meta_compiler.compiler.parser import parse_document, FixtureBlock
+from meta_compiler.compiler.parser import parse_document, FixtureBlock, ResultsBlock
 
 def test_parse_fixture_block():
     source = '''# Model
@@ -145,6 +145,51 @@ Set("W", description="Workers")
     assert "FixtureBlock" in types
     assert "MathBlock" in types
     assert "ValidationBlock" in types
+
+def test_parse_results_block():
+    source = '''# Model
+
+```python:fixture
+x = 42
+```
+
+```python:results
+print(f"x = {x}")
+```
+'''
+    blocks = parse_document(source)
+    results_blocks = [b for b in blocks if isinstance(b, ResultsBlock)]
+    assert len(results_blocks) == 1
+    assert 'print(f"x = {x}")' in results_blocks[0].code
+
+
+def test_parse_results_block_tracks_line_number():
+    source = "# Title\n\n```python:results\nprint('hi')\n```\n"
+    blocks = parse_document(source)
+    rblocks = [b for b in blocks if isinstance(b, ResultsBlock)]
+    assert len(rblocks) == 1
+    assert rblocks[0].line_number == 3  # 1-indexed line of the fence (matches FixtureBlock/ValidationBlock pattern)
+
+
+def test_coverage_results_does_not_interrupt():
+    """A results block between math and validate doesn't break coverage."""
+    source = '''# Model
+
+$$x = 1$$
+
+```python:results
+print("x is 1")
+```
+
+```python:validate
+Parameter("x", description="x value")
+```
+'''
+    from meta_compiler.compiler.parser import coverage_metric
+    blocks = parse_document(source)
+    result = coverage_metric(blocks)
+    assert result.covered_math == 1
+
 
 def test_coverage_fixture_does_not_interrupt():
     """A math block followed by fixture then validate counts as covered."""
