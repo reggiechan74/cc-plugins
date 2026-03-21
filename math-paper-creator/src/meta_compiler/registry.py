@@ -78,11 +78,20 @@ class Registry:
                     f"but it is registered as {type(self.symbols[set_name]).__name__}"
                 )
 
+    @staticmethod
+    def _is_scalar(value) -> bool:
+        """Check if a value is a scalar (including numpy scalar types)."""
+        if isinstance(value, (int, float, str)):
+            return True
+        try:
+            import numpy as np
+            return isinstance(value, (np.integer, np.floating))
+        except ImportError:
+            return False
+
     def _make_proxy(self, name: str) -> "SymbolProxy | int | float | str":
         """Create a data-backed proxy and auto-inject into exec namespace."""
-        if name in self.data_store and isinstance(
-            self.data_store[name], (int, float, str)
-        ):
+        if name in self.data_store and self._is_scalar(self.data_store[name]):
             # Scalar value — inject raw value, not a proxy
             value = self.data_store[name]
             self.scalar_names.add(name)

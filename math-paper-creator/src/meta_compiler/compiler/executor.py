@@ -18,6 +18,25 @@ from meta_compiler.registry import Registry, registry
 from meta_compiler.symbols import ConstraintSymbol, ObjectiveSymbol
 
 
+def _coerce_bool(value) -> bool:
+    """Coerce constraint result to Python bool (handles numpy scalars)."""
+    try:
+        return bool(value)
+    except (ValueError, TypeError):
+        return value is True
+
+
+def _is_numeric(value) -> bool:
+    """Check if a value is numeric, including numpy scalar types."""
+    if isinstance(value, (int, float)):
+        return True
+    try:
+        import numpy as np
+        return isinstance(value, (np.integer, np.floating))
+    except ImportError:
+        return False
+
+
 @dataclass
 class ExecutionResult:
     passed: bool
@@ -100,7 +119,7 @@ def execute_blocks(
             elif isinstance(sym, ObjectiveSymbol) and sym.expr is not None:
                 try:
                     result = sym.expr() if _arity(sym.expr) == 0 else None
-                    if result is not None and not isinstance(result, (int, float)):
+                    if result is not None and not _is_numeric(result):
                         errors.append(
                             f"Objective \"{sym.name}\" returned {type(result).__name__}, "
                             f"expected numeric value"
@@ -128,7 +147,7 @@ def _check_constraint(sym: ConstraintSymbol, reg: Registry, errors: list[str]):
 
     if arity == 0:
         result = sym.expr()
-        if result is not True:
+        if not _coerce_bool(result):
             errors.append(
                 f"Constraint \"{sym.name}\" failed (returned {result!r})"
             )
@@ -155,7 +174,7 @@ def _check_constraint(sym: ConstraintSymbol, reg: Registry, errors: list[str]):
 
         for member in members:
             result = sym.expr(member)
-            if result is not True:
+            if not _coerce_bool(result):
                 errors.append(
                     f"Constraint \"{sym.name}\" violated for "
                     f"{sym.over}=\"{member}\": result is {result!r}"
