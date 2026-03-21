@@ -33,11 +33,19 @@ def main(argv: list[str] | None = None) -> int:
     paper_parser.add_argument("--depth", choices=["executive", "technical", "appendix"],
                               help="Depth filter for paper output")
     paper_parser.add_argument("--output", type=Path, help="Output file path")
+    paper_parser.add_argument(
+        "--no-strict", action="store_true",
+        help="Treat orphan symbols as warnings instead of errors",
+    )
 
     # report
     report_parser = subparsers.add_parser("report", help="Generate validation report")
     report_parser.add_argument("file", type=Path, help="Path to .model.md file")
     report_parser.add_argument("--output", type=Path, help="Output file path")
+    report_parser.add_argument(
+        "--no-strict", action="store_true",
+        help="Treat orphan symbols as warnings instead of errors",
+    )
 
     # compile
     compile_parser = subparsers.add_parser("compile", help="Generate all artifacts")
@@ -46,6 +54,10 @@ def main(argv: list[str] | None = None) -> int:
                                 help="Output directory (default: output/)")
     compile_parser.add_argument("--depth", choices=["executive", "technical", "appendix"],
                                 help="Depth filter for paper output")
+    compile_parser.add_argument(
+        "--no-strict", action="store_true",
+        help="Treat orphan symbols as warnings instead of errors",
+    )
 
     args = parser.parse_args(argv)
     source = args.file.read_text()
@@ -53,11 +65,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "check":
         return _cmd_check(source, strict=args.strict)
     elif args.command == "paper":
-        return _cmd_paper(source, depth=args.depth, output=args.output)
+        return _cmd_paper(source, depth=args.depth, output=args.output,
+                          strict=not args.no_strict)
     elif args.command == "report":
-        return _cmd_report(source, output=args.output)
+        return _cmd_report(source, output=args.output, strict=not args.no_strict)
     elif args.command == "compile":
-        return _cmd_compile(source, output=args.output, depth=args.depth)
+        return _cmd_compile(source, output=args.output, depth=args.depth,
+                            strict=not args.no_strict)
     return 1
 
 
@@ -79,11 +93,12 @@ def _cmd_check(source: str, *, strict: bool = False) -> int:
         return 1
 
 
-def _cmd_paper(source: str, *, depth: str | None, output: Path | None) -> int:
+def _cmd_paper(source: str, *, depth: str | None, output: Path | None,
+               strict: bool = True) -> int:
     from meta_compiler.compiler import compile_document
 
     try:
-        artifacts = compile_document(source, depth=depth)
+        artifacts = compile_document(source, depth=depth, strict=strict)
     except (ValueError, RuntimeError) as e:
         print(str(e), file=sys.stderr)
         return 1
@@ -97,11 +112,11 @@ def _cmd_paper(source: str, *, depth: str | None, output: Path | None) -> int:
     return 0
 
 
-def _cmd_report(source: str, *, output: Path | None) -> int:
+def _cmd_report(source: str, *, output: Path | None, strict: bool = True) -> int:
     from meta_compiler.compiler import compile_document
 
     try:
-        artifacts = compile_document(source)
+        artifacts = compile_document(source, strict=strict)
     except (ValueError, RuntimeError) as e:
         print(str(e), file=sys.stderr)
         return 1
@@ -115,11 +130,12 @@ def _cmd_report(source: str, *, output: Path | None) -> int:
     return 0
 
 
-def _cmd_compile(source: str, *, output: Path, depth: str | None) -> int:
+def _cmd_compile(source: str, *, output: Path, depth: str | None,
+                 strict: bool = True) -> int:
     from meta_compiler.compiler import compile_document
 
     try:
-        artifacts = compile_document(source, depth=depth)
+        artifacts = compile_document(source, depth=depth, strict=strict)
     except (ValueError, RuntimeError) as e:
         print(str(e), file=sys.stderr)
         return 1

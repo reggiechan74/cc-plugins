@@ -142,3 +142,25 @@ Constraint("limit", expr=lambda i: x[i] <= cap[i],
     assert (out_dir / "paper.md").exists()
     assert (out_dir / "runner.py").exists()
     assert (out_dir / "report.txt").exists()
+
+
+def test_compile_no_strict_flag(tmp_path):
+    """compile --no-strict should pass for scalar models with orphans."""
+    model = tmp_path / "scalar.model.md"
+    model.write_text('''
+```python:fixture
+M = 5.0
+```
+
+```python:validate
+Parameter("M", description="meeting hours")
+Parameter("H", description="total hours")
+```
+''')
+    out_dir = tmp_path / "output"
+    result = subprocess.run(
+        [sys.executable, "-m", "meta_compiler.cli", "compile", str(model),
+         "--output", str(out_dir), "--no-strict"],
+        capture_output=True, text=True, env=_CLI_ENV,
+    )
+    assert result.returncode == 0, f"stderr: {result.stderr}"

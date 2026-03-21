@@ -268,3 +268,23 @@ def test_full_model_structural_mode():
     from meta_compiler.compiler import check_document
     result = check_document(structural_doc)
     assert result.passed, f"Structural errors: {result.errors}"
+
+
+def test_compile_document_accepts_strict_param(fresh_registry):
+    """compile_document should accept strict kwarg."""
+    from meta_compiler.compiler import compile_document
+
+    source = '''
+```python:fixture
+M = 5.0
+```
+
+```python:validate
+Parameter("M", description="meeting hours")
+```
+'''
+    # With strict=False, this should succeed even without the auto-detect heuristic
+    result = compile_document(source, strict=False)
+    assert "paper" in result
+    assert "report" in result
+    assert "runner" in result

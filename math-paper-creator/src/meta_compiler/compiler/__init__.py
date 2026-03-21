@@ -16,12 +16,16 @@ def check_document(source: str, *, strict: bool = False) -> ExecutionResult:
 
 
 def compile_document(
-    source: str, *, depth: str | None = None, filename: str = "model.model.md"
+    source: str,
+    *,
+    depth: str | None = None,
+    filename: str = "model.model.md",
+    strict: bool = True,
 ) -> dict:
     """Full compilation pipeline: validate, then generate artifacts."""
     blocks = parse_document(source)
 
-    result = execute_blocks(blocks, strict=True)
+    result = execute_blocks(blocks, strict=strict)
     if not result.passed:
         raise RuntimeError(
             "Validation failed in strict mode:\n"
