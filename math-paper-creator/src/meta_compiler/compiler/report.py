@@ -76,6 +76,9 @@ class Report:
 
         return "\n".join(lines)
 
+    def __str__(self) -> str:
+        return self.to_text()
+
 
 def generate_report(
     registry: Registry,

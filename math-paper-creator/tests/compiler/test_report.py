@@ -108,3 +108,17 @@ def test_report_generates_without_expr_tree():
     assert report.symbol_table is not None
     text = report.to_text()
     assert "cap" in text
+
+
+def test_report_str_delegates_to_to_text():
+    """str(report) should produce the same output as report.to_text()."""
+    report = Report(
+        symbol_table=[{"name": "x", "type": "Variable", "description": "test"}],
+        dependencies=[],
+        test_passed=True,
+        test_errors=[],
+        test_warnings=[],
+        coverage={"total_math": 1, "covered_math": 1, "uncovered_sections": []},
+    )
+    assert str(report) == report.to_text()
+    assert repr(report) != str(report)  # __str__ is not __repr__
