@@ -81,9 +81,9 @@ class Report:
 
 
 def generate_report(
-    registry: Registry,
     blocks: list[Block],
     *,
+    registry: Registry,
     test_result: "TestResult | None" = None,
 ) -> Report:
     """Generate a validation report from registry state and parsed blocks."""

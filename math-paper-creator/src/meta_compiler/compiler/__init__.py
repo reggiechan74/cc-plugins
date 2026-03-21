@@ -29,7 +29,7 @@ def compile_document(
         )
 
     paper = generate_paper(blocks, depth=depth)
-    report = generate_report(result.registry, blocks, test_result=result)
+    report = generate_report(blocks, registry=result.registry, test_result=result)
 
     return {
         "paper": paper,
