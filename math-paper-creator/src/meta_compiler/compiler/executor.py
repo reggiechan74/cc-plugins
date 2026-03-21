@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from meta_compiler.checks import collect_scalar_refs
 from meta_compiler.compiler.parser import Block, FixtureBlock, ResultsBlock, ValidationBlock
 from meta_compiler.registry import Registry, registry
-from meta_compiler.symbols import ConstraintSymbol, ObjectiveSymbol
+from meta_compiler.symbols import AxiomSymbol, ConstraintSymbol, ObjectiveSymbol, PropertySymbol
 
 
 def _coerce_bool(value) -> bool:
@@ -144,6 +144,48 @@ def execute_blocks(
                         )
                 except Exception as e:
                     errors.append(f"Error in objective \"{sym.name}\": {e}")
+
+    # Step 4b: Verify axioms and properties (if Z3 expressions present)
+    axiom_syms = [
+        sym for sym in registry.symbols.values()
+        if isinstance(sym, AxiomSymbol) and sym.z3_expr is not None
+    ]
+    if axiom_syms:
+        from meta_compiler.verification import check_axiom_consistency, check_property, z3_available
+        if z3_available():
+            # Consistency check
+            consistency = check_axiom_consistency([s.z3_expr for s in axiom_syms])
+            if consistency.status == "contradictory":
+                axiom_names = ", ".join(s.name for s in axiom_syms)
+                errors.append(
+                    f"Axioms are contradictory: {axiom_names} cannot all hold simultaneously"
+                )
+            elif consistency.status == "error":
+                errors.append(f"Axiom consistency check error: {consistency.error}")
+
+            # Property implication checks
+            for name, sym in registry.symbols.items():
+                if isinstance(sym, PropertySymbol):
+                    given_exprs = [
+                        registry.symbols[ax_name].z3_expr
+                        for ax_name in sym.given
+                        if isinstance(registry.symbols.get(ax_name), AxiomSymbol)
+                        and registry.symbols[ax_name].z3_expr is not None
+                    ]
+                    if given_exprs:
+                        prop_result = check_property(given_exprs, sym.z3_expr)
+                        if prop_result.status == "failed":
+                            ce = prop_result.counterexample or {}
+                            ce_str = ", ".join(f"{k}={v}" for k, v in ce.items())
+                            errors.append(
+                                f'Property "{sym.name}" does NOT follow from '
+                                f'{", ".join(sym.given)}'
+                                f'{" — counterexample: " + ce_str if ce_str else ""}'
+                            )
+                        elif prop_result.status == "error":
+                            errors.append(
+                                f'Property "{sym.name}" verification error: {prop_result.error}'
+                            )
 
     # Step 5: Run structural checks
     from meta_compiler.checks import run_all_checks
