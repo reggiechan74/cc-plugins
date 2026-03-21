@@ -75,3 +75,14 @@ def test_register_property_given_not_axiom_raises(fresh_registry):
             "P1", claim="t_eff >= 0", z3_expr=lambda: None,
             given=["W"], description="Non-neg"
         )
+
+def test_axiom_dsl_function(fresh_registry):
+    from meta_compiler import Axiom
+    Axiom("A1", statement="H > 0", description="Positivity")
+    assert "A1" in fresh_registry.symbols
+
+def test_property_dsl_function(fresh_registry):
+    from meta_compiler import Axiom, Property
+    Axiom("A1", statement="H > 0", description="Pos")
+    Property("P1", claim="t_eff >= 0", z3_expr=lambda: None, given=["A1"], description="Non-neg")
+    assert "P1" in fresh_registry.symbols

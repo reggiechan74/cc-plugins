@@ -92,11 +92,12 @@ def execute_blocks(
             rb.output = buf.getvalue()
 
     # Step 2: Build validation namespace
-    from meta_compiler import Set, Parameter, Variable, Expression, Constraint, Objective, S
+    from meta_compiler import Set, Parameter, Variable, Expression, Constraint, Objective, S, Axiom, Property
     ns = {
         "Set": Set, "Parameter": Parameter, "Variable": Variable,
         "Expression": Expression, "Constraint": Constraint,
-        "Objective": Objective, "S": S, "registry": registry,
+        "Objective": Objective, "S": S, "Axiom": Axiom,
+        "Property": Property, "registry": registry,
     }
 
     # Step 3: Execute validation blocks

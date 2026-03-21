@@ -68,6 +68,29 @@ def Objective(
     registry.register_objective(name, expr=expr, sense=sense, description=description)
 
 
+def Axiom(
+    name: str,
+    *,
+    statement: str,
+    z3_expr: object | None = None,
+    description: str = "",
+) -> None:
+    """Declare a foundational axiom."""
+    registry.register_axiom(name, statement=statement, z3_expr=z3_expr, description=description)
+
+
+def Property(
+    name: str,
+    *,
+    claim: str,
+    z3_expr: object,
+    given: list[str] | tuple[str, ...],
+    description: str = "",
+) -> None:
+    """Declare a derived property."""
+    registry.register_property(name, claim=claim, z3_expr=z3_expr, given=given, description=description)
+
+
 def S(name: str):
     """Return the members of a registered set for iteration."""
     return registry.s(name)
