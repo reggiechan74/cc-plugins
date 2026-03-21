@@ -9,6 +9,9 @@ v2 checks use:
 
 from __future__ import annotations
 
+import io
+import inspect
+import tokenize
 from typing import TYPE_CHECKING
 
 from meta_compiler.symbols import (
@@ -139,10 +142,6 @@ def _check_cycles(registry: "Registry", errors: list[str]):
 
 def _extract_names_from_source(fn, registry: "Registry") -> set[str]:
     """Extract symbol names from a callable's source using tokenize."""
-    import tokenize
-    import io
-    import inspect
-
     try:
         source = inspect.getsource(fn)
     except (OSError, TypeError):
@@ -162,6 +161,24 @@ def _extract_names_from_source(fn, registry: "Registry") -> set[str]:
         pass
 
     return found
+
+
+def collect_scalar_refs(
+    block_source: str, scalar_names: set[str], access_log: set[str]
+) -> None:
+    """Add scalar symbol names found in block_source to access_log.
+
+    Uses Python's tokenizer to avoid substring false positives.
+    """
+    if not scalar_names:
+        return
+    try:
+        tokens = tokenize.generate_tokens(io.StringIO(block_source).readline)
+        for tok_type, tok_string, *_ in tokens:
+            if tok_type == tokenize.NAME and tok_string in scalar_names:
+                access_log.add(tok_string)
+    except tokenize.TokenError:
+        pass  # partial source is OK — best-effort
 
 
 def _check_unit_boundaries(registry: "Registry", errors: list[str]):
