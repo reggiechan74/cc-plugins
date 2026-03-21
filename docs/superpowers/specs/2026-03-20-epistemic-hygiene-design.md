@@ -22,6 +22,10 @@ Six additions to the authoring workflow, all prompt-level changes to `commands/a
 
 **Action:** Store the choice in YAML frontmatter as `epistemic_type: empirical | structural | decision_framework`. Generate a `**Scope and epistemic status:**` paragraph appended to the Introduction. For `structural` and `decision_framework`, include: "Parameters are illustrative, not estimated from observational data. Scenario outputs are model-implied examples, not observed outcomes."
 
+**Default:** If the author declines or says "skip", default to `structural` (most conservative framing) and note `epistemic_type: structural  # default` in frontmatter.
+
+**Review findings path:** If the paper is loaded from review findings (Step 1, item 0), the scope declaration prompt still fires at Step 2 — review findings do not set `epistemic_type`.
+
 **Used by:** Items 4 (language scan calibration) and 5 (four-tests conclusion gating).
 
 ### 2. Parameter Provenance (Step 3.2)
@@ -36,7 +40,7 @@ Six additions to the authoring workflow, all prompt-level changes to `commands/a
 - **(b)** "Following [Author] ([year]), we set..." (author provides citation)
 - **(c)** "We adopt [value] as a representative value..."
 
-Fires per-parameter during Step 3.2 prose writing. No separate tracking structure — the prose itself is the record. For blocks with multiple parameters, prompt once per parameter.
+Fires during Step 3.2 prose writing. No separate tracking structure — the prose itself is the record. For blocks with multiple parameters, present all parameters in a batch prompt (e.g., a table) rather than one-at-a-time to reduce prompt fatigue.
 
 ### 3. Scenario Decomposition Flag (Step 3.2)
 
@@ -60,7 +64,7 @@ Only applies to scenario/sensitivity sections (signaled by heading or author des
 | Pattern | Suggestion |
 |---------|------------|
 | "the model proves" | "the model shows that, under these assumptions" |
-| "demonstrates that" | "illustrates that" or "model-implied analysis suggests" |
+| "demonstrates that" (in empirical-sounding context, not formal math proofs) | "illustrates that" or "model-implied analysis suggests" |
 | "findings" (for scenario outputs) | "implications under illustrative calibration" |
 | "the math says" | "under these assumptions" |
 | "yields [N] results/findings" | "yields [N] implications" |
@@ -69,7 +73,11 @@ Only applies to scenario/sensitivity sections (signaled by heading or author des
 - `empirical`: softer framing — "Review these — they may be appropriate for an empirical paper."
 - `structural` / `decision_framework`: stronger framing — "These may overstate what the model has earned."
 
+Pattern matching is case-insensitive, whole-word (not substring). "Demonstrates that" in a mathematical proof context (e.g., "Theorem 3 demonstrates that") should not be flagged — the LLM evaluates context, not just the pattern.
+
 Not auto-fix. Present flagged instances with line context and suggestions. Author decides which to change. Skill offers to apply accepted changes.
+
+**Ordering:** The language scan runs first. The four-tests conclusion (item 5) runs after, so any generated conclusion paragraph is also subject to the scan if re-run.
 
 ### 5. Four-Tests Conclusion Frame (Step 4, conditional)
 
@@ -100,7 +108,7 @@ Append:
 - Multi-parameter scenarios include effect decomposition
 ```
 
-Advisory items — informational notes at completion, not warnings. Evaluated against document text during existing Step 4 checklist scan.
+Advisory items — informational notes at completion, not warnings. Evaluated against document text during existing Step 4 checklist scan. Note: unlike existing advisory items (which check for structural symbol presence/absence), these require semantic evaluation of prose. Results may be less deterministic, which is acceptable for advisory items.
 
 ## Files Changed
 
