@@ -6,6 +6,7 @@ Usage:
     python -m meta_compiler.cli report <file.model.md>
     python -m meta_compiler.cli compile <file.model.md> [--output <dir>]
     python -m meta_compiler.cli reconcile <file.model.md> [--section "<heading>"]
+    python -m meta_compiler.cli verify <file.model.md>
 """
 
 from __future__ import annotations
@@ -70,6 +71,10 @@ def main(argv: list[str] | None = None) -> int:
         help="Scope checks to a specific section heading"
     )
 
+    # verify
+    verify_parser = subparsers.add_parser("verify", help="Run Z3 axiom verification")
+    verify_parser.add_argument("file", type=Path, help="Path to .model.md file")
+
     args = parser.parse_args(argv)
     source = args.file.read_text()
 
@@ -85,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
                             strict=not args.no_strict)
     elif args.command == "reconcile":
         return _cmd_reconcile(source, section=args.section)
+    elif args.command == "verify":
+        return _cmd_verify(source)
     return 1
 
 
@@ -177,6 +184,49 @@ def _cmd_reconcile(source: str, *, section: str | None) -> int:
     else:
         print("Reconciliation: OK")
         return 0
+
+
+def _cmd_verify(source: str) -> int:
+    from meta_compiler.compiler.parser import parse_document
+    from meta_compiler.compiler.executor import execute_blocks
+    from meta_compiler.verification import z3_available
+
+    if not z3_available():
+        print("z3-solver is not installed. Install with: pip install z3-solver",
+              file=sys.stderr)
+        return 1
+
+    blocks = parse_document(source)
+    result = execute_blocks(blocks)
+
+    # Extract axiom/property info from registry
+    from meta_compiler.symbols import AxiomSymbol, PropertySymbol
+    reg = result.registry
+    if reg is None:
+        print("FAILED — could not build registry", file=sys.stderr)
+        return 1
+
+    axioms = [s for s in reg.symbols.values() if isinstance(s, AxiomSymbol)]
+    properties = [s for s in reg.symbols.values() if isinstance(s, PropertySymbol)]
+    z3_axioms = [a for a in axioms if a.z3_expr is not None]
+
+    if not z3_axioms:
+        print("No axioms with Z3 expressions found.")
+        return 0
+
+    print(f"Axiom verification (Z3):")
+    print(f"  Axioms: {len(z3_axioms)}, Properties: {len(properties)}")
+
+    if result.passed:
+        print(f"  PASSED")
+        for w in result.warnings:
+            print(f"  WARNING: {w}")
+        return 0
+    else:
+        print(f"  FAILED")
+        for e in result.errors:
+            print(f"  ERROR: {e}")
+        return 1
 
 
 if __name__ == "__main__":
