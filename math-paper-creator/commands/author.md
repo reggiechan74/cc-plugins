@@ -119,7 +119,26 @@ Generate a `**Scope and epistemic status:**` paragraph and append it to the Intr
 - **Empirical:** "Parameters are estimated from observed data. Results reflect empirical regularities in the sample."
 - **Structural / Decision framework:** "Parameters are illustrative, not estimated from observational data. Scenario outputs are model-implied examples, not observed outcomes."
 
-Write the paragraph to the file, then continue to the authoring loop.
+Write the paragraph to the file, then continue to the axiom declaration (if applicable) or the authoring loop.
+
+#### Axiom Declaration (structural / decision_framework papers only)
+
+If `epistemic_type` is `structural` or `decision_framework`, prompt:
+
+> "Would you like to declare foundational axioms for this model? Axioms are explicit assumptions stated without proof — everything else derives from them. (Recommended for structural papers.)"
+
+If accepted, the first authoring section (before Parameters) is "Axioms and Assumptions." For each axiom:
+- Prose statement explaining the assumption
+- Display math: `$$H > 0$$`
+- `python:validate` block registering: `Axiom("A1", statement="H > 0", z3_expr=lambda: H > 0, description="...")`
+- The `z3_expr` is optional — include it if Z3 verification is desired
+
+Z3 variables must be declared in the `python:validate` block (NOT in fixture blocks — fixture data gets wrapped in SymbolProxy which breaks Z3 operations):
+```python
+from z3 import Real
+H = Real('H')
+Axiom("A1", statement="H > 0", z3_expr=lambda: H > 0, description="...")
+```
 
 **Review findings path:** If the paper was loaded from review findings (Step 1, item 0), the scope declaration prompt still fires — review findings do not set `epistemic_type`.
 
@@ -277,6 +296,24 @@ When the user signals they are done:
 
    Tests 1-2 are partially inferable from meta-compiler validation (no cycles, explicit mechanisms). Tests 3-4 require reading scenario sections and prose.
 
+#### Axiom Verification (if Z3 expressions present)
+
+If any Axiom symbols have `z3_expr`, the executor automatically:
+1. Checks axiom consistency
+2. Checks property implications
+3. Reports results in the completion summary:
+
+```
+Axiom verification (Z3):
+  ✓ Axioms A1-A4 are consistent (sat in 0.02s)
+  ✓ Property P1 follows from A1, A2, A3
+  ✗ Property P2 does NOT follow from A1, A2 — counterexample: H=1, M=1, beta=2
+```
+
+Reference Z3 results in the four-tests conclusion frame:
+- Test 1 (Non-contradiction): cite axiom consistency check
+- Test 3 (Comparative statics): cite monotonicity verification if applicable
+
 4. Show a summary:
    - Total sections with math blocks
    - Symbol count by type (Sets, Parameters, Variables, Expressions, Constraints, Objectives)
@@ -298,7 +335,7 @@ When the user signals they are done:
 ## API reference and known constraints
 
 ```python
-from meta_compiler import Set, Parameter, Variable, Expression, Constraint, Objective, S, registry
+from meta_compiler import Set, Parameter, Variable, Expression, Constraint, Objective, S, Axiom, Property, registry
 
 # Sets — fixture data must be a list
 Set("W", description="Set of workers")
@@ -352,6 +389,15 @@ Constraint("demand",
 # Scalar fixture values (int, float, str) are auto-unwrapped as raw
 # Python types, so arithmetic works directly: M * beta, H - M, etc.
 # No need to extract from registry.data_store for scalars.
+
+# Axioms — foundational assumptions (z3_expr optional, for machine verification)
+Axiom("A1", statement="H > 0", z3_expr=lambda: H > 0, description="Positivity")
+
+# Properties — derived claims that follow from axioms
+Property("P1", claim="H - M >= 0",
+         z3_expr=lambda: H - M >= 0,
+         given=["A1", "A2"],
+         description="Non-negative effective time")
 
 # Objectives — lambda takes ZERO arguments
 Objective("total_output",

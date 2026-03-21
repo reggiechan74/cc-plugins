@@ -37,3 +37,4 @@ Informational notes — not blocking, but worth surfacing:
 - Scenario outputs framed as model-implied rather than empirical findings
 - Parameters have stated provenance (estimated / literature / illustrative)
 - Multi-parameter scenarios include effect decomposition
+- Structural/decision papers declare foundational axioms with Z3 expressions for machine verification
