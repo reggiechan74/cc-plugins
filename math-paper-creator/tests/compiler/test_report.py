@@ -184,3 +184,47 @@ def test_report_str_delegates_to_to_text():
     )
     assert str(report) == report.to_text()
     assert repr(report) != str(report)  # __str__ is not __repr__
+
+
+def test_report_includes_axiom_in_symbol_table(fresh_registry):
+    from meta_compiler import Set, Parameter, Axiom
+    from meta_compiler.compiler.parser import parse_document
+    from meta_compiler.compiler.report import generate_report
+
+    Set("W", description="Workers")
+    Parameter("cap", index="W", description="Capacity")
+    Axiom("A1", statement="Capacity is positive", description="Positivity")
+
+    blocks = parse_document('''# Model
+```python:validate
+Set("W", description="Workers")
+Parameter("cap", index="W", description="Capacity")
+Axiom("A1", statement="Capacity is positive", description="Positivity")
+```
+''')
+    report = generate_report(blocks, registry=fresh_registry)
+    types = [s["type"] for s in report.symbol_table]
+    assert "Axiom" in types
+    axiom_entry = [s for s in report.symbol_table if s["type"] == "Axiom"][0]
+    assert axiom_entry["statement"] == "Capacity is positive"
+
+def test_report_includes_property_in_symbol_table(fresh_registry):
+    from meta_compiler import Axiom, Property
+    from meta_compiler.compiler.parser import parse_document
+    from meta_compiler.compiler.report import generate_report
+
+    Axiom("A1", statement="H > 0", description="Pos")
+    Property("P1", claim="t_eff >= 0", z3_expr=lambda: None, given=["A1"], description="Non-neg")
+
+    blocks = parse_document('''# Model
+```python:validate
+Axiom("A1", statement="H > 0", description="Pos")
+Property("P1", claim="t_eff >= 0", z3_expr=lambda: None, given=["A1"], description="Non-neg")
+```
+''')
+    report = generate_report(blocks, registry=fresh_registry)
+    types = [s["type"] for s in report.symbol_table]
+    assert "Property" in types
+    prop_entry = [s for s in report.symbol_table if s["type"] == "Property"][0]
+    assert prop_entry["claim"] == "t_eff >= 0"
+    assert prop_entry["given"] == ["A1"]

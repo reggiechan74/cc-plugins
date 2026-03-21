@@ -7,10 +7,12 @@ from dataclasses import dataclass, field
 from meta_compiler.compiler.parser import Block, coverage_metric
 from meta_compiler.registry import Registry
 from meta_compiler.symbols import (
+    AxiomSymbol,
     ConstraintSymbol,
     ExpressionSymbol,
     ObjectiveSymbol,
     ParameterSymbol,
+    PropertySymbol,
     SetSymbol,
     VariableSymbol,
 )
@@ -63,6 +65,16 @@ class Report:
         if self.coverage["uncovered_sections"]:
             lines.append(f"  Uncovered:   {', '.join(self.coverage['uncovered_sections'])}")
         lines.append("")
+
+        # Axiom verification summary
+        axioms = [s for s in self.symbol_table if s["type"] == "Axiom"]
+        properties = [s for s in self.symbol_table if s["type"] == "Property"]
+        if axioms:
+            lines.append("## Axiom Verification")
+            lines.append("")
+            lines.append(f"  Axioms declared: {len(axioms)}")
+            lines.append(f"  Properties declared: {len(properties)}")
+            lines.append("")
 
         # Test results
         lines.append("## Test Results")
@@ -142,6 +154,13 @@ def _build_symbol_table(registry: Registry) -> list[dict]:
             case ObjectiveSymbol():
                 entry["type"] = "Objective"
                 entry["sense"] = sym.sense
+            case AxiomSymbol():
+                entry["type"] = "Axiom"
+                entry["statement"] = sym.statement
+            case PropertySymbol():
+                entry["type"] = "Property"
+                entry["claim"] = sym.claim
+                entry["given"] = list(sym.given)
         table.append(entry)
     return table
 
