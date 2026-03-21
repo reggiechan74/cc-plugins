@@ -1,8 +1,9 @@
-"""Generate a standalone runner script from .model.md fixture + validate blocks.
+"""Generate a standalone runner script from .model.md fixture, results, and validate blocks.
 
-The runner contains all fixture data and validation code extracted from the
-document, concatenated in document order. It is self-contained — it does not
-require the .model.md file or re-parse it at runtime.
+The runner contains all fixture data, results display code, and validation
+logic extracted from the document, concatenated in document order. It is
+self-contained — it does not require the .model.md file or re-parse it at
+runtime.
 """
 
 from __future__ import annotations
@@ -13,9 +14,9 @@ from meta_compiler.compiler.parser import Block, FixtureBlock, ResultsBlock, Val
 def generate_runner(blocks: list[Block], *, model_path: str = "model.model.md") -> str:
     """Generate a standalone Python script from extracted blocks.
 
-    If blocks are provided, the runner contains all fixture and validate code
-    inlined. If blocks are not provided (backward compat), falls back to a
-    thin wrapper that re-parses the .model.md file.
+    If blocks are provided, the runner contains all fixture, results, and
+    validate code inlined. If blocks are not provided (backward compat),
+    falls back to a thin wrapper that re-parses the .model.md file.
     """
     if not blocks:
         return _generate_legacy_runner(model_path)
