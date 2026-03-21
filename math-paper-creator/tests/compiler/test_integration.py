@@ -288,3 +288,45 @@ Parameter("M", description="meeting hours")
     assert "paper" in result
     assert "report" in result
     assert "runner" in result
+
+
+def test_scalar_model_compiles_end_to_end(fresh_registry):
+    """A pure scalar model should compile through compile_document with no workarounds."""
+    from meta_compiler.compiler import compile_document
+
+    source = '''
+# Organizational Productivity
+
+A simple scalar optimization model.
+
+$$t_{eff} = H - M \\cdot \\beta$$
+
+```python:fixture
+H = 8.0
+M = 2.0
+beta = 0.75
+```
+
+```python:validate
+Parameter("H", description="Total work hours per day")
+Parameter("M", description="Meeting hours per day")
+Parameter("beta", description="Productivity impact factor")
+Expression("t_eff", definition=lambda: H - M * beta, description="Effective productive time")
+Variable("M_opt", domain="continuous", bounds=(0, None), description="Optimal meeting hours")
+Objective("maximize_productivity", expr=lambda: H - M * beta, sense="maximize", description="Maximize productive time")
+Constraint("meeting_bound", expr=lambda: M <= H, description="Cannot exceed total hours")
+```
+'''
+    # Should compile without errors — no workarounds needed
+    result = compile_document(source, strict=True)
+
+    assert "paper" in result
+    assert "Organizational Productivity" in result["paper"]
+
+    assert "report" in result
+    report = result["report"]
+    assert report.test_passed
+    assert str(report) == report.to_text()  # __str__ works
+
+    assert "runner" in result
+    assert "#!/usr/bin/env python3" in result["runner"]
