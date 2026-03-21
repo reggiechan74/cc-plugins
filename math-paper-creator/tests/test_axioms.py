@@ -86,3 +86,26 @@ def test_property_dsl_function(fresh_registry):
     Axiom("A1", statement="H > 0", description="Pos")
     Property("P1", claim="t_eff >= 0", z3_expr=lambda: None, given=["A1"], description="Non-neg")
     assert "P1" in fresh_registry.symbols
+
+def test_axiom_not_flagged_as_orphan(fresh_registry):
+    """Axioms are foundational — they shouldn't be flagged as orphans."""
+    from meta_compiler import Set, Parameter, Constraint, Axiom
+    Set("W", description="Workers")
+    Parameter("cap", index="W", description="Capacity")
+    Constraint("check", over="W", expr=lambda i: cap[i] <= 100, description="Cap check")
+    Axiom("A1", statement="Capacity positive", description="Pos")
+    result = fresh_registry.run_tests(strict=True)
+    orphan_errors = [e for e in result.errors if "Orphan" in e and "A1" in e]
+    assert orphan_errors == [], f"Axiom flagged as orphan: {orphan_errors}"
+
+def test_property_not_flagged_as_orphan(fresh_registry):
+    """Properties are consumers — they shouldn't be flagged as orphans."""
+    from meta_compiler import Set, Parameter, Constraint, Axiom, Property
+    Set("W", description="Workers")
+    Parameter("cap", index="W", description="Capacity")
+    Constraint("check", over="W", expr=lambda i: cap[i] <= 100, description="Cap check")
+    Axiom("A1", statement="Capacity positive", description="Pos")
+    Property("P1", claim="Some claim", z3_expr=lambda: None, given=["A1"], description="Prop")
+    result = fresh_registry.run_tests(strict=True)
+    orphan_errors = [e for e in result.errors if "Orphan" in e and "P1" in e]
+    assert orphan_errors == [], f"Property flagged as orphan: {orphan_errors}"

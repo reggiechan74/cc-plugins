@@ -20,7 +20,9 @@ from typing import TYPE_CHECKING
 from meta_compiler.compiler.parser import Block, ProseBlock
 
 from meta_compiler.symbols import (
+    AxiomSymbol,
     ConstraintSymbol, ExpressionSymbol, ObjectiveSymbol,
+    PropertySymbol,
     SetSymbol, ParameterSymbol, VariableSymbol,
 )
 
@@ -92,11 +94,15 @@ def _check_orphans(
         if hasattr(sym, "index") and sym.index:
             for idx_set in (sym.index if isinstance(sym.index, tuple) else (sym.index,)):
                 implicit_refs.add(idx_set)
+        if isinstance(sym, PropertySymbol) and sym.given:
+            for axiom_name in sym.given:
+                implicit_refs.add(axiom_name)
 
-    # Constraints and objectives are consumers, not things that need to be referenced
+    # Constraints, objectives, axioms, and properties are consumers,
+    # not things that need to be referenced
     consumer_names = {
         name for name, sym in registry.symbols.items()
-        if isinstance(sym, (ConstraintSymbol, ObjectiveSymbol))
+        if isinstance(sym, (ConstraintSymbol, ObjectiveSymbol, AxiomSymbol, PropertySymbol))
     }
 
     combined = all_accessed | implicit_refs | consumer_names
