@@ -34,3 +34,39 @@ Set("W", description="workers")
     script = generate_runner(blocks, model_path="test.model.md")
     assert "test.model.md" in script
     assert "#!/usr/bin/env python3" in script
+
+
+def test_runner_includes_results_blocks():
+    from meta_compiler.compiler.parser import parse_document
+    source = '''# Model
+
+```python:fixture
+x = 42
+```
+
+```python:results
+print(f"The answer is {x}")
+```
+
+```python:validate
+Parameter("x", description="the answer")
+```
+'''
+    blocks = parse_document(source)
+    script = generate_runner(blocks, model_path="test.model.md")
+    assert 'print(f"The answer is {x}")' in script
+    compile(script, "<runner>", "exec")  # valid Python
+
+
+def test_runner_results_without_fixtures():
+    from meta_compiler.compiler.parser import parse_document
+    source = '''# Model
+
+```python:results
+print("hello")
+```
+'''
+    blocks = parse_document(source)
+    script = generate_runner(blocks, model_path="test.model.md")
+    assert 'print("hello")' in script
+    compile(script, "<runner>", "exec")  # valid Python

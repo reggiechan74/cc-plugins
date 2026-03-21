@@ -7,7 +7,7 @@ require the .model.md file or re-parse it at runtime.
 
 from __future__ import annotations
 
-from meta_compiler.compiler.parser import Block, FixtureBlock, ValidationBlock
+from meta_compiler.compiler.parser import Block, FixtureBlock, ResultsBlock, ValidationBlock
 
 
 def generate_runner(blocks: list[Block], *, model_path: str = "model.model.md") -> str:
@@ -21,9 +21,10 @@ def generate_runner(blocks: list[Block], *, model_path: str = "model.model.md") 
         return _generate_legacy_runner(model_path)
 
     fixture_blocks = [b for b in blocks if isinstance(b, FixtureBlock)]
+    results_blocks = [b for b in blocks if isinstance(b, ResultsBlock)]
     validate_blocks = [b for b in blocks if isinstance(b, ValidationBlock)]
 
-    if not fixture_blocks and not validate_blocks:
+    if not fixture_blocks and not validate_blocks and not results_blocks:
         return _generate_legacy_runner(model_path)
 
     # Build the standalone script
@@ -72,6 +73,18 @@ def generate_runner(blocks: list[Block], *, model_path: str = "model.model.md") 
         parts.append('    for _name, _value in _frame_locals.items():')
         parts.append('        registry.data_store[_name] = _value')
         parts.append('')
+
+    # Emit results blocks — display computed values
+    if results_blocks:
+        parts.append('    # ── Results blocks ─────────────────────────────────')
+        for i, rb in enumerate(results_blocks):
+            parts.append(f'    # Results block {i + 1} (source line {rb.line_number})')
+            for line in rb.code.splitlines():
+                if line.strip():
+                    parts.append(f'    {line}')
+                else:
+                    parts.append('')
+            parts.append('')
 
     # Set up execution namespace for auto-injection
     parts.append('    # ── Validation blocks ──────────────────────────────')
