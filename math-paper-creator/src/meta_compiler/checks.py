@@ -250,3 +250,36 @@ def check_directional_claims(blocks: list[Block]) -> list[str]:
                     f"— verify against computed values"
                 )
     return warnings
+
+
+def check_value_reporting(blocks: list[Block], registry: "Registry") -> list[str]:
+    """Warn if a section computes values but prose doesn't mention any."""
+    # Collect numeric values from data_store
+    numeric_values: set[str] = set()
+    for name, data in registry.data_store.items():
+        if name in registry.symbols and isinstance(
+            registry.symbols[name], (ParameterSymbol, VariableSymbol, ExpressionSymbol)
+        ):
+            if isinstance(data, dict):
+                for v in data.values():
+                    if isinstance(v, (int, float)):
+                        numeric_values.add(str(v))
+            elif isinstance(data, (int, float)):
+                numeric_values.add(str(data))
+
+    if not numeric_values:
+        return []
+
+    # Check if any numeric value appears in prose
+    prose_text = " ".join(
+        block.content for block in blocks if isinstance(block, ProseBlock)
+    )
+
+    for val in numeric_values:
+        if val in prose_text:
+            return []
+
+    return [
+        f"Section computes {len(numeric_values)} value(s) but prose reports none "
+        f"(values: {', '.join(sorted(numeric_values)[:5])})"
+    ]
