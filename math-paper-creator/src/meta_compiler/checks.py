@@ -11,8 +11,11 @@ from __future__ import annotations
 
 import io
 import inspect
+import re
 import tokenize
 from typing import TYPE_CHECKING
+
+from meta_compiler.compiler.parser import Block, ProseBlock
 
 from meta_compiler.symbols import (
     ConstraintSymbol, ExpressionSymbol, ObjectiveSymbol,
@@ -216,3 +219,34 @@ def _check_unit_boundaries(registry: "Registry", errors: list[str]):
                             f'Constraint "{name}": "{name_a}" has unit '
                             f'"{unit_a}" but "{name_b}" has unit "{unit_b}"'
                         )
+
+
+# ---------------------------------------------------------------------------
+# Prose-math reconciliation checks
+# ---------------------------------------------------------------------------
+
+_DIRECTIONAL_KEYWORDS = re.compile(
+    r'\b(increases|decreases|widens|narrows|higher|lower'
+    r'|maximizes|minimizes|monotone|non-monotone)\b',
+    re.IGNORECASE,
+)
+
+
+def check_directional_claims(blocks: list[Block]) -> list[str]:
+    """Flag directional keywords in prose for manual verification."""
+    warnings: list[str] = []
+    for block in blocks:
+        if not isinstance(block, ProseBlock):
+            continue
+        for line in block.content.split("\n"):
+            for match in _DIRECTIONAL_KEYWORDS.finditer(line):
+                keyword = match.group()
+                # Show ~40 chars of context around the match
+                start = max(0, match.start() - 20)
+                end = min(len(line), match.end() + 20)
+                context = line[start:end].strip()
+                warnings.append(
+                    f'Directional claim "{keyword}": "...{context}..." '
+                    f"— verify against computed values"
+                )
+    return warnings
