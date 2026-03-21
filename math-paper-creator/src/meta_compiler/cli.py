@@ -5,6 +5,7 @@ Usage:
     python -m meta_compiler.cli paper <file.model.md> [--depth executive|technical|appendix]
     python -m meta_compiler.cli report <file.model.md>
     python -m meta_compiler.cli compile <file.model.md> [--output <dir>]
+    python -m meta_compiler.cli reconcile <file.model.md> [--section "<heading>"]
 """
 
 from __future__ import annotations
@@ -59,6 +60,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Treat orphan symbols as warnings instead of errors",
     )
 
+    # reconcile
+    reconcile_parser = subparsers.add_parser(
+        "reconcile", help="Run prose-math reconciliation checks"
+    )
+    reconcile_parser.add_argument("file", type=Path, help="Path to .model.md file")
+    reconcile_parser.add_argument(
+        "--section", type=str, default=None,
+        help="Scope checks to a specific section heading"
+    )
+
     args = parser.parse_args(argv)
     source = args.file.read_text()
 
@@ -72,6 +83,8 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "compile":
         return _cmd_compile(source, output=args.output, depth=args.depth,
                             strict=not args.no_strict)
+    elif args.command == "reconcile":
+        return _cmd_reconcile(source, section=args.section)
     return 1
 
 
@@ -150,6 +163,20 @@ def _cmd_compile(source: str, *, output: Path, depth: str | None,
     print("  runner.py")
     print("  report.txt")
     return 0
+
+
+def _cmd_reconcile(source: str, *, section: str | None) -> int:
+    from meta_compiler.compiler import reconcile_document
+
+    warnings, _ = reconcile_document(source, section=section)
+    if warnings:
+        print("Reconciliation warnings:")
+        for w in warnings:
+            print(f"  WARNING: {w}")
+        return 2
+    else:
+        print("Reconciliation: OK")
+        return 0
 
 
 if __name__ == "__main__":

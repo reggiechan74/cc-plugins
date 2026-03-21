@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from meta_compiler.compiler.parser import parse_document
+from meta_compiler.compiler.parser import parse_document, extract_section_blocks
 from meta_compiler.compiler.executor import execute_blocks, ExecutionResult
 from meta_compiler.compiler.paper import generate_paper
 from meta_compiler.compiler.report import generate_report
 from meta_compiler.compiler.runner import generate_runner
+from meta_compiler.checks import run_reconciliation_checks
 
 
 def check_document(source: str, *, strict: bool = False) -> ExecutionResult:
@@ -41,3 +42,24 @@ def compile_document(
         "report_text": report.to_text(),
         "runner": generate_runner(blocks, model_path=filename),
     }
+
+
+def reconcile_document(
+    source: str, *, section: str | None = None, strict: bool = False
+) -> tuple[list[str], bool]:
+    """Parse, execute, and run reconciliation checks.
+
+    Returns (warnings, validation_passed). Executes the full document to
+    populate the registry, then scopes reconciliation checks to the named
+    section (if provided).
+    """
+    blocks = parse_document(source)
+    result = execute_blocks(blocks, strict=strict)
+
+    if section:
+        scoped_blocks = extract_section_blocks(blocks, section)
+    else:
+        scoped_blocks = blocks
+
+    warnings = run_reconciliation_checks(scoped_blocks, result.registry)
+    return warnings, result.passed

@@ -350,3 +350,14 @@ def _extract_num(node: ast.expr) -> float | None:
         if inner is not None:
             return -inner
     return None
+
+
+def run_reconciliation_checks(
+    blocks: list[Block], registry: "Registry"
+) -> list[str]:
+    """Run all prose-math reconciliation checks. Returns list of warnings."""
+    warnings: list[str] = []
+    warnings.extend(check_value_reporting(blocks, registry))
+    warnings.extend(check_constraint_tolerance(registry))
+    warnings.extend(check_directional_claims(blocks))
+    return warnings
