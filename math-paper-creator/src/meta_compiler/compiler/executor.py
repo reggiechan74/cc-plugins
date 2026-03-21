@@ -13,7 +13,7 @@ import inspect
 from dataclasses import dataclass, field
 
 from meta_compiler.checks import collect_scalar_refs
-from meta_compiler.compiler.parser import Block, FixtureBlock, ValidationBlock
+from meta_compiler.compiler.parser import Block, FixtureBlock, ResultsBlock, ValidationBlock
 from meta_compiler.registry import Registry, registry
 from meta_compiler.symbols import ConstraintSymbol, ObjectiveSymbol
 
@@ -73,6 +73,23 @@ def execute_blocks(
         for name, value in fixture_ns.items():
             if not name.startswith("_"):
                 registry.data_store[name] = value
+
+    # Step 1b: Execute results blocks in fixture namespace, capture stdout
+    results_blocks = [b for b in blocks if isinstance(b, ResultsBlock)]
+    if results_blocks:
+        import io
+        import contextlib
+
+        for rb in results_blocks:
+            buf = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(buf):
+                    exec(rb.code, fixture_ns if has_fixtures else {})
+            except Exception as e:
+                errors.append(f"Results error (line {rb.line_number}): {e}")
+                return ExecutionResult(passed=False, errors=errors,
+                                       warnings=warnings, registry=None)
+            rb.output = buf.getvalue()
 
     # Step 2: Build validation namespace
     from meta_compiler import Set, Parameter, Variable, Expression, Constraint, Objective, S
