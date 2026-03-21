@@ -9,9 +9,11 @@ v2 checks use:
 
 from __future__ import annotations
 
+import ast
 import io
 import inspect
 import re
+import textwrap
 import tokenize
 from typing import TYPE_CHECKING
 
@@ -283,3 +285,68 @@ def check_value_reporting(blocks: list[Block], registry: "Registry") -> list[str
         f"Section computes {len(numeric_values)} value(s) but prose reports none "
         f"(values: {', '.join(sorted(numeric_values)[:5])})"
     ]
+
+
+_TOLERANCE_THRESHOLD = 1.0
+
+
+def check_constraint_tolerance(registry: "Registry") -> list[str]:
+    """Flag constraints with suspiciously large arithmetic offsets."""
+    warnings: list[str] = []
+
+    for name, sym in registry.symbols.items():
+        if not isinstance(sym, ConstraintSymbol):
+            continue
+        if sym.expr is None:
+            continue
+
+        try:
+            source = inspect.getsource(sym.expr)
+        except (OSError, TypeError):
+            source = getattr(sym.expr, "_source_text", "")
+            if not source:
+                continue
+
+        offsets = _find_arithmetic_offsets(source)
+        for offset_val in offsets:
+            if abs(offset_val) > _TOLERANCE_THRESHOLD:
+                warnings.append(
+                    f'Constraint "{name}" has arithmetic offset {offset_val} '
+                    f"in comparison — verify this is intentional"
+                )
+
+    return warnings
+
+
+def _find_arithmetic_offsets(source: str) -> list[float]:
+    """Find numeric literals used as +/- offsets in comparison expressions."""
+    offsets: list[float] = []
+    try:
+        tree = ast.parse(textwrap.dedent(source))
+    except SyntaxError:
+        return offsets
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Compare):
+            continue
+        # Check both sides of comparisons for BinOp with Add/Sub
+        all_exprs = [node.left] + list(node.comparators)
+        for expr in all_exprs:
+            if isinstance(expr, ast.BinOp) and isinstance(expr.op, (ast.Add, ast.Sub)):
+                # Check the right operand — the arithmetic offset
+                num = _extract_num(expr.right)
+                if num is not None:
+                    offsets.append(num)
+
+    return offsets
+
+
+def _extract_num(node: ast.expr) -> float | None:
+    """Extract a numeric value from an AST node."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+        return float(node.value)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        inner = _extract_num(node.operand)
+        if inner is not None:
+            return -inner
+    return None
