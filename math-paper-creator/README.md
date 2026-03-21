@@ -1,7 +1,7 @@
 # math-paper-creator
 
 <!-- badges-start -->
-![Version](https://img.shields.io/badge/version-0.5.0-blue)
+![Version](https://img.shields.io/badge/version-0.6.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
 <!-- badges-end -->

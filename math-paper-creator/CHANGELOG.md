@@ -5,6 +5,16 @@ All notable changes to math-paper-creator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-03-21
+
+### Added
+- `Axiom` and `Property` symbol types for declaring foundational axioms and derived properties
+- Z3-based verification module (`verification.py`) with consistency and implication checking
+- `verify` CLI subcommand for standalone Z3 axiom verification
+- Axiom/Property support in registry, executor, report, and orphan checks
+- z3-solver as optional dependency via `[verification]` extra
+- Axiom authoring workflow in author command (Step 2) and verification output in completion (Step 4)
+
 ## [0.5.0] - 2026-03-21
 
 ### Added
