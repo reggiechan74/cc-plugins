@@ -37,7 +37,13 @@ def run_all_checks(
     all_accessed = registry.access_log | source_refs
 
     _check_phantoms(registry, all_accessed, errors)
-    _check_orphans(registry, all_accessed, errors, warnings, strict)
+
+    # Auto-detect scalar models: if strict but no Sets registered,
+    # demote orphan checking to non-strict (orphans become warnings)
+    has_sets = any(isinstance(s, SetSymbol) for s in registry.symbols.values())
+    effective_orphan_strict = strict and has_sets
+
+    _check_orphans(registry, all_accessed, errors, warnings, effective_orphan_strict)
     _check_cycles(registry, errors)
     _check_unit_boundaries(registry, errors)
 
