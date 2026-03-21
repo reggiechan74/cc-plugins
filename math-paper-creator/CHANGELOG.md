@@ -5,6 +5,16 @@ All notable changes to math-paper-creator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-03-21
+
+### Added
+- Prose-math reconciliation checkpoint in author skill section loop (#11)
+- `reconcile` CLI subcommand with `--section` scoping flag
+- `check_directional_claims` — flags directional keywords in prose for manual verification
+- `check_value_reporting` — warns when computed values are absent from prose
+- `check_constraint_tolerance` — flags suspiciously large arithmetic offsets in constraints via AST inspection
+- `extract_section_blocks` parser helper for section-level block scoping
+
 ## [0.4.1] - 2026-03-21
 
 ### Fixed
