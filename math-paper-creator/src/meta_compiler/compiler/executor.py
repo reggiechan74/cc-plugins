@@ -12,6 +12,7 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass, field
 
+from meta_compiler.checks import collect_scalar_refs
 from meta_compiler.compiler.parser import Block, FixtureBlock, ValidationBlock
 from meta_compiler.registry import Registry, registry
 from meta_compiler.symbols import ConstraintSymbol, ObjectiveSymbol
@@ -78,6 +79,7 @@ def execute_blocks(
         try:
             registry._current_block_source = vb.code
             exec(vb.code, ns)
+            collect_scalar_refs(vb.code, registry.scalar_names, registry.access_log)
         except Exception as e:
             errors.append(f"Validation error (line {vb.line_number}): {e}")
             return ExecutionResult(passed=False, errors=errors,
