@@ -209,3 +209,65 @@ Parameter("x", description="x value")
     blocks = parse_document(source)
     result = coverage_metric(blocks)
     assert result.covered_math == 1
+
+
+from meta_compiler.compiler.parser import extract_section_blocks
+
+
+def test_extract_section_blocks_isolates_named_section():
+    """extract_section_blocks returns only blocks under the named heading."""
+    doc = """## Setup
+
+Some setup prose.
+
+```python:validate
+Set("W", description="Workers")
+```
+
+## Analysis
+
+Analysis prose here.
+
+```python:validate
+Parameter("cap", index="W", description="Cap")
+```
+
+## Conclusion
+
+Final prose.
+"""
+    blocks = parse_document(doc)
+    section_blocks = extract_section_blocks(blocks, "Analysis")
+    # Should contain the Analysis prose and its validate block
+    assert len(section_blocks) == 2
+    assert isinstance(section_blocks[0], ProseBlock)
+    assert "Analysis prose" in section_blocks[0].content
+    assert isinstance(section_blocks[1], ValidationBlock)
+
+
+def test_extract_section_blocks_respects_heading_level():
+    """Stops at same-or-higher heading level, includes sub-headings."""
+    doc = """## Section A
+
+Prose A.
+
+### Subsection A.1
+
+Sub prose.
+
+## Section B
+
+Prose B.
+"""
+    blocks = parse_document(doc)
+    section_blocks = extract_section_blocks(blocks, "Section A")
+    prose_text = " ".join(b.content for b in section_blocks if isinstance(b, ProseBlock))
+    assert "Prose A" in prose_text
+    assert "Sub prose" in prose_text
+    assert "Prose B" not in prose_text
+
+
+def test_extract_section_blocks_unknown_heading_returns_empty():
+    doc = "## Intro\n\nSome text.\n"
+    blocks = parse_document(doc)
+    assert extract_section_blocks(blocks, "Nonexistent") == []

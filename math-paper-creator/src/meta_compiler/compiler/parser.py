@@ -206,3 +206,86 @@ def coverage_metric(blocks: list[Block]) -> CoverageResult:
         covered_math=covered,
         uncovered_sections=uncovered_sections,
     )
+
+
+def extract_section_blocks(blocks: list[Block], heading: str) -> list[Block]:
+    """Extract blocks belonging to a specific section heading.
+
+    Finds the ProseBlock containing the heading, then collects all blocks
+    until the next heading at the same or higher level (fewer '#' characters).
+
+    Because the parser may group multiple headings into one ProseBlock,
+    this function also trims prose content at section boundaries.
+    """
+    target_level = 0
+    start_idx = None
+    heading_line_idx = None  # line index within the ProseBlock
+
+    for i, block in enumerate(blocks):
+        if not isinstance(block, ProseBlock):
+            continue
+        for li, line in enumerate(block.content.split("\n")):
+            stripped = line.strip()
+            if not stripped.startswith("#"):
+                continue
+            hashes = len(stripped) - len(stripped.lstrip("#"))
+            title = stripped.lstrip("#").strip()
+            if title == heading:
+                target_level = hashes
+                start_idx = i
+                heading_line_idx = li
+                break
+        if start_idx is not None:
+            break
+
+    if start_idx is None:
+        return []
+
+    def _trim_prose_at_boundary(text: str, level: int, *, skip_first_heading: bool = False) -> tuple[str, bool]:
+        """Return (trimmed_text, hit_boundary).
+
+        If skip_first_heading is True, the first heading matching the target
+        heading is skipped (used for the starting block).
+        """
+        lines = text.split("\n")
+        skipped = False
+        out: list[str] = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                hashes = len(stripped) - len(stripped.lstrip("#"))
+                if hashes <= level:
+                    if skip_first_heading and not skipped:
+                        skipped = True
+                    else:
+                        # Hit a boundary — return what we have so far
+                        trimmed = "\n".join(out)
+                        return trimmed, True
+            out.append(line)
+        return "\n".join(out), False
+
+    # Build the starting ProseBlock content: lines from heading onward,
+    # trimmed at the next same-or-higher heading.
+    start_block = blocks[start_idx]
+    start_lines = start_block.content.split("\n")
+    section_text = "\n".join(start_lines[heading_line_idx:])
+    trimmed_text, hit = _trim_prose_at_boundary(section_text, target_level, skip_first_heading=True)
+
+    result: list[Block] = []
+    if trimmed_text.strip():
+        result.append(ProseBlock(content=trimmed_text))
+
+    if hit:
+        return result
+
+    for block in blocks[start_idx + 1:]:
+        if isinstance(block, ProseBlock):
+            trimmed, hit = _trim_prose_at_boundary(block.content, target_level, skip_first_heading=False)
+            if trimmed.strip():
+                result.append(ProseBlock(content=trimmed))
+            if hit:
+                return result
+        else:
+            result.append(block)
+
+    return result
