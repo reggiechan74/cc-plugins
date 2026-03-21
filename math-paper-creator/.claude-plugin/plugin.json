@@ -7,7 +7,6 @@
   },
   "license": "MIT",
   "keywords": ["math", "validation", "meta-compiler", "optimization"],
-  "hooks": "./hooks/hooks.json",
   "commands": [
     "./commands/"
   ]
