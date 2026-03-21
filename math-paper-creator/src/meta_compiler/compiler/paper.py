@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from meta_compiler.compiler.parser import Block, MathBlock, ProseBlock, ValidationBlock, FixtureBlock
+from meta_compiler.compiler.parser import Block, MathBlock, ProseBlock, ResultsBlock, ValidationBlock, FixtureBlock
 
 
 def generate_paper(
@@ -31,6 +31,8 @@ def generate_paper(
         elif isinstance(block, MathBlock):
             parts.append(block.raw)
             parts.append("")
+        elif isinstance(block, ResultsBlock) and block.output:
+            parts.append(block.output.rstrip())
         # ValidationBlocks and FixtureBlocks are silently skipped
 
     return "\n".join(parts).strip() + "\n"
