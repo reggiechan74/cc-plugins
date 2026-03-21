@@ -35,5 +35,5 @@ def compile_document(
         "paper": paper,
         "report": report,
         "report_text": report.to_text(),
-        "runner": generate_runner(filename, blocks=blocks),
+        "runner": generate_runner(blocks, model_path=filename),
     }

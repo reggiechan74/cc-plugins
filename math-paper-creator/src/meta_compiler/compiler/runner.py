@@ -10,14 +10,14 @@ from __future__ import annotations
 from meta_compiler.compiler.parser import Block, FixtureBlock, ValidationBlock
 
 
-def generate_runner(model_path: str, blocks: list[Block] | None = None) -> str:
+def generate_runner(blocks: list[Block], *, model_path: str = "model.model.md") -> str:
     """Generate a standalone Python script from extracted blocks.
 
     If blocks are provided, the runner contains all fixture and validate code
     inlined. If blocks are not provided (backward compat), falls back to a
     thin wrapper that re-parses the .model.md file.
     """
-    if blocks is None:
+    if not blocks:
         return _generate_legacy_runner(model_path)
 
     fixture_blocks = [b for b in blocks if isinstance(b, FixtureBlock)]
