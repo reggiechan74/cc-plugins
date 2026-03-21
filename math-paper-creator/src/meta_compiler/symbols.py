@@ -62,5 +62,25 @@ class ObjectiveSymbol:
     expr: object  # callable in v2
 
 
+@dataclass(frozen=True)
+class AxiomSymbol:
+    """A foundational axiom like A1 (non-negativity of hours)."""
+    name: str
+    statement: str
+    z3_expr: object | None  # callable returning z3 expr, or None
+    description: str
+
+
+@dataclass(frozen=True)
+class PropertySymbol:
+    """A derived property like P1 (effective time is non-negative)."""
+    name: str
+    claim: str
+    z3_expr: object  # callable returning z3 expr
+    given: tuple[str, ...]  # axiom names this property depends on
+    description: str
+
+
 # Union of all symbol types
-Symbol = SetSymbol | ParameterSymbol | VariableSymbol | ExpressionSymbol | ConstraintSymbol | ObjectiveSymbol
+Symbol = (SetSymbol | ParameterSymbol | VariableSymbol | ExpressionSymbol
+          | ConstraintSymbol | ObjectiveSymbol | AxiomSymbol | PropertySymbol)
