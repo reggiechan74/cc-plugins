@@ -99,7 +99,29 @@ Write an Introduction section into the `.model.md` file based on the user's init
 - A `#` heading and introductory prose explaining the problem domain
 - No math blocks or validation blocks (the Introduction frames the problem; formalization begins in subsequent sections)
 
-Write it to the file immediately. Ask the user to approve, revise, or redirect before continuing to the authoring loop.
+Write it to the file immediately. Ask the user to approve, revise, or redirect.
+
+### 2.1 Scope declaration
+
+After the Introduction is approved, prompt:
+
+> "What type of model is this paper? (1) Empirical — estimated from observed data, (2) Structural/theoretical — specifies mechanisms and derives consequences from assumptions, (3) Decision framework — helps reason more clearly even when exact calibration is unavailable."
+
+If the user declines or says "skip", default to `structural` (the most conservative framing).
+
+Store the choice in the YAML frontmatter:
+```yaml
+epistemic_type: structural  # or empirical, decision_framework
+```
+
+Generate a `**Scope and epistemic status:**` paragraph and append it to the Introduction section. Tailor by type:
+
+- **Empirical:** "Parameters are estimated from observed data. Results reflect empirical regularities in the sample."
+- **Structural / Decision framework:** "Parameters are illustrative, not estimated from observational data. Scenario outputs are model-implied examples, not observed outcomes."
+
+Write the paragraph to the file, then continue to the authoring loop.
+
+**Review findings path:** If the paper was loaded from review findings (Step 1, item 0), the scope declaration prompt still fires — review findings do not set `epistemic_type`.
 
 ## Step 3: Authoring loop
 
@@ -136,6 +158,29 @@ d. **`python:fixture` block** — realistic test data with 3-5 concrete members 
 e. **`python:validate` block** — register the symbols using the meta-compiler API:
    - `Set`, `Parameter`, `Variable`, `Expression`, `Constraint`, `Objective`
    - End with `registry.run_tests()`
+
+#### Parameter provenance
+
+When a `python:fixture` block assigns values to Parameters, prompt for provenance. For blocks with multiple parameters, present all in a batch:
+
+> "How were these parameter values determined?
+> | Parameter | Value | Provenance |
+> |-----------|-------|------------|
+> | H | 8.0 | (a) data, (b) literature, (c) illustrative? |
+> | beta | 0.75 | (a) data, (b) literature, (c) illustrative? |"
+
+Use the response to frame the prose near each parameter definition:
+- **(a) Estimated from data:** "Estimated from [source]..." (ask for source)
+- **(b) Literature:** "Following [Author] ([year]), we set..." (ask for citation)
+- **(c) Illustrative:** "We adopt [value] as a representative value..."
+
+#### Scenario decomposition flag
+
+When formalizing a scenario or sensitivity analysis section whose fixture block changes 2 or more parameters that were already defined in earlier fixtures, flag:
+
+> "This scenario modifies [N] parameters at once ([list]). The combined effect should be decomposed — show each factor's contribution separately before reporting the total. Or say 'combined is fine' if these parameters are genuinely inseparable."
+
+If decomposition is accepted, structure the section to show each parameter's individual effect before the combined result. This only applies to scenario/sensitivity sections, not initial parameter definitions.
 
 ### 3.3 Check names
 
@@ -185,18 +230,51 @@ When the user signals they are done:
    cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli check "<file_path>"
    ```
 
-2. Show a summary:
+2. **Epistemic language scan.** Before showing the summary, scan the full `.model.md` text for language that may overstate epistemic status. Flag instances with suggested replacements:
+
+   | Pattern | Suggestion |
+   |---------|------------|
+   | "the model proves" | "the model shows that, under these assumptions" |
+   | "demonstrates that" (in empirical-sounding context, not formal math proofs) | "illustrates that" or "model-implied analysis suggests" |
+   | "findings" (for scenario outputs) | "implications under illustrative calibration" |
+   | "the math says" | "under these assumptions" |
+   | "yields [N] results/findings" | "yields [N] implications" |
+
+   Pattern matching is case-insensitive, whole-word. Use context to avoid false positives — "Theorem 3 demonstrates that" in a formal proof context should not be flagged.
+
+   Calibrate framing by `epistemic_type` (from frontmatter):
+   - `empirical`: "Review these — they may be appropriate for an empirical paper."
+   - `structural` / `decision_framework`: "These may overstate what the model has earned."
+
+   Present flagged instances with line context and suggestions. Do not auto-fix — let the author decide which to change. Offer to apply accepted changes.
+
+3. **Four-tests conclusion frame** (conditional). Only offer for `epistemic_type: structural` or `decision_framework`. Skip for `empirical`.
+
+   > "For a formalization-of-intuition paper, the conclusion can be strengthened by stating which formal tests the intuition passed. Would you like me to evaluate against the four-tests framework?"
+
+   If accepted, evaluate the model qualitatively against:
+   1. **Non-contradiction** — do the variables interact coherently without logical inconsistencies?
+   2. **Mechanistic plausibility** — does the model have a causal structure rather than a curve-fit?
+   3. **Comparative statics** — do parameter changes shift the optimum in the expected direction?
+   4. **Organizational/domain interpretability** — can a practitioner inspect the result and understand *why* it occurs?
+
+   Generate a conclusion paragraph reporting which tests pass, framed as: "The model does not identify the true empirical optimum. It formalizes a [common intuition] and shows that, under reasonable structural assumptions, [the core claim]."
+
+   Tests 1-2 are partially inferable from meta-compiler validation (no cycles, explicit mechanisms). Tests 3-4 require reading scenario sections and prose.
+
+4. Show a summary:
    - Total sections with math blocks
    - Symbol count by type (Sets, Parameters, Variables, Expressions, Constraints, Objectives)
    - Any warnings (orphan symbols, etc.)
+   - Epistemic language scan results (if any flagged)
    - **Structural checklist results:** Read `${CLAUDE_PLUGIN_ROOT}/templates/_checklist.md` and evaluate every item against the document:
      - **Required items:** Show pass/fail status for each. Failed items are warnings — the user should address them but they don't block compilation.
      - **Advisory items:** Show any that match as informational notes.
 
-3. Ask the user:
+5. Ask the user:
    > "Would you like me to compile now? This produces a clean paper (prose + math only), a standalone runner.py (all validation logic as a self-contained script), and a validation report. Or you can do this later with `/math-paper-creator:compile`."
 
-4. If the user wants to compile, run:
+6. If the user wants to compile, run:
    ```bash
    cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli compile "<file_path>" --output "<output_dir>"
    ```
@@ -256,10 +334,9 @@ Constraint("demand",
            description="Demand coverage for every project type and team")
 
 # Scalar parameters in Objective/Constraint lambdas:
-# SymbolProxy does not support arithmetic operators (* + - /).
-# For scalar (non-indexed) parameters, extract the raw value:
-#   alpha_val = registry.data_store["alpha"]
-# Then use alpha_val (a plain float) in the lambda.
+# Scalar fixture values (int, float, str) are auto-unwrapped as raw
+# Python types, so arithmetic works directly: M * beta, H - M, etc.
+# No need to extract from registry.data_store for scalars.
 
 # Objectives — lambda takes ZERO arguments
 Objective("total_output",

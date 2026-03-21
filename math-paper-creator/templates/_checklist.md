@@ -33,3 +33,7 @@ Informational notes — not blocking, but worth surfacing:
 - More than 20 symbols with no Part/section grouping — consider organizing into parts
 - Parameters with no units specified — intentional or missing?
 - Sets declared but never used as an index — orphan sets
+- Paper declares epistemic status (empirical / structural / decision framework) in Introduction
+- Scenario outputs framed as model-implied rather than empirical findings
+- Parameters have stated provenance (estimated / literature / illustrative)
+- Multi-parameter scenarios include effect decomposition
