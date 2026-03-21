@@ -330,3 +330,69 @@ Constraint("meeting_bound", expr=lambda: M <= H, description="Cannot exceed tota
 
     assert "runner" in result
     assert "#!/usr/bin/env python3" in result["runner"]
+
+
+RESULTS_MODEL = '''# Workforce Model
+
+```python:fixture
+W = ["alice", "bob"]
+cap = {"alice": 40, "bob": 35}
+total_cap = sum(cap.values())
+```
+
+```python:results
+print("| Worker | Capacity |")
+print("|--------|----------|")
+for w in W:
+    print(f"| {w} | {cap[w]} |")
+print()
+print(f"Total capacity: {total_cap} hours")
+```
+
+$$\\text{cap}_i \\leq 100$$
+
+```python:validate
+Set("W", description="Workers")
+Parameter("cap", index="W", units="hours", description="Capacity")
+Constraint("check", over="W", expr=lambda i: cap[i] <= 100)
+```
+'''
+
+
+def test_compile_with_results_blocks():
+    result = compile_document(RESULTS_MODEL)
+
+    # Paper includes results output, not code
+    paper = result["paper"]
+    assert "| alice | 40 |" in paper
+    assert "Total capacity: 75 hours" in paper
+    assert "python:results" not in paper
+    assert "python:fixture" not in paper
+    assert "python:validate" not in paper
+
+    # Runner includes results code
+    runner = result["runner"]
+    assert "print(f\"| {w} | {cap[w]} |\")" in runner or "cap[w]" in runner
+
+    # Report still works
+    assert result["report"].test_passed
+
+
+def test_compile_results_to_disk(tmp_path):
+    """Full compile with results blocks writes correct paper to disk."""
+    doc_path = tmp_path / "model.model.md"
+    doc_path.write_text(RESULTS_MODEL)
+
+    out_dir = tmp_path / "output"
+
+    result = subprocess.run(
+        [sys.executable, "-m", "meta_compiler.cli", "compile",
+         str(doc_path), "--output", str(out_dir)],
+        capture_output=True, text=True, env=_CLI_ENV,
+    )
+    assert result.returncode == 0, f"stderr: {result.stderr}"
+
+    paper = (out_dir / "paper.md").read_text()
+    assert "| alice | 40 |" in paper
+    assert "Total capacity: 75 hours" in paper
+    assert "python:results" not in paper
