@@ -38,12 +38,12 @@ def run_all_checks(
 
     _check_phantoms(registry, all_accessed, errors)
 
-    # Auto-detect scalar models: if strict but no Sets registered,
-    # demote orphan checking to non-strict (orphans become warnings)
+    # Auto-detect scalar models: if no Sets registered, skip orphan
+    # checking entirely — scalar models have no indexed cross-references,
+    # so every symbol would be flagged as an orphan (pure noise).
     has_sets = any(isinstance(s, SetSymbol) for s in registry.symbols.values())
-    effective_orphan_strict = strict and has_sets
-
-    _check_orphans(registry, all_accessed, errors, warnings, effective_orphan_strict)
+    if has_sets:
+        _check_orphans(registry, all_accessed, errors, warnings, strict)
     _check_cycles(registry, errors)
     _check_unit_boundaries(registry, errors)
 

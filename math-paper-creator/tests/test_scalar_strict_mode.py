@@ -4,15 +4,15 @@ from meta_compiler import Parameter, Expression, Set
 from meta_compiler.compiler import check_document
 
 
-def test_strict_no_sets_demotes_orphans(fresh_registry):
-    """With strict=True but no Sets, orphans should be warnings, not errors."""
+def test_strict_no_sets_suppresses_orphans(fresh_registry):
+    """With strict=True but no Sets, orphan checking is skipped entirely."""
     Parameter("M", description="meeting hours")
     result = registry.run_tests(strict=True)
-    # M is an orphan (never referenced), but no sets → demote to warning
+    # M is an orphan (never referenced), but no sets → skip orphan check
     orphan_errors = [e for e in result.errors if "Orphan" in e]
     orphan_warnings = [w for w in result.warnings if "Orphan" in w]
     assert len(orphan_errors) == 0, f"Orphans should not be errors: {orphan_errors}"
-    assert len(orphan_warnings) > 0, "Orphans should still appear as warnings"
+    assert len(orphan_warnings) == 0, f"Orphans should be suppressed: {orphan_warnings}"
 
 
 def test_strict_with_sets_keeps_orphans_as_errors(fresh_registry):
