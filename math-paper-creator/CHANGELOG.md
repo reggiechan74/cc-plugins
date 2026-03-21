@@ -5,6 +5,13 @@ All notable changes to math-paper-creator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-03-21
+
+### Fixed
+- Constraint evaluation now accepts `np.True_` from numpy-backed computations (#9)
+- Scalar auto-unwrap detects `np.float64`/`np.int64` instead of wrapping them as `SymbolProxy` (#9)
+- Objective numeric check accepts numpy scalar types (#9)
+
 ## [0.4.0] - 2026-03-20
 
 ### Added
