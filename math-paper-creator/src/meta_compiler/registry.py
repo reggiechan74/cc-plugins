@@ -6,6 +6,7 @@ Accumulates symbol declarations and runs cumulative integrity checks.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from meta_compiler.proxy import SymbolProxy
 from meta_compiler.symbols import (
@@ -34,8 +35,9 @@ class Registry:
     def __init__(self) -> None:
         self.symbols: dict[str, Symbol] = {}
         self._registration_order: list[str] = []
-        self.data_store: dict[str, dict] = {}
+        self.data_store: dict[str, Any] = {}
         self.access_log: set[str] = set()
+        self.scalar_names: set[str] = set()
         self._exec_namespace: dict | None = None  # set by executor
         self._current_block_source: str | None = None  # set by executor per block
 
@@ -45,6 +47,7 @@ class Registry:
         self._registration_order.clear()
         self.data_store.clear()
         self.access_log.clear()
+        self.scalar_names = set()
         self._exec_namespace = None
         self._current_block_source = None
 
@@ -75,8 +78,17 @@ class Registry:
                     f"but it is registered as {type(self.symbols[set_name]).__name__}"
                 )
 
-    def _make_proxy(self, name: str) -> SymbolProxy:
+    def _make_proxy(self, name: str) -> "SymbolProxy | int | float | str":
         """Create a data-backed proxy and auto-inject into exec namespace."""
+        if name in self.data_store and isinstance(
+            self.data_store[name], (int, float, str)
+        ):
+            # Scalar value — inject raw value, not a proxy
+            value = self.data_store[name]
+            self.scalar_names.add(name)
+            if self._exec_namespace is not None:
+                self._exec_namespace[name] = value
+            return value
         proxy = SymbolProxy(name, data=self.data_store.get(name), access_log=self.access_log)
         if self._exec_namespace is not None:
             self._exec_namespace[name] = proxy
