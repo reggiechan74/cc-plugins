@@ -210,7 +210,22 @@ After approval:
 
 3. **If the check fails:** Show the errors, fix them in the `.model.md` file, and re-run. Repeat until the check passes (errors only — orphan warnings are expected). Do NOT proceed to the next section until the current one passes.
 
-4. **If the check passes:** Update the running symbol name registry with all newly registered names. Tell the user the section is validated and ask for the next concept.
+4. **Prose-math reconciliation.** After the meta-compiler check passes, run reconciliation checks scoped to the current section:
+   ```bash
+   cd ${CLAUDE_PLUGIN_ROOT} && PYTHONPATH=src python3 -m meta_compiler.cli reconcile "<file_path>" --section "<heading>"
+   ```
+   - If warnings are printed, show them to the user.
+   - Then show the manual reconciliation prompt:
+     > "Reconciliation check:
+     > - Do the interpretation paragraphs match the computed values?
+     > - Are spatial/directional claims consistent with the boundary values?
+     > - Are any claims made about variables that don't appear in the section's equations?
+     >
+     > Type 'confirmed' to proceed, or describe issues."
+   - If the user describes issues: revise the section in `.model.md`, re-run the meta-compiler check (item 2 above), then re-run reconciliation.
+   - If the user confirms: proceed to the next item.
+
+5. **If the check passes:** Update the running symbol name registry with all newly registered names. Tell the user the section is validated and ask for the next concept.
 
 ### 3.6 Between sections
 
