@@ -10,10 +10,12 @@ from typing import Any
 
 from meta_compiler.proxy import SymbolProxy
 from meta_compiler.symbols import (
+    AxiomSymbol,
     ConstraintSymbol,
     ExpressionSymbol,
     ObjectiveSymbol,
     ParameterSymbol,
+    PropertySymbol,
     SetSymbol,
     Symbol,
     VariableSymbol,
@@ -216,6 +218,49 @@ class Registry:
             expr._source_text = self._current_block_source
         sym = ObjectiveSymbol(
             name=name, sense=sense, description=description, expr=expr,
+        )
+        self._register(name, sym)
+
+    def register_axiom(
+        self,
+        name: str,
+        *,
+        statement: str,
+        z3_expr: object | None = None,
+        description: str = "",
+    ) -> None:
+        """Register a foundational axiom."""
+        sym = AxiomSymbol(
+            name=name, statement=statement,
+            z3_expr=z3_expr, description=description,
+        )
+        self._register(name, sym)
+
+    def register_property(
+        self,
+        name: str,
+        *,
+        claim: str,
+        z3_expr: object,
+        given: list[str] | tuple[str, ...],
+        description: str = "",
+    ) -> None:
+        """Register a derived property with axiom dependencies."""
+        given_tuple = tuple(given)
+        for axiom_name in given_tuple:
+            if axiom_name not in self.symbols:
+                raise ValueError(
+                    f'Property "{name}" references axiom "{axiom_name}" '
+                    f"which is not registered"
+                )
+            if not isinstance(self.symbols[axiom_name], AxiomSymbol):
+                raise ValueError(
+                    f'Property "{name}" references "{axiom_name}" '
+                    f"which is not an Axiom (it is {type(self.symbols[axiom_name]).__name__})"
+                )
+        sym = PropertySymbol(
+            name=name, claim=claim, z3_expr=z3_expr,
+            given=given_tuple, description=description,
         )
         self._register(name, sym)
 
