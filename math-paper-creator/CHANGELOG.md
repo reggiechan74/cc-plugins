@@ -5,6 +5,21 @@ All notable changes to math-paper-creator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-20
+
+### Added
+- **Epistemic hygiene checks** — scope declaration prompt at Step 2 with `epistemic_type` stored in frontmatter (#8)
+- Parameter provenance batch prompt (data / literature / illustrative) at Step 3.2 (#8)
+- Scenario decomposition flag for multi-parameter changes at Step 3.2 (#8)
+- Epistemic language scan at Step 4, calibrated by paper type (#8)
+- Four-tests conclusion frame for structural/decision framework papers at Step 4 (#8)
+- Four advisory checklist items for epistemic completeness (#8)
+- Expr-based dependency tracing for scalar models in report dependency graph (#7)
+
+### Changed
+- Orphan checking fully suppressed for scalar models (no Sets) — no more warning noise in reports
+- Scalar parameter API note updated in author skill to reflect v0.3.0 auto-unwrap
+
 ## [0.3.0] - 2026-03-20
 
 ### Added

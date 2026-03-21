@@ -1,6 +1,6 @@
 {
   "name": "math-paper-creator",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Author validated math papers interactively. Formalize concepts into prose, LaTeX math, and executable Python validation — each section checked before the next begins.",
   "author": {
     "name": "Reggie Chan"
