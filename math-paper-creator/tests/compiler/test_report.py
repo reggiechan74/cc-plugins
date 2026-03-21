@@ -133,6 +133,45 @@ Parameter("cap", index="W", description="capacity")
     assert report.test_passed is not None
 
 
+def test_report_dependency_graph_scalar_model(fresh_registry):
+    """Scalar models should have dependency edges from expr source tokenization."""
+    doc = '''
+```python:fixture
+H = 8.0
+M = 2.0
+beta = 0.75
+```
+
+```python:validate
+Parameter("H", description="Total hours")
+Parameter("M", description="Meeting hours")
+Parameter("beta", description="Impact factor")
+Expression("t_eff", definition=lambda: H - M * beta, description="Effective time")
+Objective("max_prod", expr=lambda: H - M * beta, sense="maximize", description="Maximize")
+Constraint("bound", expr=lambda: M <= H, description="Meeting bound")
+```
+'''
+    blocks = parse_document(doc)
+    result = execute_blocks(blocks)
+    report = generate_report(blocks, registry=result.registry)
+
+    # t_eff references H, M, beta
+    t_eff_deps = {e["to"] for e in report.dependencies if e["from"] == "t_eff"}
+    assert "H" in t_eff_deps
+    assert "M" in t_eff_deps
+    assert "beta" in t_eff_deps
+
+    # max_prod references H, M, beta
+    max_deps = {e["to"] for e in report.dependencies if e["from"] == "max_prod"}
+    assert "H" in max_deps
+    assert "M" in max_deps
+
+    # bound references M, H
+    bound_deps = {e["to"] for e in report.dependencies if e["from"] == "bound"}
+    assert "M" in bound_deps
+    assert "H" in bound_deps
+
+
 def test_report_str_delegates_to_to_text():
     """str(report) should produce the same output as report.to_text()."""
     report = Report(

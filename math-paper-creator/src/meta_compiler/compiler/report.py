@@ -147,16 +147,23 @@ def _build_symbol_table(registry: Registry) -> list[dict]:
 
 
 def _build_dependency_graph(registry: Registry) -> list[dict]:
-    """Build dependency edges from over/index fields."""
+    """Build dependency edges from over/index fields and expr source."""
+    from meta_compiler.checks import _extract_names_from_source
+
     edges: list[dict] = []
     for name in registry._registration_order:
         sym = registry.symbols[name]
-        refs = []
+        refs: set[str] = set()
         if hasattr(sym, "over") and sym.over:
-            refs.append(sym.over)
+            refs.add(sym.over)
         if hasattr(sym, "index") and sym.index:
             for idx in (sym.index if isinstance(sym.index, tuple) else (sym.index,)):
-                refs.append(idx)
-        for ref in sorted(set(refs)):
+                refs.add(idx)
+        # Trace references from expr source (covers scalar models)
+        expr_fn = getattr(sym, "expr", None)
+        if expr_fn is not None:
+            refs |= _extract_names_from_source(expr_fn, registry)
+        refs.discard(name)  # no self-edges
+        for ref in sorted(refs):
             edges.append({"from": name, "to": ref})
     return edges
