@@ -159,3 +159,6 @@ Constraints iterate over a single set via `over`. For multi-index constraints, i
 ## Requirements
 
 Python 3.10+ with the `meta_compiler` package available on the Python path. The package is included in this plugin directory.
+
+- **numpy** (>=1.24) — required dependency
+- **z3-solver** (>=4.12) — optional, for axiom verification (`pip install meta-compiler[verification]`)

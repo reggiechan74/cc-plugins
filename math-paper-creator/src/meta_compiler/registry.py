@@ -85,11 +85,8 @@ class Registry:
         """Check if a value is a scalar (including numpy scalar types)."""
         if isinstance(value, (int, float, str)):
             return True
-        try:
-            import numpy as np
-            return isinstance(value, (np.integer, np.floating))
-        except ImportError:
-            return False
+        import numpy as np
+        return isinstance(value, (np.integer, np.floating))
 
     def _make_proxy(self, name: str) -> "SymbolProxy | int | float | str":
         """Create a data-backed proxy and auto-inject into exec namespace."""

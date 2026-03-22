@@ -30,11 +30,8 @@ def _is_numeric(value) -> bool:
     """Check if a value is numeric, including numpy scalar types."""
     if isinstance(value, (int, float)):
         return True
-    try:
-        import numpy as np
-        return isinstance(value, (np.integer, np.floating))
-    except ImportError:
-        return False
+    import numpy as np
+    return isinstance(value, (np.integer, np.floating))
 
 
 @dataclass
