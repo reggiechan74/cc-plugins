@@ -199,34 +199,121 @@ def collect_scalar_refs(
 
 
 def _check_unit_boundaries(registry: "Registry", errors: list[str]):
-    """Check unit compatibility at constraint boundaries."""
-    from meta_compiler.units import parse_unit, units_compatible
+    """Check unit compatibility at constraint boundaries using AST-based dimensional analysis.
 
-    for name, sym in registry.symbols.items():
+    Instead of pairwise comparison of all referenced symbols, this walks
+    the lambda's AST and only flags incompatible units where they actually
+    matter: addition/subtraction and comparison operators.  Multiplication
+    and division combine units algebraically.
+    """
+    from meta_compiler.units import (
+        parse_unit, units_compatible, units_multiply, units_divide,
+    )
+
+    dimensionless = parse_unit("dimensionless")
+
+    for constraint_name, sym in registry.symbols.items():
         if not isinstance(sym, ConstraintSymbol):
             continue
         if sym.expr is None:
             continue
 
-        refs = _extract_names_from_source(sym.expr, registry)
+        # --- obtain source & parse AST ---
+        try:
+            source = inspect.getsource(sym.expr)
+        except (OSError, TypeError):
+            source = getattr(sym.expr, "_source_text", "")
+            if not source:
+                continue
 
-        unit_map: dict[str, str] = {}
-        for ref_name in refs:
+        try:
+            tree = ast.parse(textwrap.dedent(source))
+        except SyntaxError:
+            continue
+
+        # --- build name -> Unit map ---
+        unit_map: dict[str, "Unit"] = {}
+        for ref_name in _extract_names_from_source(sym.expr, registry):
             ref_sym = registry.symbols.get(ref_name)
             if ref_sym is None:
                 continue
             if isinstance(ref_sym, (ParameterSymbol, VariableSymbol)):
-                unit_map[ref_name] = ref_sym.units
+                unit_map[ref_name] = parse_unit(ref_sym.units)
 
-        units_seen: list[tuple[str, str]] = list(unit_map.items())
-        for i, (name_a, unit_a) in enumerate(units_seen):
-            for name_b, unit_b in units_seen[i + 1:]:
-                if unit_a != "dimensionless" and unit_b != "dimensionless":
-                    if not units_compatible(parse_unit(unit_a), parse_unit(unit_b)):
-                        errors.append(
-                            f'Constraint "{name}": "{name_a}" has unit '
-                            f'"{unit_a}" but "{name_b}" has unit "{unit_b}"'
-                        )
+        # --- recursive unit inference ---
+        local_errors: list[str] = []
+
+        def _infer(node: ast.expr) -> "Unit":
+            if isinstance(node, ast.Name):
+                return unit_map.get(node.id, dimensionless)
+
+            if isinstance(node, ast.Constant):
+                return dimensionless
+
+            if isinstance(node, ast.Subscript):
+                # e.g. hours_val[i] — resolve the base name
+                if isinstance(node.value, ast.Name):
+                    return unit_map.get(node.value.id, dimensionless)
+                return dimensionless
+
+            if isinstance(node, ast.BinOp):
+                left = _infer(node.left)
+                right = _infer(node.right)
+                if isinstance(node.op, (ast.Add, ast.Sub)):
+                    if left != dimensionless and right != dimensionless:
+                        if not units_compatible(left, right):
+                            local_errors.append(
+                                f'Constraint "{constraint_name}": '
+                                f'incompatible units in +/- : '
+                                f'"{left}" vs "{right}"'
+                            )
+                    return left if left != dimensionless else right
+                if isinstance(node.op, ast.Mult):
+                    return units_multiply(left, right)
+                if isinstance(node.op, (ast.Div, ast.FloorDiv)):
+                    return units_divide(left, right)
+                # Pow, Mod, etc. — conservative
+                return dimensionless
+
+            if isinstance(node, ast.Compare):
+                left_unit = _infer(node.left)
+                for comparator in node.comparators:
+                    right_unit = _infer(comparator)
+                    if left_unit != dimensionless and right_unit != dimensionless:
+                        if not units_compatible(left_unit, right_unit):
+                            local_errors.append(
+                                f'Constraint "{constraint_name}": '
+                                f'incompatible units in comparison: '
+                                f'"{left_unit}" vs "{right_unit}"'
+                            )
+                    left_unit = right_unit
+                return dimensionless
+
+            if isinstance(node, ast.UnaryOp):
+                return _infer(node.operand)
+
+            if isinstance(node, ast.BoolOp):
+                for val in node.values:
+                    _infer(val)
+                return dimensionless
+
+            if isinstance(node, ast.IfExp):
+                _infer(node.test)
+                t = _infer(node.body)
+                _infer(node.orelse)
+                return t
+
+            # ast.Call, ast.Attribute, etc. — conservative
+            return dimensionless
+
+        # Walk top-level expressions in the AST
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Compare,)):
+                _infer(node)
+            elif isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Sub)):
+                _infer(node)
+
+        errors.extend(local_errors)
 
 
 # ---------------------------------------------------------------------------
