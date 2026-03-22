@@ -95,6 +95,7 @@ The `runner.py` is immediately repeatable. You can run it in CI, share it with c
 | `/math-paper-creator:report <file>` | Generate full validation report |
 | `/math-paper-creator:paper <file>` | Generate clean paper artifact (strips validation blocks) |
 | `/math-paper-creator:compile <file>` | Produce all artifacts: clean paper, standalone runner, validation report |
+| `/math-paper-creator:plain-english <file> [output]` | Generate a plain-English companion with explanation callouts for math-heavy sections |
 
 ## Templates
 
