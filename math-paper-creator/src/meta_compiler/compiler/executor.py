@@ -206,7 +206,19 @@ def _check_constraint(sym: ConstraintSymbol, reg: Registry, errors: list[str]):
     arity = _arity(sym.expr)
 
     if arity == 0:
-        result = sym.expr()
+        try:
+            result = sym.expr()
+        except NameError as e:
+            missing = str(e).split("'")[1]
+            if missing in reg.data_store:
+                errors.append(
+                    f'Constraint "{sym.name}": "{missing}" is computed in fixture '
+                    f'but not registered as a Parameter — add Parameter("{missing}", ...) '
+                    f'to the validate block to use it in constraints'
+                )
+            else:
+                errors.append(f'Error in constraint "{sym.name}": {e}')
+            return
         if not _coerce_bool(result):
             errors.append(
                 f"Constraint \"{sym.name}\" failed (returned {result!r})"
@@ -233,7 +245,19 @@ def _check_constraint(sym: ConstraintSymbol, reg: Registry, errors: list[str]):
             return
 
         for member in members:
-            result = sym.expr(member)
+            try:
+                result = sym.expr(member)
+            except NameError as e:
+                missing = str(e).split("'")[1]
+                if missing in reg.data_store:
+                    errors.append(
+                        f'Constraint "{sym.name}": "{missing}" is computed in fixture '
+                        f'but not registered as a Parameter — add Parameter("{missing}", ...) '
+                        f'to the validate block to use it in constraints'
+                    )
+                else:
+                    errors.append(f'Error in constraint "{sym.name}": {e}')
+                return
             if not _coerce_bool(result):
                 errors.append(
                     f"Constraint \"{sym.name}\" violated for "

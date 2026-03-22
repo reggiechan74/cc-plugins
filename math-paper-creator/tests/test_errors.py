@@ -94,3 +94,51 @@ def test_orphan_error_message_strict(fresh_registry):
     assert not result.passed
     assert any('"buildability"' in e for e in result.errors)
     assert any("never referenced" in e for e in result.errors)
+
+
+def test_unregistered_fixture_variable_helpful_message(fresh_registry):
+    """Constraint referencing fixture var not registered as Parameter gives helpful error."""
+    from meta_compiler.compiler.parser import parse_document
+    from meta_compiler.compiler.executor import execute_blocks
+
+    doc = '''# Model
+
+```python:fixture
+Hf_C0 = 42.0
+```
+
+```python:validate
+Constraint("C0_recovers_base_Hf", expr=lambda: Hf_C0 > 0, description="Check base enthalpy")
+```
+'''
+    blocks = parse_document(doc)
+    result = execute_blocks(blocks)
+    assert not result.passed
+    msgs = [e for e in result.errors if "Hf_C0" in e]
+    assert len(msgs) >= 1
+    assert "computed in fixture" in msgs[0]
+    assert 'add Parameter("Hf_C0"' in msgs[0]
+
+
+def test_truly_undefined_variable_generic_error(fresh_registry):
+    """Constraint referencing a truly undefined name gives the generic NameError."""
+    from meta_compiler.compiler.parser import parse_document
+    from meta_compiler.compiler.executor import execute_blocks
+
+    doc = '''# Model
+
+```python:fixture
+dummy = 1
+```
+
+```python:validate
+Constraint("uses_nonexistent", expr=lambda: totally_bogus_var > 0, description="References nothing")
+```
+'''
+    blocks = parse_document(doc)
+    result = execute_blocks(blocks)
+    assert not result.passed
+    msgs = [e for e in result.errors if "totally_bogus_var" in e]
+    assert len(msgs) >= 1
+    assert "computed in fixture" not in msgs[0]
+    assert "Error in constraint" in msgs[0]
