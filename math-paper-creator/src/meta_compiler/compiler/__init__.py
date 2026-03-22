@@ -22,9 +22,14 @@ def compile_document(
     depth: str | None = None,
     filename: str = "model.model.md",
     strict: bool = True,
+    skip_validation: bool = False,
 ) -> dict:
     """Full compilation pipeline: validate, then generate artifacts."""
     blocks = parse_document(source)
+
+    if skip_validation:
+        paper = generate_paper(blocks, depth=depth)
+        return {"paper": paper, "report": None, "report_text": None, "runner": None}
 
     result = execute_blocks(blocks, strict=strict)
     if not result.passed:

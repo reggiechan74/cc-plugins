@@ -39,6 +39,10 @@ def main(argv: list[str] | None = None) -> int:
         "--no-strict", action="store_true",
         help="Treat orphan symbols as warnings instead of errors",
     )
+    paper_parser.add_argument(
+        "--skip-validation", action="store_true",
+        help="Generate paper without running validation",
+    )
 
     # report
     report_parser = subparsers.add_parser("report", help="Generate validation report")
@@ -82,7 +86,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_check(source, strict=args.strict)
     elif args.command == "paper":
         return _cmd_paper(source, depth=args.depth, output=args.output,
-                          strict=not args.no_strict)
+                          strict=not args.no_strict,
+                          skip_validation=args.skip_validation)
     elif args.command == "report":
         return _cmd_report(source, output=args.output, strict=not args.no_strict)
     elif args.command == "compile":
@@ -114,11 +119,12 @@ def _cmd_check(source: str, *, strict: bool = False) -> int:
 
 
 def _cmd_paper(source: str, *, depth: str | None, output: Path | None,
-               strict: bool = True) -> int:
+               strict: bool = True, skip_validation: bool = False) -> int:
     from meta_compiler.compiler import compile_document
 
     try:
-        artifacts = compile_document(source, depth=depth, strict=strict)
+        artifacts = compile_document(source, depth=depth, strict=strict,
+                                     skip_validation=skip_validation)
     except (ValueError, RuntimeError) as e:
         print(str(e), file=sys.stderr)
         return 1

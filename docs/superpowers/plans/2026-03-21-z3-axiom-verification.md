@@ -363,7 +363,7 @@ def Property(
 
 - [ ] **Step 4: Add Axiom and Property to executor validation namespace**
 
-In `src/meta_compiler/compiler/executor.py`, update the namespace dict in `execute_blocks` (around line 59-64):
+In `src/meta_compiler/compiler/executor.py`, update the namespace dict in `execute_blocks` (lines 95-100):
 
 ```python
 from meta_compiler import Set, Parameter, Variable, Expression, Constraint, Objective, S, Axiom, Property
@@ -728,9 +728,11 @@ In `src/meta_compiler/compiler/executor.py`, add these imports at the top:
 from meta_compiler.symbols import AxiomSymbol, ConstraintSymbol, ObjectiveSymbol, PropertySymbol
 ```
 
-(Replace the existing `ConstraintSymbol, ObjectiveSymbol` import line.)
+(Replace the existing `ConstraintSymbol, ObjectiveSymbol` import at line 18.)
 
-Add a new step between constraint evaluation (Step 4) and structural checks (Step 5). Insert after the `for name, sym in registry.symbols.items():` loop that checks constraints/objectives:
+Add a new step between constraint evaluation (Step 4, ends at line ~146) and structural checks (Step 5, line ~147). Insert after the `if has_fixtures:` block that checks constraints/objectives:
+
+> **Note:** The executor now has a Step 1b (results block execution, lines 76-92) added after this plan was written. The verification pass is independent of results blocks.
 
 ```python
     # Step 4b: Verify axioms and properties (if Z3 expressions present)
@@ -970,7 +972,7 @@ Expected: FAIL — no "verify" subcommand
 
 - [ ] **Step 3: Implement verify subcommand**
 
-Add to `src/meta_compiler/cli.py`, in `main()` after the compile parser:
+Add to `src/meta_compiler/cli.py`, in `main()` after the `reconcile` parser (line 71):
 
 ```python
     # verify
@@ -978,7 +980,13 @@ Add to `src/meta_compiler/cli.py`, in `main()` after the compile parser:
     verify_parser.add_argument("file", type=Path, help="Path to .model.md file")
 ```
 
-Add handler in the dispatch block:
+Update the module docstring (line 1-9) to include the verify subcommand:
+
+```python
+    python -m meta_compiler.cli verify <file.model.md>
+```
+
+Add handler in the dispatch block (after the `reconcile` handler at line 87):
 
 ```python
     elif args.command == "verify":
@@ -1201,6 +1209,8 @@ Axiom("A1", statement="H > 0", z3_expr=lambda: H > 0, description="...")
 
 - [ ] **Step 2: Update author.md Step 4 — add verification output**
 
+> **Note:** `author.md` now has a prose-math reconciliation checkpoint at Step 3.5 (added after this plan was written). Position verification output after reconciliation in the Step 4 completion flow.
+
 In the Step 4 completion section, after the meta-compiler check, add:
 
 ```markdown
@@ -1223,7 +1233,26 @@ Reference Z3 results in the four-tests conclusion frame:
 - Test 3 (Comparative statics): cite monotonicity verification if applicable
 ```
 
-- [ ] **Step 3: Update _checklist.md — add advisory**
+- [ ] **Step 3: Update author.md API reference section**
+
+In the "API reference and known constraints" section (lines 298-367), add `Axiom` and `Property` to the import line and add usage examples after the Objective section:
+
+```python
+from meta_compiler import Set, Parameter, Variable, Expression, Constraint, Objective, S, Axiom, Property, registry
+
+# ... existing examples ...
+
+# Axioms — foundational assumptions (z3_expr optional, for machine verification)
+Axiom("A1", statement="H > 0", z3_expr=lambda: H > 0, description="Positivity")
+
+# Properties — derived claims that follow from axioms
+Property("P1", claim="H - M >= 0",
+         z3_expr=lambda: H - M >= 0,
+         given=["A1", "A2"],
+         description="Non-negative effective time")
+```
+
+- [ ] **Step 4: Update _checklist.md — add advisory**
 
 Add to the Advisories section in `templates/_checklist.md`:
 
@@ -1231,7 +1260,7 @@ Add to the Advisories section in `templates/_checklist.md`:
 - Structural/decision papers declare foundational axioms with Z3 expressions for machine verification
 ```
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add commands/author.md templates/_checklist.md
@@ -1277,7 +1306,7 @@ Expected: Output shows axiom consistency and property verification passing.
 
 - [ ] **Step 3: Version bump**
 
-Run: `/version-bump math-paper-creator 0.5.0`
+Run: `/version-bump math-paper-creator 0.6.0`
 
 - [ ] **Step 4: Final commit and push**
 

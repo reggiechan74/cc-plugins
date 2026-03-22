@@ -144,6 +144,44 @@ Constraint("limit", expr=lambda i: x[i] <= cap[i],
     assert (out_dir / "report.txt").exists()
 
 
+def test_cli_paper_skip_validation(tmp_path):
+    """paper --skip-validation produces output even when validation would fail."""
+    doc_path = tmp_path / "test.model.md"
+    doc_path.write_text('''### Model
+
+Some prose about the model.
+
+```python:validate
+Parameter("cap", index=["W"], description="Missing set ref")
+```
+''')
+    result = subprocess.run(
+        [sys.executable, "-m", "meta_compiler.cli", "paper",
+         str(doc_path), "--skip-validation"],
+        capture_output=True, text=True, env=_CLI_ENV,
+    )
+    assert result.returncode == 0, f"stderr: {result.stderr}"
+    # Paper output should contain the prose but not the validate block
+    assert "Model" in result.stdout
+    assert "Parameter(" not in result.stdout
+
+
+def test_cli_paper_without_skip_validation_fails(tmp_path):
+    """paper without --skip-validation fails when validation fails."""
+    doc_path = tmp_path / "test.model.md"
+    doc_path.write_text('''### Model
+
+```python:validate
+Parameter("cap", index=["W"], description="Missing set ref")
+```
+''')
+    result = subprocess.run(
+        [sys.executable, "-m", "meta_compiler.cli", "paper", str(doc_path)],
+        capture_output=True, text=True, env=_CLI_ENV,
+    )
+    assert result.returncode == 1
+
+
 def test_compile_no_strict_flag(tmp_path):
     """compile --no-strict should pass for scalar models with orphans."""
     model = tmp_path / "scalar.model.md"
