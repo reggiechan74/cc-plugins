@@ -1,13 +1,15 @@
 ---
 description: "Convert a mathematically dense document into a plain-English companion version with explanation callouts"
 argument-hint: "<path to document> [output_path]"
-allowed-tools: AskUserQuestion, Read, Write, Agent, Bash, Glob
+allowed-tools: AskUserQuestion, Read, Write, Edit, Agent, Bash, Glob, Grep
 model: sonnet
 ---
 
 # Plain-English Companion Generator
 
 **Purpose:** Take a mathematically dense, symbol-heavy, or conceptually difficult document and produce a companion version that adds plain-English explanation callouts after complex sections. The original text is preserved by default.
+
+**Architecture:** Uses a chunked processing pipeline — each section is processed independently to avoid context overflow on large documents. No single agent call needs to hold the full source + full output.
 
 ## Instructions
 
@@ -135,35 +137,85 @@ Configuration:
 Proceeding with generation...
 ```
 
-### Step 5: Generate the Companion Document
+### Step 5: Split Source Into Sections
 
-Launch a general-purpose Agent to create the companion document. The agent prompt must include:
+**This is the chunked processing architecture that handles large documents.**
 
-1. **The full source document content** (read it and pass it in)
-2. **The user's configuration** from Step 4
-3. **The callout format templates** based on the user's choices
-4. **Writing guidelines per callout type:**
+Split the source document into sections at `##` heading boundaries. Each section consists of:
+- The heading line itself (e.g., `## 4. Single-Stage Dynkin Game`)
+- All content up to (but not including) the next `##` heading
+
+**Rules for splitting:**
+- YAML frontmatter (if present) is extracted separately — it becomes the basis for the output file's frontmatter
+- The title block (everything before the first `##` heading — typically `# Title`, author, date, abstract) is one chunk
+- Each `##` or `###` heading starts a new chunk
+- Subsections (`###`, `####`) stay attached to their parent `##` section unless the parent exceeds ~300 lines, in which case split at `###` boundaries too
+
+**Build a section manifest** — a list of:
+```
+[
+  { index: 0, heading: "frontmatter + title block", lines: N, has_math: bool, density: "light|moderate|heavy" },
+  { index: 1, heading: "## 1. Introduction", lines: N, has_math: bool, density: "..." },
+  ...
+]
+```
+
+Report the manifest to the user:
+```
+Split into <N> sections for processing:
+  1. Title block (N lines, light)
+  2. ## 1. Introduction (N lines, moderate)
+  3. ## 2. Literature Review (N lines, heavy — 12 formulas)
+  ...
+```
+
+### Step 6: Process Sections (Chunked)
+
+Process each section independently. For each section, launch a general-purpose Agent with:
+
+1. **Only that section's content** (not the full document)
+2. **A brief document summary** (1-2 sentences describing the paper's topic, so the agent has context for writing relevant callouts)
+3. **The user's configuration** from Step 4
+4. **The callout format templates** based on the user's choices
+5. **Writing guidelines per callout type:**
    - 💡 What This Means / Intuition: Use everyday analogies. "Think of it like..." Keep at the target reading level. Explain what the math is actually saying in human terms. 3-6 sentences.
    - 🔧 How To Apply This / Operational: Concrete guidance. "When scoring..." or "In practice, this means..." Give specific examples. 3-6 sentences.
    - ⚡ Why This Matters / Executive: Strategic implications. "This changes the conversation from..." Connect to business outcomes. 2-4 sentences.
-5. **Placement rules** based on the user's adaptive/all/math-only choice
-6. **Instruction to preserve all original text verbatim** (unless user chose simplified/hybrid)
-7. **YAML frontmatter** for the output file including `companion_to:` referencing the source
+6. **Placement rules** based on the user's adaptive/all/math-only choice
+7. **Instruction to preserve all original text verbatim** (unless user chose simplified/hybrid)
 
-The agent prompt must explicitly state:
-- Write the COMPLETE file — do not truncate
-- Every line of the original must appear (if preservation mode)
-- Get today's date via `TZ='America/New_York' date '+%Y-%m-%d'` for the lastUpdated field
+**Agent output format:** The agent must return ONLY the processed section content (original text + callouts). No frontmatter, no extra commentary. Just the section ready to concatenate.
 
-### Step 6: Verify and Report
+**Parallelism:** Launch up to 3 section agents in parallel when sections are independent (which they always are in this pipeline). This significantly speeds up processing of large documents.
 
-After the agent completes:
+**Progress reporting:** After each batch completes, report:
+```
+Processed: sections <X>-<Y> of <N>
+```
+
+### Step 7: Assemble the Output
+
+After all sections are processed:
+
+1. **Get today's date** via `TZ='America/New_York' date '+%Y-%m-%d'`
+2. **Build YAML frontmatter** for the output file:
+   - Copy relevant fields from source frontmatter
+   - Add `companion_to:` referencing the source file path
+   - Add `lastUpdated:` with today's date
+   - Add `documentType: plain-english-companion`
+3. **Concatenate** all processed sections in order: frontmatter + title block + section 1 + section 2 + ...
+4. **Write the complete file** to the output path using the Write tool
+
+### Step 8: Verify and Report
+
+After assembly:
 
 1. Verify the output file exists and is non-empty
 2. Count lines in original vs companion
 3. Count callout insertions (grep for the callout syntax markers)
-4. Compare section headings between original and companion to verify completeness
-5. Report:
+4. Compare section headings between original and companion to verify completeness — every `##` and `###` heading from the source must appear in the output
+5. If any headings are missing, report which ones and offer to regenerate those sections
+6. Report:
 
 ```
 Complete.
@@ -171,6 +223,7 @@ Complete.
 - Output: <output_file> (<M> lines)
 - Callouts inserted: <count>
 - Section headings: <match status>
+- Sections processed: <N> (in <batches> batches)
 ```
 
 ## Callout Templates
