@@ -44,7 +44,7 @@
       "name": "math-paper-creator",
       "source": "./math-paper-creator",
       "description": "Author validated math papers interactively. Formalize concepts into prose, LaTeX math, and executable Python validation — each section checked before the next begins.",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "name": "nano-banana",
