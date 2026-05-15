@@ -28,8 +28,10 @@ A Claude Code plugin that provides comprehensive D3.js v7 knowledge for quickly 
 ```
 
 ### Local Development
-```bash
-claude --plugin-dir /path/to/d3-visualizations
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
+/plugin install d3-visualizations@cc-plugins
 ```
 
 ## Usage

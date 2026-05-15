@@ -78,8 +78,16 @@ The `runner.py` is immediately repeatable. You can run it in CI, share it with c
 
 ## Installation
 
+### From Marketplace
 ```
 /plugin marketplace add reggiechan74/cc-plugins
+/plugin install math-paper-creator@cc-plugins
+```
+
+### Local Development
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
 /plugin install math-paper-creator@cc-plugins
 ```
 

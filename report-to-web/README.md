@@ -10,8 +10,16 @@ Convert markdown research reports into interactive React presentation websites f
 
 ## Installation
 
+### From Marketplace
 ```
 /plugin marketplace add reggiechan74/cc-plugins
+/plugin install report-to-web@cc-plugins
+```
+
+### Local Development
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
 /plugin install report-to-web@cc-plugins
 ```
 

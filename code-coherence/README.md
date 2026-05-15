@@ -74,8 +74,10 @@ Per-project settings via `.claude/code-coherence.local.md`:
 ```
 
 ### Local Development
-```bash
-claude --plugin-dir /path/to/code-coherence
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
+/plugin install code-coherence@cc-plugins
 ```
 
 ## Usage

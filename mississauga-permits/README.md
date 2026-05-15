@@ -23,9 +23,10 @@ Claude Code plugin for querying the City of Mississauga Open Data portal. Provid
 ```
 
 ### Local Development
-
-```bash
-claude --plugin-dir /path/to/mississauga-permits
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
+/plugin install mississauga-permits@cc-plugins
 ```
 
 When loaded as a plugin, `${CLAUDE_PLUGIN_ROOT}` resolves automatically. No path editing needed.

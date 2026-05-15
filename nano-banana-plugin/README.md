@@ -47,6 +47,15 @@ Or open the interactive plugin manager and browse to it:
 
 Navigate to the **Discover** tab, find **nano-banana**, and choose your installation scope (User, Project, or Local).
 
+### Local Development
+
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+
+```
+/plugin marketplace add .
+/plugin install nano-banana@cc-plugins
+```
+
 ## Prerequisites
 
 1. **Google AI Studio API key** — get one at [aistudio.google.com](https://aistudio.google.com)

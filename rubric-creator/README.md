@@ -36,8 +36,10 @@ Professional-grade rubric creation skill with validity, reliability, and fairnes
 ```
 
 ### Local Development
-```bash
-claude --plugin-dir /path/to/rubric-creator
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
+/plugin install rubric-creator@cc-plugins
 ```
 
 ## Available Templates

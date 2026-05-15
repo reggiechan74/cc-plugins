@@ -45,7 +45,7 @@ This plugin helps independent consultants, trainers, and instructional designers
 ```
 
 ### Local Development
-Clone this repo, then from inside the cloned directory:
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
 ```
 /plugin marketplace add .
 /plugin install course-curriculum-creator@cc-plugins

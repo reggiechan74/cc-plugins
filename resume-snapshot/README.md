@@ -17,8 +17,10 @@ A Claude Code plugin that generates portfolio-ready repository snapshots for res
 ```
 
 ### Local Development
-```bash
-claude --plugin-dir /path/to/resume-snapshot
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
+/plugin install resume-snapshot@cc-plugins
 ```
 
 ## Usage

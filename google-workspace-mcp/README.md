@@ -8,10 +8,18 @@
 
 Model Context Protocol servers that integrate Gmail, Google Calendar, and Google Contacts with Claude Code.
 
-## Install
+## Installation
 
+### From Marketplace
 ```
 /plugin marketplace add reggiechan74/cc-plugins
+/plugin install google-workspace-mcp@cc-plugins
+```
+
+### Local Development
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
 /plugin install google-workspace-mcp@cc-plugins
 ```
 
