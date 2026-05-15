@@ -7,6 +7,7 @@
     "url": "https://github.com/reggiechan74"
   },
   "repository": "https://github.com/reggiechan74/cc-plugins",
+  "homepage": "https://github.com/reggiechan74/cc-plugins/tree/main/google-workspace-mcp",
   "license": "MIT",
   "keywords": ["gmail", "google-calendar", "google-contacts", "mcp", "google-workspace"]
 }

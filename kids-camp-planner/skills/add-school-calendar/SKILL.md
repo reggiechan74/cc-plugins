@@ -1,7 +1,6 @@
 ---
 name: Add School Calendar
 description: This skill should be used when the user asks to "add a school calendar", "import school calendar", "save school calendar", "import PA day dates", "import PA days from PDF", "add a school to the planner", "save school dates", "load school calendar from URL", "import school year", or provides a school calendar PDF or URL and wants it saved as reference data for camp planning. Extracts and saves structured calendar data from school board or private school sources.
-version: 0.1.0
 ---
 
 # Add School Calendar

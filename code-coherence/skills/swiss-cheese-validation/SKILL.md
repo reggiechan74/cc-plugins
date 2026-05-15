@@ -1,7 +1,6 @@
 ---
 name: Swiss Cheese Validation
 description: This skill should be used when the user asks to "verify critic independence", "check for overlapping failures", "validate swiss cheese model", "are the critics independent", "measure orthogonality", or needs to verify that multiple critic layers have misaligned failure modes as required by the swiss cheese model.
-version: 0.1.0
 ---
 
 # Swiss Cheese Validation: Verify Critic Independence

@@ -1,5 +1,11 @@
 # Rubric Creator Plugin for Claude Code
 
+<!-- badges-start -->
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
+<!-- badges-end -->
+
 Professional-grade rubric creation skill with validity, reliability, and fairness controls.
 
 ## Features
@@ -23,17 +29,17 @@ Professional-grade rubric creation skill with validity, reliability, and fairnes
 
 ## Installation
 
-### Option 1: Copy to .claude/skills/
-
-```bash
-# From your project root
-cp -r rubric-creator .claude/skills/
+### From Marketplace
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install rubric-creator@cc-plugins
 ```
 
-### Option 2: Symlink (for development)
-
-```bash
-ln -s /path/to/rubric-creator .claude/skills/rubric-creator
+### Local Development
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
+/plugin install rubric-creator@cc-plugins
 ```
 
 ## Available Templates

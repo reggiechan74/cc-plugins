@@ -1,7 +1,6 @@
 ---
 name: Acceptance Criteria
 description: This skill should be used when the user asks to "define acceptance criteria", "what are the success criteria", "set quality gates", "establish acceptance tests", "define what success looks like", or needs to specify pre-declared success criteria before code execution begins.
-version: 0.1.0
 ---
 
 # Acceptance Criteria: Define Success Before Execution

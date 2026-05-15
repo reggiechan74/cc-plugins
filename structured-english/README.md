@@ -22,10 +22,16 @@ Both share: decision tables, configuration parameters, $variable threading, cons
 
 ## Installation
 
-Add the marketplace, then install the plugin:
-
-```bash
+### From Marketplace
+```
 /plugin marketplace add reggiechan74/cc-plugins
+/plugin install structured-english@cc-plugins
+```
+
+### Local Development
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
 /plugin install structured-english@cc-plugins
 ```
 

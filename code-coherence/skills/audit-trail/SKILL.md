@@ -1,7 +1,6 @@
 ---
 name: Audit Trail
 description: This skill should be used when the user asks to "show audit trail", "why did we make this decision", "what happened after this", "trace this decision", "show decision history", "search audit log", or needs to understand the decision history and rationale behind code changes verified through coherence check.
-version: 0.1.0
 ---
 
 # Audit Trail: Decision History and Traceability

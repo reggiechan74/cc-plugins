@@ -1,5 +1,11 @@
 # Course Curriculum Creator
 
+<!-- badges-start -->
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
+<!-- badges-end -->
+
 A Claude Code plugin for rapidly creating professional, pedagogically-sound curricula for 1-2 day intensive workshops and training programs.
 
 ## Overview
@@ -14,10 +20,10 @@ This plugin helps independent consultants, trainers, and instructional designers
 - **Modular Architecture**: Create courses optimized for 1-2 day weekend workshops
 - **Professional Outputs**: Course descriptions, outlines, lesson plans, rubrics, student materials
 - **Template System**: Save and reuse course structures for variants and iterations
-- **Cascade Invalidation**: Automatic staleness detection when source files change
+- **Staleness Warnings**: Commands flag downstream files that may need regeneration when sources change
 - **Export Workflows**: Export as complete document, stakeholder summary, or student syllabus
 - **Delivery Support**: Workshop preparation checklists and post-workshop feedback processing
-- **Quality Gates**: Prerequisite validation hooks prevent generating files out of order
+- **Prerequisite Validation**: Commands check required source files exist before generating, with explicit error messages and recovery hints
 - **Incremental Updates**: Add, remove, or modify individual objectives and modules
 - **Version Control Ready**: Semantic versioning with organized markdown files
 - **Learner Analysis**: Generate learner profiles with prior knowledge, motivations, and transfer environment
@@ -39,8 +45,9 @@ This plugin helps independent consultants, trainers, and instructional designers
 ```
 
 ### Local Development
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
 ```
-/plugin marketplace add ./path/to/cc-plugins
+/plugin marketplace add .
 /plugin install course-curriculum-creator@cc-plugins
 ```
 
@@ -392,4 +399,4 @@ Created by Reggie Chan for Tenebrus Capital Corp training programs.
 
 ## Support
 
-_GitHub repository and issue tracking coming soon._
+Issues and contributions: https://github.com/reggiechan74/cc-plugins/issues

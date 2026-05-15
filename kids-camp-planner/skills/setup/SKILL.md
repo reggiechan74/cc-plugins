@@ -1,7 +1,6 @@
 ---
 name: Camp Planner Setup
 description: This skill should be used when the user asks to "set up camp planner", "initialize camp planning", "create family profile", "configure camp planner", "start camp planning", "set up kids camp", or mentions needing to configure their family details, children info, school board, or budget for camp planning. Provides guided setup workflow for the kids-camp-planner plugin.
-version: 0.2.0
 ---
 
 # Camp Planner Setup

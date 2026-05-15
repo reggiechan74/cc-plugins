@@ -327,7 +327,7 @@ Generate and apply themed spinner verbs for Claude Code status messages. Include
 
 ### structured-english
 
-Dual-audience specification format -- HSF v5 (prose instructions optimized for LLM execution) and SESF v4.1 (formal BEHAVIOR/PROCEDURE/RULE/STEP blocks optimized for human readers). Both share @route decision tables, @config parameters, $variable threading, consolidated error tables, and 3-tier scaling.
+Dual-audience specification format -- HSF v6 (XML envelope with JSON config, XML routes, output schemas, and prose instructions optimized for LLM execution) and SESF v4.1 (formal BEHAVIOR/PROCEDURE/RULE/STEP blocks optimized for human readers). Both share decision tables, configuration parameters, $variable threading, consolidated error tables, and 3-tier scaling.
 
 **Install:**
 ```bash
@@ -335,7 +335,7 @@ Dual-audience specification format -- HSF v5 (prose instructions optimized for L
 ```
 
 **Features:**
-- Two formats: HSF v5 (LLM-facing prose) and SESF v4.1 (human-facing formal blocks)
+- Two formats: HSF v6 (LLM-facing XML envelope) and SESF v4.1 (human-facing formal blocks)
 - Decision tables: `@route` compact notation for 3+ branch conditional logic
 - Centralized config: `@config` blocks for thresholds, feature flags, and environment settings
 - Variable threading: `$variable` for explicit data flow between phases
@@ -345,7 +345,7 @@ Dual-audience specification format -- HSF v5 (prose instructions optimized for L
 - Cross-format conversion: author in SESF, convert to HSF for LLM execution
 
 **Commands:**
-- `/write-LLM-spec <domain>` - Write an LLM-facing specification (HSF v5)
+- `/write-LLM-spec <domain>` - Write an LLM-facing specification (HSF v6)
 - `/assess-LLM-doc <path>` - Evaluate whether a document would benefit from HSF conversion
 - `/update-LLM-spec <path>` - Update an existing HSF spec
 - `/write-human-spec <domain>` - Write a human-facing specification (SESF v4.1)

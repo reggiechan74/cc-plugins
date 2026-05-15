@@ -16,6 +16,8 @@
     "production-reliability"
   ],
   "license": "MIT",
+  "repository": "https://github.com/reggiechan74/cc-plugins",
+  "homepage": "https://github.com/reggiechan74/cc-plugins/tree/main/code-coherence",
   "agents": [
     "./agents/planner.md",
     "./agents/code-critic.md",

@@ -1,11 +1,26 @@
 # Google Workspace MCP for Claude Code
 
+<!-- badges-start -->
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
+<!-- badges-end -->
+
 Model Context Protocol servers that integrate Gmail, Google Calendar, and Google Contacts with Claude Code.
 
-## Install
+## Installation
 
-```bash
-claude plugin add github:reggiechan74/cc-plugins/google-workspace-mcp
+### From Marketplace
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install google-workspace-mcp@cc-plugins
+```
+
+### Local Development
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+```
+/plugin marketplace add .
+/plugin install google-workspace-mcp@cc-plugins
 ```
 
 ## Features

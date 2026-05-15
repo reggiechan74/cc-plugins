@@ -32,8 +32,9 @@ This plugin helps Ontario families navigate the complex puzzle of school-break c
 ```
 
 ### Local Development
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
 ```
-/plugin marketplace add ./path/to/cc-plugins
+/plugin marketplace add .
 /plugin install kids-camp-planner@cc-plugins
 ```
 

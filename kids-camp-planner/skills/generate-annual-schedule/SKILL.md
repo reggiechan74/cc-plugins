@@ -1,7 +1,6 @@
 ---
 name: Generate Annual Schedule
 description: This skill should be used when the user asks to "generate annual schedule", "update annual schedule", "create year schedule", "rebuild schedule", "refresh schedule from spreadsheet", "create full-year view", "build annual camp plan", "consolidate all camp days", "combine summer and PA days", or needs to produce a consolidated annual schedule covering summer, PA days, winter break, and March break from spreadsheet data and school calendar. Generates both markdown and Excel output.
-version: 0.1.0
 ---
 
 # Generate Annual Schedule

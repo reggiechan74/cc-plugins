@@ -1,7 +1,6 @@
 ---
 name: Plan Summer Camps
 description: This skill should be used when the user asks to "plan summer camps", "plan summer coverage", "fill the summer schedule", "summer camp schedule", "cover the summer", "what camps for summer", "summer childcare plan", "plan from end of school to Labour Day", or needs help building a complete summer camp schedule covering the period from the last day of school through to the start of the next school year. Provides a structured workflow for gap-free summer camp coverage in Ontario.
-version: 0.1.0
 ---
 
 # Plan Summer Camps

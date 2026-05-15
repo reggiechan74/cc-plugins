@@ -36,7 +36,7 @@ This downloads the plugin catalog from `github.com/reggiechan74/cc-plugins` and 
 ### Step 2: Install the plugin
 
 ```
-/plugin install nano-banana@reggiechan74-cc-plugins
+/plugin install nano-banana@cc-plugins
 ```
 
 Or open the interactive plugin manager and browse to it:
@@ -46,6 +46,15 @@ Or open the interactive plugin manager and browse to it:
 ```
 
 Navigate to the **Discover** tab, find **nano-banana**, and choose your installation scope (User, Project, or Local).
+
+### Local Development
+
+Clone `reggiechan74/cc-plugins`, then from inside the clone:
+
+```
+/plugin marketplace add .
+/plugin install nano-banana@cc-plugins
+```
 
 ## Prerequisites
 

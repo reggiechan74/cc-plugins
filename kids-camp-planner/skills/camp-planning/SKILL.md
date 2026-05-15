@@ -1,7 +1,6 @@
 ---
 name: Camp Planning Knowledge
 description: This skill should be used when the user asks to "evaluate a camp", "compare camps", "what to look for in a camp", "is this camp good", "camp safety standards", "camp certifications", "choosing a day camp", "questions to ask a camp", or needs guidance on assessing camp quality, safety, program structure, or suitability for their children. Provides Ontario-focused camp evaluation knowledge and best practices.
-version: 0.1.0
 ---
 
 # Camp Planning Knowledge

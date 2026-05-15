@@ -1,7 +1,6 @@
 ---
 name: Draft Camp Emails
 description: This skill should be used when the user asks to "draft an email to a camp", "write an inquiry email", "email camp provider", "write registration email", "draft waitlist follow-up", "write cancellation email", "email about allergies", "contact camp about special needs", or needs help composing emails to camp providers for inquiries, registration, waitlist follow-ups, special needs requests, dietary accommodations, or cancellations. Provides email templates and personalization using the family profile.
-version: 0.1.0
 ---
 
 # Draft Camp Emails

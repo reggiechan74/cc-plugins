@@ -64,7 +64,7 @@ Quickly review the loaded skills to ensure:
 
 ## Phase 3: Course Initialization
 
-Read `${CLAUDE_PLUGIN_ROOT}/commands/create-course.md` using the Read tool.
+Read `${CLAUDE_PLUGIN_ROOT}/commands/0-analysis/create-course.md` using the Read tool.
 Follow its instructions to create the directory structure and initial files (course-positioning.md).
 
 Use the gathered requirements from Phase 1 (topic, duration, audience, level) as inputs.
@@ -80,28 +80,28 @@ If learner information is limited, skip this phase — it can be generated later
 
 ## Phase 4: Learning Outcomes Definition
 
-Read `${CLAUDE_PLUGIN_ROOT}/commands/generate-objectives.md` using the Read tool.
+Read `${CLAUDE_PLUGIN_ROOT}/commands/1-desired-results/generate-objectives.md` using the Read tool.
 Follow its instructions to create Bloom's-aligned learning objectives using course-positioning.md as input.
 
 Ensure objectives progress from lower to higher Bloom's levels appropriate for the course duration.
 
 ## Phase 5: Assessment Design
 
-Read `${CLAUDE_PLUGIN_ROOT}/commands/generate-rubrics.md` using the Read tool.
+Read `${CLAUDE_PLUGIN_ROOT}/commands/2-assessment-evidence/generate-rubrics.md` using the Read tool.
 Follow its instructions to create assessment rubrics aligned to the learning objectives.
 
 Select assessment types that match the cognitive level of each objective (e.g., case studies for Analyze, demonstrations for Apply).
 
 ## Phase 6: Course Outline Design
 
-Read `${CLAUDE_PLUGIN_ROOT}/commands/generate-outline.md` using the Read tool.
+Read `${CLAUDE_PLUGIN_ROOT}/commands/3-learning-plan/generate-outline.md` using the Read tool.
 Follow its instructions to create the module structure with timing allocations.
 
 Ensure the schedule includes breaks, transitions, and appropriate buffer time for the course duration.
 
 ## Phase 7: Detailed Lesson Plans
 
-Read `${CLAUDE_PLUGIN_ROOT}/commands/generate-lesson-plans.md` using the Read tool.
+Read `${CLAUDE_PLUGIN_ROOT}/commands/3-learning-plan/generate-lesson-plans.md` using the Read tool.
 Follow its instructions to create detailed module-level lesson plans.
 
 Each module should include introduction, content delivery, practice activities, and debrief sections with instructor notes.
@@ -117,7 +117,7 @@ Skip if all objectives are at Apply level or higher with no implied prerequisite
 
 ## Phase 8: Student-Facing Materials
 
-Read `${CLAUDE_PLUGIN_ROOT}/commands/generate-description.md` using the Read tool.
+Read `${CLAUDE_PLUGIN_ROOT}/commands/4-materials/generate-description.md` using the Read tool.
 Follow its instructions to create the student-facing course description.
 
 The description should be professional and suitable for marketing/enrollment purposes.
