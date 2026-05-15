@@ -4,5 +4,9 @@
   "description": "Query Mississauga building permit data by address with filtering and summary stats",
   "author": {
     "name": "Reggie Chan"
-  }
+  },
+  "license": "MIT",
+  "repository": "https://github.com/reggiechan74/cc-plugins",
+  "homepage": "https://github.com/reggiechan74/cc-plugins/tree/main/mississauga-permits",
+  "keywords": ["mississauga", "permits", "ontario", "open-data", "real-estate"]
 }

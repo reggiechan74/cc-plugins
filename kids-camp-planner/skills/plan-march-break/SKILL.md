@@ -1,7 +1,6 @@
 ---
 name: Plan March Break
 description: This skill should be used when the user asks to "plan March break", "plan March break camps", "March break coverage", "March break childcare", "what to do for March break", "book March break camp", or needs help finding and scheduling camp programs for the Ontario March break week. Provides a structured workflow for March break camp planning.
-version: 0.1.0
 ---
 
 # Plan March Break

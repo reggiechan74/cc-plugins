@@ -1,9 +1,12 @@
 # Code Coherence Plugin
 
-> Multi-agent verification system for production-grade code reliability
+<!-- badges-start -->
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
+<!-- badges-end -->
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
+> Multi-agent verification system for production-grade code reliability
 
 ## Overview
 

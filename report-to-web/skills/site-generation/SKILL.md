@@ -6,7 +6,6 @@ description: This skill should be used when the user asks to "generate a website
   "parse report for web", "scaffold Vite React project", "deploy to GitHub Pages",
   or needs guidance on markdown parsing strategy, component composition, interactive element
   detection, or static site generation from research documents.
-version: 2.0.0
 ---
 
 # Research Report to Interactive Website Generation

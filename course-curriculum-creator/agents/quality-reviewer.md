@@ -22,7 +22,7 @@ When validating a curriculum, follow this comprehensive process:
 
 ## 1. Curriculum Discovery and Loading
 
-Read `${CLAUDE_PLUGIN_ROOT}/commands/review-curriculum.md` using the Read tool.
+Read `${CLAUDE_PLUGIN_ROOT}/commands/5-quality-and-review/review-curriculum.md` using the Read tool.
 Follow its curriculum discovery instructions to locate and load all curriculum files.
 
 The command provides the standard file patterns and directory structure to look for.

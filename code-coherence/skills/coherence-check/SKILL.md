@@ -1,7 +1,6 @@
 ---
 name: Coherence Check
 description: This skill should be used when the user asks to "check this code", "validate this", "verify this implementation", "is this correct", "review this code", "check for errors", "multi-agent verification", or mentions production-critical code, financial calculations, security implementations, or high-stakes operations. Provides comprehensive multi-agent verification workflow with specialized critic agents.
-version: 0.1.0
 ---
 
 # Coherence Check: Multi-Agent Verification

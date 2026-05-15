@@ -36,7 +36,7 @@ This downloads the plugin catalog from `github.com/reggiechan74/cc-plugins` and 
 ### Step 2: Install the plugin
 
 ```
-/plugin install nano-banana@reggiechan74-cc-plugins
+/plugin install nano-banana@cc-plugins
 ```
 
 Or open the interactive plugin manager and browse to it:

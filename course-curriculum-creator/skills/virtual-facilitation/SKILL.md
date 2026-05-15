@@ -1,7 +1,6 @@
 ---
 name: virtual-facilitation
 description: This skill should be used when the user asks to "design a virtual workshop", "create online training", "adapt for remote delivery", "plan a hybrid session", "facilitate via Zoom/Teams/Meet", or when course-positioning.md has deliveryMode set to "virtual" or "hybrid". Provides practical guidance for designing and facilitating effective virtual and hybrid learning experiences.
-version: 0.1.0
 ---
 
 # Virtual Facilitation for Workshop Design

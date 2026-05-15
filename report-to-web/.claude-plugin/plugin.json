@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "Convert markdown research reports into interactive React presentation websites for GitHub Pages",
   "author": {
-    "name": "Claude Code Plugin",
-    "email": "noreply@anthropic.com"
+    "name": "Reggie Chan"
   },
+  "license": "MIT",
+  "repository": "https://github.com/reggiechan74/cc-plugins",
+  "homepage": "https://github.com/reggiechan74/cc-plugins/tree/main/report-to-web",
   "keywords": ["react", "presentation", "research", "website", "github-pages", "interactive"]
 }

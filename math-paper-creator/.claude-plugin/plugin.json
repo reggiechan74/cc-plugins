@@ -6,6 +6,8 @@
     "name": "Reggie Chan"
   },
   "license": "MIT",
+  "repository": "https://github.com/reggiechan74/cc-plugins",
+  "homepage": "https://github.com/reggiechan74/cc-plugins/tree/main/math-paper-creator",
   "keywords": ["math", "validation", "meta-compiler", "optimization"],
   "commands": [
     "./commands/"

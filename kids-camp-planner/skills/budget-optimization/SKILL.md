@@ -1,7 +1,6 @@
 ---
 name: Budget Optimization
 description: This skill should be used when the user asks to "create a camp budget", "generate budget spreadsheet", "calculate camp costs", "compare camp prices", "optimize camp spending", "track camp expenses", "how much will camps cost", "budget for summer camps", "camp cost breakdown", or needs help analyzing, comparing, or managing camp-related expenses across children and time periods. Provides budget calculation tools and cost optimization strategies for Ontario families.
-version: 0.1.0
 ---
 
 # Budget Optimization

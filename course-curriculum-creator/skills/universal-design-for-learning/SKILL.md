@@ -1,7 +1,6 @@
 ---
 name: universal-design-for-learning
 description: This skill should be used when the user asks to "design accessible curriculum", "apply UDL", "accommodate diverse learners", "create inclusive workshops", "ensure accessibility", or references Universal Design for Learning. Also applies when generating lesson plans, outlines, or activities to ensure multiple means of representation, engagement, and expression. Provides practical guidance for creating inclusive, accessible learning experiences in 1-2 day workshop contexts.
-version: 0.1.0
 ---
 
 # Universal Design for Learning (UDL) for Workshop Design

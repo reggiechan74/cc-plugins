@@ -2,6 +2,11 @@
   "name": "resume-snapshot",
   "version": "1.0.0",
   "description": "Generate portfolio-ready repository snapshots for resume and job documentation",
+  "author": {
+    "name": "Reggie Chan"
+  },
   "license": "MIT",
+  "repository": "https://github.com/reggiechan74/cc-plugins",
+  "homepage": "https://github.com/reggiechan74/cc-plugins/tree/main/resume-snapshot",
   "keywords": ["resume", "portfolio", "documentation", "repository-analysis", "job-search"]
 }

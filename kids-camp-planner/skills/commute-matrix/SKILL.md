@@ -1,7 +1,6 @@
 ---
 name: Commute Matrix
 description: This skill should be used when the user asks to "calculate commutes", "commute matrix", "travel times", "update commute data", "how far is each camp", "filter by commute", "commute analysis", "check commute times", "driving time to camps", "transit time to camps", or needs automated commute calculations between home, work, and camp locations. Requires a Geoapify API key in the family profile.
-version: 0.1.0
 ---
 
 # Commute Matrix

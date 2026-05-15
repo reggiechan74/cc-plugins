@@ -1,7 +1,6 @@
 ---
 name: d3js
 description: This skill should be used when the user asks to "create a D3 visualization", "make a D3 chart", "build a d3js graph", "create a bar chart with D3", "make a scatter plot", "build a treemap", "create a force-directed graph", "make a choropleth map", "create a Sankey diagram", "build a sunburst chart", "make a line chart", "create a histogram", "build a heatmap", or mentions D3.js, d3js, data visualization with D3, or any specific chart type. Covers D3.js v7 with three output formats and optional creative/artistic mode.
-version: 0.1.0
 ---
 
 Create any D3.js data visualization quickly and correctly using D3 v7. This skill supports two workflows: direct implementation (default) for fast, professional output, and creative mode for artistic, philosophy-driven visualizations. Three output formats are available: standalone HTML, HTML + separate JS, and React components.

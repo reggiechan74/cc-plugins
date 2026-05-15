@@ -7,7 +7,6 @@ description: This skill should be used when the user asks about "dark theme for 
   dark professional visual design system used by report-to-web generated sites, including
   color palettes, typography, spacing, animation patterns, responsive design, accessibility,
   component styling, and theme/registry selection.
-version: 2.0.0
 ---
 
 # Dark Professional Design System for Report Websites

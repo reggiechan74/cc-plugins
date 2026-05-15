@@ -1,5 +1,11 @@
 # mississauga-permits
 
+<!-- badges-start -->
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
+<!-- badges-end -->
+
 Claude Code plugin for querying the City of Mississauga Open Data portal. Provides on-demand access to 20 municipal datasets including building permits, parcels, land use, transit, infrastructure projects, and more.
 
 ## Prerequisites

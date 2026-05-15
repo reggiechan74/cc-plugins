@@ -1,7 +1,6 @@
 ---
 name: Plan PA Days
 description: This skill should be used when the user asks to "plan PA days", "find PA day programs", "PA day coverage", "PD day camps", "professional activity day", "what to do on PA days", "look up PA days", "school PA day schedule", or needs help finding PA day dates and arranging single-day childcare coverage for Ontario Professional Activity days. Provides a workflow for looking up PA days and finding programs.
-version: 0.1.0
 ---
 
 # Plan PA Days

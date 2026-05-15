@@ -1,5 +1,11 @@
 # d3-visualizations
 
+<!-- badges-start -->
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
+<!-- badges-end -->
+
 A Claude Code plugin that provides comprehensive D3.js v7 knowledge for quickly creating any kind of data visualization.
 
 ## Features
@@ -15,6 +21,13 @@ A Claude Code plugin that provides comprehensive D3.js v7 knowledge for quickly 
 
 ## Installation
 
+### From Marketplace
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install d3-visualizations@cc-plugins
+```
+
+### Local Development
 ```bash
 claude --plugin-dir /path/to/d3-visualizations
 ```

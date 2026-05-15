@@ -1,7 +1,6 @@
 ---
 name: Plan Review
 description: This skill should be used when the user asks to "review the plan", "check the execution plan", "validate this plan", "is this plan good", or automatically after the planner agent creates an execution plan. Validates plans for completeness, clarity, measurability, and proper acceptance criteria before execution begins.
-version: 0.1.0
 ---
 
 # Plan Review: Validate Execution Plans

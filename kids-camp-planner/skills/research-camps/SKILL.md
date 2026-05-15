@@ -1,7 +1,6 @@
 ---
 name: Research Camps
 description: This skill should be used when the user asks to "research camps", "find camps near me", "search for camps", "look up camp providers", "what camps are available", "compare camp options", "create camp provider files", "find day camps in [area]", or needs help discovering, evaluating, and documenting camp providers in their area. Creates structured provider markdown files in the research folder.
-version: 0.1.0
 ---
 
 # Research Camps

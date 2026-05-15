@@ -1,6 +1,19 @@
 # report-to-web
 
+<!-- badges-start -->
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
+<!-- badges-end -->
+
 Convert markdown research reports into interactive React presentation websites for GitHub Pages.
+
+## Installation
+
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install report-to-web@cc-plugins
+```
 
 ## Features
 

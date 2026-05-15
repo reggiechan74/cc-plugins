@@ -1,6 +1,19 @@
 # Spinnerverbs Plugin
 
+<!-- badges-start -->
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-blueviolet)
+<!-- badges-end -->
+
 Generate and apply themed spinner verbs for Claude Code status messages.
+
+## Installation
+
+```
+/plugin marketplace add reggiechan74/cc-plugins
+/plugin install spinnerverbs@cc-plugins
+```
 
 ## Features
 
