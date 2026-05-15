@@ -23,6 +23,7 @@ This plugin helps independent consultants, trainers, and instructional designers
 - **Staleness Warnings**: Commands flag downstream files that may need regeneration when sources change
 - **Export Workflows**: Export as complete document, stakeholder summary, or student syllabus
 - **Delivery Support**: Workshop preparation checklists and post-workshop feedback processing
+- **Prerequisite Validation**: Commands check required source files exist before generating, with explicit error messages and recovery hints
 - **Incremental Updates**: Add, remove, or modify individual objectives and modules
 - **Version Control Ready**: Semantic versioning with organized markdown files
 - **Learner Analysis**: Generate learner profiles with prior knowledge, motivations, and transfer environment
