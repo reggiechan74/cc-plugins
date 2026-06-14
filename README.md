@@ -1,7 +1,7 @@
 # Reggie Chan's Claude Code Plugins
 
 <!-- badges-start -->
-[![Plugins](https://img.shields.io/badge/plugins-13-blue)](https://github.com/reggiechan74/cc-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-14-blue)](https://github.com/reggiechan74/cc-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-marketplace-blueviolet)](https://claude.ai/claude-code)
 [![GitHub Stars](https://img.shields.io/github/stars/reggiechan74/cc-plugins?style=flat&color=yellow)](https://github.com/reggiechan74/cc-plugins/stargazers)
@@ -132,6 +132,26 @@ Gmail, Google Calendar, and Google Contacts MCP servers for Claude Code. Feature
 
 **Commands:**
 - `/authenticate` - Run OAuth flow for Gmail and Calendar servers
+
+---
+
+### hermes-tweet
+
+Read-first X/Twitter research and approval-gated publishing workflows through Xquik.
+
+**Install:**
+```bash
+/plugin install hermes-tweet@cc-plugins
+```
+
+**Features:**
+- Public thread analysis and account research workflows
+- Search summaries and monitoring reports
+- Draft-first publishing guidance
+- Explicit runtime gate before posting, replying, liking, reposting, or following
+
+**Commands:**
+- `/hermes-tweet:research [topic-or-url]` - Plan read-first X/Twitter research and summarize public context
 
 ---
 
