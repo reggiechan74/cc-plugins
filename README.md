@@ -1,7 +1,7 @@
 # Reggie Chan's Claude Code Plugins
 
 <!-- badges-start -->
-[![Plugins](https://img.shields.io/badge/plugins-13-blue)](https://github.com/reggiechan74/cc-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-12-blue)](https://github.com/reggiechan74/cc-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-marketplace-blueviolet)](https://claude.ai/claude-code)
 [![GitHub Stars](https://img.shields.io/github/stars/reggiechan74/cc-plugins?style=flat&color=yellow)](https://github.com/reggiechan74/cc-plugins/stargazers)
@@ -41,57 +41,6 @@ Multi-agent verification system implementing organizational intelligence for pro
 - `/audit-trail` - Bidirectional decision history with search
 - `/acceptance-criteria` - Define and enforce success criteria
 - `/swiss-cheese-validation` - Multi-layer error checking with independence verification
-
----
-
-### course-curriculum-creator
-
-Create professional course curricula for 1-2 day workshops using backward design methodology and Bloom's taxonomy.
-
-**Install:**
-```bash
-/plugin install course-curriculum-creator@cc-plugins
-```
-
-**Features:**
-- Backward Design Framework with Bloom's Taxonomy integration
-- Rapid course creation: autonomous or step-by-step
-- Template system: save and reuse course structures
-- Universal Design for Learning (UDL) compliance
-- Virtual/hybrid delivery adaptation
-- Kirkpatrick L1-L4 evaluation planning
-- Course series design (101/201/301/401) with Bloom's band enforcement
-- Learner profile generation for audience analysis
-- Pre-work micro-learning units with fast track/full path options
-- Post-workshop spaced retrieval practice to combat forgetting curve
-- Affective domain (Krathwohl's taxonomy) for attitude-change objectives
-- WCAG 2.1 AA accessibility specifications
-- Co-facilitation support with role rotation and handoff protocols
-
-**Commands:**
-- `/create-course` - Initialize new course project with directory structure
-- `/assess-needs` - Conduct a training needs assessment
-- `/generate-objectives` - Create Bloom's-aligned learning objectives
-- `/generate-rubrics` - Create 1-5 scale analytical assessment rubrics
-- `/generate-outline` - Generate module structure with timing
-- `/generate-lesson-plans` - Generate detailed module-level lesson plans
-- `/generate-description` - Create student-facing course description
-- `/generate-artifacts` - Generate student handouts, instructor guides, etc.
-- `/generate-evaluation-plan` - Kirkpatrick L1-L4 evaluation plan
-- `/generate-transfer-plan` - Post-workshop transfer plan
-- `/generate-workshop-prep` - Dated preparation checklist for delivery
-- `/process-workshop-feedback` - Analyze feedback and generate improvement report
-- `/adapt-for-virtual` - Adapt curriculum for virtual or hybrid delivery
-- `/generate-review-package` - Stakeholder/SME review package
-- `/review-curriculum` - Validate curriculum quality and alignment
-- `/export-curriculum` - Export as combined document
-- `/design-series` - Design a leveled course series
-- `/save-as-template` - Save course structure as reusable template
-- `/create-from-template` - Create new course from existing template
-- `/list-templates` - List available course templates
-- `/generate-learner-profile` - Audience analysis across 5 dimensions
-- `/generate-pre-work` - Pre-workshop micro-learning prerequisites
-- `/generate-spaced-practice` - Post-workshop spaced retrieval practice
 
 ---
 
