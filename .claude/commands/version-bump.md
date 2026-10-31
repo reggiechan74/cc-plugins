@@ -16,7 +16,7 @@ Bump a plugin's version consistently across all files that reference it.
 
 Extract `<plugin-name>` and `<new-version>` from the arguments.
 
-- If no arguments provided, ask: "Which plugin and what version? (e.g., `math-paper-creator 0.5.0`)"
+- If no arguments provided, ask: "Which plugin and what version? (e.g., `code-coherence 0.2.0`)"
 - If only plugin name provided, read current version from its `plugin.json` and suggest the next minor bump. Ask user to confirm or specify a different version.
 - Validate the version follows semver (X.Y.Z).
 

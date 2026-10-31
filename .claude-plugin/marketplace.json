@@ -35,12 +35,6 @@
       "version": "0.1.0"
     },
     {
-      "name": "math-paper-creator",
-      "source": "./math-paper-creator",
-      "description": "Author validated math papers interactively. Formalize concepts into prose, LaTeX math, and executable Python validation — each section checked before the next begins.",
-      "version": "0.7.0"
-    },
-    {
       "name": "nano-banana",
       "source": "./nano-banana-plugin",
       "description": "AI image generation and presentation deck creation via Gemini API. 25 style presets, batch deck generation, and report-to-slides decomposition.",

@@ -1,7 +1,7 @@
 # Reggie Chan's Claude Code Plugins
 
 <!-- badges-start -->
-[![Plugins](https://img.shields.io/badge/plugins-12-blue)](https://github.com/reggiechan74/cc-plugins)
+[![Plugins](https://img.shields.io/badge/plugins-11-blue)](https://github.com/reggiechan74/cc-plugins)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/licenses/MIT)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-marketplace-blueviolet)](https://claude.ai/claude-code)
 [![GitHub Stars](https://img.shields.io/github/stars/reggiechan74/cc-plugins?style=flat&color=yellow)](https://github.com/reggiechan74/cc-plugins/stargazers)
@@ -125,34 +125,6 @@ Query Mississauga building permit data by address with filtering and summary sta
 **Commands:**
 - `/fetch-permits <address>` - Building permit lookup with rich filtering (type, scope, ward, date range, construction value)
 - `/fetch-mississauga [options]` - General-purpose query for any of 20 City of Mississauga datasets
-
----
-
-### math-paper-creator
-
-Author validated math papers interactively. Formalize concepts into prose, LaTeX math, and executable Python validation — each section checked before the next begins.
-
-**Install:**
-```bash
-/plugin install math-paper-creator@cc-plugins
-```
-
-**Features:**
-- Incremental section-by-section authoring with live validation
-- Symbol registry: sets, parameters, variables, expressions, constraints, objectives
-- Phantom detection, collision checking, index validation, cycle detection, unit boundaries
-- Constraint satisfaction and objective evaluation against fixture data
-- Compile to clean paper, standalone runner.py, and validation report
-- Onboarding workflow for existing papers without validation
-
-**Commands:**
-- `/math-paper-creator:author [file]` - Author a new paper interactively with section-by-section validation
-- `/math-paper-creator:onboard <file>` - Convert an existing paper by adding validation blocks
-- `/math-paper-creator:check <file>` - Run validation pipeline against a .model.md document
-- `/math-paper-creator:status <file>` - Show symbol table, coverage, and orphan/phantom status
-- `/math-paper-creator:report <file>` - Generate full validation report
-- `/math-paper-creator:paper <file>` - Generate clean paper artifact (strips validation blocks)
-- `/math-paper-creator:compile <file>` - Produce all artifacts: clean paper, standalone runner, validation report
 
 ---
 
